@@ -15,3 +15,11 @@ Instituicao: CNI
 - Criacao da estrutura inicial de montagem de provas com contador de uso.
 - Criacao do schema MySQL em `database.sql`.
 - Atualizacao da documentacao principal do projeto.
+
+2026-03-25
+- Consolidacao do banco principal em `database_geral_atualizado.sql`.
+- Adicao de um seed com 100 questoes variadas em `seed_100_questoes_marcelo_botura.sql`.
+- Vinculacao automatica dessas questoes ao usuario `Marcelo Botura`.
+- Reorganizacao da home em `index.php` com visual mais minimalista.
+- Inclusao de animacoes suaves e nova hierarquia visual em `assets/css/app.css`.
+- Exibicao da quantidade real de questoes cadastradas e publicas na pagina inicial.
