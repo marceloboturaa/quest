@@ -1,0 +1,60 @@
+PACOTE DE PUBLICACAO - QUEST - 2026-03-25
+
+Subir estes arquivos e pastas para o servidor:
+
+1. Arquivos PHP da raiz
+- index.php
+- login.php
+- register.php
+- forgot-password.php
+- reset-password.php
+- dashboard.php
+- users.php
+- questions.php
+- exams.php
+- exam-pdf.php
+- bootstrap.php
+- config.php
+
+2. Includes
+- includes/layout.php
+- includes/question_helpers.php
+- includes/question_actions.php
+- includes/question_repository.php
+- includes/exam_actions.php
+- includes/exam_repository.php
+- includes/pdf_builder.php
+
+3. Assets
+- assets/js/app.js
+- assets/css/app.css
+
+4. Banco de dados
+- executar database_update_20260325.sql no phpMyAdmin da hospedagem
+
+5. Arquivos opcionais
+- README.md
+- history.txt
+- llms.txt
+
+NAO subir:
+- config.local.php
+- .git
+- storage/mail.log
+
+ORDEM RECOMENDADA
+
+1. Fazer backup dos arquivos atuais e do banco.
+2. Substituir os arquivos PHP e a pasta includes.
+3. Substituir assets/js/app.js e assets/css/app.css.
+4. Executar database_update_20260325.sql.
+5. Conferir config.php com host, banco, usuario e senha da hospedagem.
+6. Testar:
+- login.php
+- questions.php
+- exams.php
+- exam-pdf.php?id=ID_DA_PROVA
+
+OBSERVACAO
+
+Se o servidor ainda estiver com uma versao muito antiga do projeto, o mais seguro e subir todos os arquivos listados acima de uma vez, e nao apenas os alterados no ultimo commit.
