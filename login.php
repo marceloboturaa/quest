@@ -38,7 +38,7 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.');
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Login</h2>
-        <p>Entre com seu e-mail e senha.</p>
+        <p>Entre com seu e-mail e senha para acessar o banco de questoes e o painel do sistema.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -59,6 +59,11 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.');
                 <a class="ghost-button" href="register.php">Criar conta</a>
             </div>
         </form>
+
+        <div class="auth-note">
+            <strong>Acesso</strong><br>
+            Se voce ainda nao tem conta, crie um cadastro. O perfil inicial entra como usuario comum.
+        </div>
     </section>
 </div>
 <?php forget_old_input(); ?>

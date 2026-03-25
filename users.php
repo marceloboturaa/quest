@@ -128,4 +128,20 @@ render_header(
         </table>
     </div>
 </section>
+
+<section class="info-grid">
+    <article class="panel">
+        <h2>Leitura dos perfis</h2>
+        <ul class="mini-list">
+            <li><strong>Master admin:</strong> visao total e gestao de usuarios.</li>
+            <li><strong>Admin local:</strong> apoio operacional ao banco de questoes.</li>
+            <li><strong>Usuario:</strong> autoria, favoritos e montagem de provas.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Boa pratica</h2>
+        <p>Promova para admin local apenas contas que realmente precisem atuar na organizacao do conteudo e da operacao.</p>
+    </article>
+</section>
 <?php render_footer(); ?>

@@ -73,7 +73,7 @@ render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicia
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Novo cadastro</h2>
-        <p>Depois do cadastro, a conta entra como usuario comum. O master admin pode promover para admin local.</p>
+        <p>Depois do cadastro, a conta entra como usuario comum. O master admin pode promover para admin local quando necessario.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -105,6 +105,11 @@ render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicia
                 <a class="ghost-button" href="login.php">Ja tenho login</a>
             </div>
         </form>
+
+        <div class="auth-note">
+            <strong>Perfil inicial</strong><br>
+            Usuarios comuns podem criar questoes, editar as proprias e montar provas com questoes visiveis.
+        </div>
     </section>
 </div>
 <?php forget_old_input(); ?>

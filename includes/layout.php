@@ -71,6 +71,10 @@ function render_footer(): void
 {
     ?>
         </main>
+        <footer class="site-footer">
+            <p>Quest. Projeto pessoal de Marcelo Botura com apoio do CNI.</p>
+            <small>Banco colaborativo de questoes, gestao de usuarios e montagem inicial de provas.</small>
+        </footer>
     </div>
     <script src="assets/js/app.js"></script>
 </body>

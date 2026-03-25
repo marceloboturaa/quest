@@ -125,23 +125,30 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
                 <textarea name="instructions"></textarea>
             </label>
 
-            <div class="question-pick-list">
-                <?php foreach ($availableQuestions as $question): ?>
-                    <label class="question-pick-item">
-                        <input type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>" <?= $preselectedQuestionId === (int) $question['id'] ? 'checked' : '' ?>>
-                        <span>
-                            <strong><?= h($question['title']) ?></strong>
-                            <small>
-                                <?= h(question_type_label($question['question_type'])) ?> |
-                                <?= h($question['discipline_name'] ?? 'Sem disciplina') ?> |
-                                <?= h($question['subject_name'] ?? 'Sem assunto') ?> |
-                                Autor: <?= h($question['author_name']) ?> |
-                                Uso: <?= h((string) $question['usage_count']) ?>
-                            </small>
-                        </span>
-                    </label>
-                <?php endforeach; ?>
-            </div>
+            <?php if ($availableQuestions === []): ?>
+                <div class="empty-state">
+                    <h2>Nenhuma questao disponivel</h2>
+                    <p>Crie questoes ou torne questoes publicas para comecar a montar provas.</p>
+                </div>
+            <?php else: ?>
+                <div class="question-pick-list">
+                    <?php foreach ($availableQuestions as $question): ?>
+                        <label class="question-pick-item">
+                            <input type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>" <?= $preselectedQuestionId === (int) $question['id'] ? 'checked' : '' ?>>
+                            <span>
+                                <strong><?= h($question['title']) ?></strong>
+                                <small>
+                                    <?= h(question_type_label($question['question_type'])) ?> |
+                                    <?= h($question['discipline_name'] ?? 'Sem disciplina') ?> |
+                                    <?= h($question['subject_name'] ?? 'Sem assunto') ?> |
+                                    Autor: <?= h($question['author_name']) ?> |
+                                    Uso: <?= h((string) $question['usage_count']) ?>
+                                </small>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
 
             <div class="form-actions">
                 <button class="button" type="submit">Salvar prova</button>
@@ -176,5 +183,21 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
             </div>
         <?php endif; ?>
     </section>
+</section>
+
+<section class="info-grid">
+    <article class="panel">
+        <h2>Como usar</h2>
+        <ul class="mini-list">
+            <li>Selecione questoes visiveis no banco.</li>
+            <li>Misture tipos diferentes na mesma prova.</li>
+            <li>Salve o conjunto para reaproveitar a estrutura.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Estado atual</h2>
+        <p>A montagem inicial de provas ja funciona. Exportacao PDF e refinamentos de impressao ainda ficam para a proxima etapa.</p>
+    </article>
 </section>
 <?php render_footer(); ?>

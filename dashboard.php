@@ -10,7 +10,7 @@ $metrics = dashboard_metrics($user);
 
 render_header(
     'Dashboard',
-    'Painel central para acompanhar usuarios, permissoes e o banco de questoes do Quest.'
+    'Painel central para acompanhar usuarios, permissoes, banco de questoes e montagem de provas.'
 );
 ?>
 <section class="stats-grid">
@@ -65,6 +65,29 @@ render_header(
         <p>Selecione questoes do banco colaborativo, misture tipos e gere provas com contador automatico de uso.</p>
         <div class="form-actions">
             <a class="ghost-button" href="exams.php">Abrir provas</a>
+        </div>
+    </article>
+</section>
+
+<section class="info-grid">
+    <article class="panel">
+        <h2>Leitura rapida do sistema</h2>
+        <ul class="mini-list">
+            <li>Usuarios criam e editam as proprias questoes.</li>
+            <li>Admins locais acompanham a operacao do banco de questoes.</li>
+            <li>Master admin gerencia os perfis da plataforma.</li>
+            <li>Provas aproveitam questoes visiveis no banco colaborativo.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Acoes sugeridas</h2>
+        <div class="form-actions">
+            <a class="button" href="questions.php">Criar questao</a>
+            <a class="button-secondary" href="exams.php">Montar prova</a>
+            <?php if (can_manage_users()): ?>
+                <a class="ghost-button" href="users.php">Revisar usuarios</a>
+            <?php endif; ?>
         </div>
     </article>
 </section>

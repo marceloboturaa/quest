@@ -257,7 +257,8 @@ h1 {
 .form-grid,
 .option-list,
 .mini-list,
-.question-list {
+.question-list,
+.info-grid {
     display: grid;
     gap: 20px;
 }
@@ -272,6 +273,10 @@ h1 {
 
 .card-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .split-card {
@@ -455,6 +460,52 @@ th {
     text-align: center;
 }
 
+.site-footer {
+    margin-top: 28px;
+    padding: 22px 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.62);
+    color: var(--ink-soft);
+}
+
+.site-footer p,
+.site-footer small {
+    margin: 0;
+}
+
+.site-footer small {
+    display: block;
+    margin-top: 8px;
+}
+
+.kicker-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.kicker-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(23, 53, 87, 0.08);
+}
+
+.kicker-card strong {
+    display: block;
+    margin-bottom: 6px;
+    font-family: 'Space Grotesk', Arial, sans-serif;
+}
+
+.auth-note {
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(23, 53, 87, 0.05);
+    border: 1px solid rgba(23, 53, 87, 0.08);
+    color: var(--ink-soft);
+}
+
 .hidden {
     display: none !important;
 }
@@ -463,7 +514,8 @@ th {
     .hero-grid,
     .split-card,
     .stats-grid,
-    .form-grid.two-columns {
+    .form-grid.two-columns,
+    .info-grid {
         grid-template-columns: 1fr;
     }
 

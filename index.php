@@ -15,10 +15,10 @@ render_header(
 <section class="hero-grid">
     <article class="panel">
         <p class="eyebrow">Projeto pessoal de Marcelo Botura</p>
-        <h2>Controle central, operacao local e autores na mesma base.</h2>
+        <h2>Uma base unica para criar, compartilhar e reutilizar questoes.</h2>
         <p>
-            Esta versao do Quest ja separa acesso de <strong>master admin</strong>, <strong>admin local</strong> e
-            <strong>usuario</strong>, com autenticacao, cadastro, recuperacao de senha e cadastro de questoes.
+            O Quest organiza autoria, colaboracao e montagem de provas em um unico fluxo. A plataforma ja separa
+            acesso de <strong>master admin</strong>, <strong>admin local</strong> e <strong>usuario</strong>.
         </p>
 
         <div class="form-actions">
@@ -33,12 +33,20 @@ render_header(
             <span>MVP funcional em desenvolvimento com apoio do CNI</span>
         </div>
 
-        <ul class="mini-list">
-            <li>Cadastro de usuarios, login e logout ja implementados.</li>
-            <li>Recuperacao de senha por token com registro de teste em <code>storage/mail.log</code>.</li>
-            <li>Master admin pode promover usuarios comuns para admin local.</li>
-            <li>Usuarios autenticados ja podem cadastrar questoes de multipla escolha, discursiva e desenho, alem de montar provas.</li>
-        </ul>
+        <div class="kicker-grid">
+            <div class="kicker-card">
+                <strong>Banco colaborativo</strong>
+                <span>Questoes privadas ou publicas com clonagem e rastreio de autoria base.</span>
+            </div>
+            <div class="kicker-card">
+                <strong>Classificacao academica</strong>
+                <span>Disciplina, assunto, nivel de ensino e tipo de questao em uma mesma base.</span>
+            </div>
+            <div class="kicker-card">
+                <strong>Montagem inicial de provas</strong>
+                <span>Selecao de questoes do banco com contador de uso automatico.</span>
+            </div>
+        </div>
     </article>
 </section>
 
@@ -57,6 +65,28 @@ render_header(
         <span class="metric-copy">Fluxos</span>
         <strong class="metric-number">4</strong>
         <p>Cadastro, login, reset de senha e montagem inicial de provas.</p>
+    </article>
+</section>
+
+<section class="info-grid">
+    <article class="panel">
+        <h2>O que ja funciona</h2>
+        <ul class="mini-list">
+            <li>Cadastro e autenticacao de usuarios.</li>
+            <li>Recuperacao de senha com token.</li>
+            <li>Gestao de perfis pelo master admin.</li>
+            <li>Questoes de multipla escolha, discursiva e desenho.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Como a base cresce</h2>
+        <ul class="mini-list">
+            <li>O autor cria uma questao privada ou publica.</li>
+            <li>Questoes publicas podem ser favoritas, clonadas e reutilizadas.</li>
+            <li>Cada reutilizacao em prova incrementa o contador de uso.</li>
+            <li>O historico de origem ajuda a manter autoria e contexto.</li>
+        </ul>
     </article>
 </section>
 <?php render_footer(); ?>
