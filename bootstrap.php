@@ -78,6 +78,15 @@ function app_url(string $path = ''): string
     return $path === '' ? $base : $base . '/' . $path;
 }
 
+function asset_url(string $path): string
+{
+    $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+    $absolutePath = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalizedPath);
+    $version = is_file($absolutePath) ? (string) filemtime($absolutePath) : (string) time();
+
+    return $normalizedPath . '?v=' . rawurlencode($version);
+}
+
 function storage_path(string $path = ''): string
 {
     $base = rtrim((string) config('storage_path', sys_get_temp_dir()), '\\/');

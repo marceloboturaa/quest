@@ -15,7 +15,7 @@ function render_header(string $title, string $subtitle = ''): void
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="<?= h(asset_url('assets/css/app.css')) ?>">
 </head>
 <body>
     <div class="page-shell">
@@ -76,7 +76,7 @@ function render_footer(): void
             <small>Banco colaborativo de questoes, gestao de usuarios e montagem inicial de provas.</small>
         </footer>
     </div>
-    <script src="assets/js/app.js"></script>
+    <script src="<?= h(asset_url('assets/js/app.js')) ?>"></script>
 </body>
 </html>
 <?php
