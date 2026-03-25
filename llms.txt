@@ -1,0 +1,25 @@
+Project: Quest
+Institution: CNI
+Status: Em desenvolvimento
+Type: Static landing page
+
+Summary:
+Quest is a pre-launch landing page focused on presenting an educational product idea.
+The current page shows branding, a short product message, an email input field, and a client-side confirmation message after form submission.
+
+Files:
+- index.html: main page with inline HTML, CSS, and JavaScript.
+- README.md: human-readable project overview and local run instructions.
+- history.txt: short change log and project history.
+
+Current behavior:
+- Displays the message "Menos tempo formatando, mais tempo ensinando."
+- Accepts a valid email in the browser form.
+- Shows a thank-you confirmation after clicking the submit button.
+- Does not persist data or connect to a backend service.
+
+Notes for LLMs:
+- This repository is currently small and static.
+- The project status is development.
+- The institution associated with the project is CNI.
+- Prefer simple edits and preserve the landing-page purpose.
