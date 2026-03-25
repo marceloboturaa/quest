@@ -9,7 +9,7 @@ if (current_user() !== null) {
 
 render_header(
     'Quest para equipes de ensino',
-    'Um MVP em PHP para gestao de usuarios, permissoes e criacao de questoes em multipla escolha, discursiva e verdadeiro ou falso.'
+    'Um MVP em PHP para gestao de usuarios, banco colaborativo de questoes e montagem inicial de provas.'
 );
 ?>
 <section class="hero-grid">
@@ -37,7 +37,7 @@ render_header(
             <li>Cadastro de usuarios, login e logout ja implementados.</li>
             <li>Recuperacao de senha por token com registro de teste em <code>storage/mail.log</code>.</li>
             <li>Master admin pode promover usuarios comuns para admin local.</li>
-            <li>Usuarios autenticados ja podem cadastrar questoes de multipla escolha, discursiva e verdadeiro ou falso.</li>
+            <li>Usuarios autenticados ja podem cadastrar questoes de multipla escolha, discursiva e desenho, alem de montar provas.</li>
         </ul>
     </article>
 </section>
@@ -51,12 +51,12 @@ render_header(
     <article>
         <span class="metric-copy">Tipos de questao</span>
         <strong class="metric-number">3</strong>
-        <p>Multipla escolha, discursiva e verdadeiro ou falso.</p>
+        <p>Multipla escolha, discursiva e desenho com espaco livre.</p>
     </article>
     <article>
         <span class="metric-copy">Fluxos</span>
         <strong class="metric-number">4</strong>
-        <p>Cadastro, login, reset de senha e criacao de questoes.</p>
+        <p>Cadastro, login, reset de senha e montagem inicial de provas.</p>
     </article>
 </section>
 <?php render_footer(); ?>

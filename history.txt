@@ -9,6 +9,9 @@ Instituicao: CNI
 - Separacao de perfis em `master_admin`, `local_admin` e `user`.
 - Inclusao de cadastro, login, logout e recuperacao de senha por token.
 - Implementacao de gerenciamento de usuarios pelo master admin.
-- Implementacao de cadastro de questoes de multipla escolha, discursiva e verdadeiro ou falso.
+- Implementacao de banco colaborativo de questoes com visibilidade publica e privada.
+- Implementacao de questoes de multipla escolha, discursiva e desenho.
+- Inclusao de disciplinas, assuntos, filtros, favoritos e clonagem de questoes.
+- Criacao da estrutura inicial de montagem de provas com contador de uso.
 - Criacao do schema MySQL em `database.sql`.
 - Atualizacao da documentacao principal do projeto.

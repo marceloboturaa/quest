@@ -25,16 +25,16 @@ render_header(
         <p><?= has_role('user') ? 'Quantidade de questoes criadas pela sua conta.' : 'Volume atual do banco de questoes.' ?></p>
     </article>
     <article>
-        <span class="metric-copy">Admins locais</span>
-        <strong class="metric-number"><?= h((string) $metrics['local_admins']) ?></strong>
-        <p><?= has_role('master_admin') ? 'Usuarios promovidos para operacao local.' : 'Perfil operacional acima do usuario comum.' ?></p>
+        <span class="metric-copy">Provas</span>
+        <strong class="metric-number"><?= h((string) $metrics['exams']) ?></strong>
+        <p><?= has_role('user') ? 'Quantidade de provas montadas pela sua conta.' : 'Volume atual de provas geradas no sistema.' ?></p>
     </article>
 </section>
 
 <section class="card-grid">
     <article class="panel">
         <h2>Banco de questoes</h2>
-        <p>Cadastre itens de multipla escolha, discursivos e verdadeiro ou falso com metadados de status e dificuldade.</p>
+        <p>Cadastre questoes de multipla escolha, discursivas e de desenho com classificacao, visibilidade e colaboracao.</p>
         <div class="form-actions">
             <a class="button" href="questions.php">Abrir questoes</a>
         </div>
@@ -61,10 +61,10 @@ render_header(
     </article>
 
     <article class="panel">
-        <h2>Recuperacao de senha</h2>
-        <p>O fluxo de reset gera token seguro e usa e-mail, com registro local do conteudo enviado para facilitar testes.</p>
+        <h2>Montagem de provas</h2>
+        <p>Selecione questoes do banco colaborativo, misture tipos e gere provas com contador automatico de uso.</p>
         <div class="form-actions">
-            <a class="ghost-button" href="forgot-password.php">Testar fluxo</a>
+            <a class="ghost-button" href="exams.php">Abrir provas</a>
         </div>
     </article>
 </section>

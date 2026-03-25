@@ -250,8 +250,37 @@ function question_type_label(string $type): string
     return match ($type) {
         'multiple_choice' => 'Multipla escolha',
         'discursive' => 'Discursiva',
+        'drawing' => 'Desenho / espaco livre',
         'true_false' => 'Verdadeiro ou falso',
         default => 'Nao definido',
+    };
+}
+
+function visibility_label(string $visibility): string
+{
+    return match ($visibility) {
+        'public' => 'Publica',
+        default => 'Privada',
+    };
+}
+
+function education_level_label(string $level): string
+{
+    return match ($level) {
+        'fundamental' => 'Ensino Fundamental',
+        'medio' => 'Ensino Medio',
+        'tecnico' => 'Tecnico',
+        'superior' => 'Superior',
+        default => 'Nao definido',
+    };
+}
+
+function drawing_size_label(?string $size): string
+{
+    return match ($size) {
+        'small' => 'Pequeno',
+        'large' => 'Grande',
+        default => 'Medio',
     };
 }
 
@@ -272,6 +301,25 @@ function can_manage_users(): bool
 function can_manage_all_questions(): bool
 {
     return has_role(['master_admin', 'local_admin']);
+}
+
+function can_manage_catalogs(): bool
+{
+    return has_role(['master_admin', 'local_admin']);
+}
+
+function option_label(int $index): string
+{
+    $label = '';
+    $number = $index + 1;
+
+    while ($number > 0) {
+        $remainder = ($number - 1) % 26;
+        $label = chr(65 + $remainder) . $label;
+        $number = intdiv($number - 1, 26);
+    }
+
+    return $label;
 }
 
 function send_password_reset_email(array $user, string $token): bool
@@ -322,6 +370,7 @@ function dashboard_metrics(array $user): array
         return [
             'users' => (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'questions' => (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn(),
+            'exams' => (int) db()->query('SELECT COUNT(*) FROM exams')->fetchColumn(),
             'local_admins' => (int) db()->query("SELECT COUNT(*) FROM users WHERE role = 'local_admin'")->fetchColumn(),
         ];
     }
@@ -330,16 +379,20 @@ function dashboard_metrics(array $user): array
         return [
             'users' => (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'questions' => (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn(),
-            'local_admins' => 1,
+            'exams' => (int) db()->query('SELECT COUNT(*) FROM exams')->fetchColumn(),
+            'local_admins' => (int) db()->query("SELECT COUNT(*) FROM users WHERE role = 'local_admin'")->fetchColumn(),
         ];
     }
 
     $statement = db()->prepare('SELECT COUNT(*) FROM questions WHERE author_id = :author_id');
     $statement->execute(['author_id' => $user['id']]);
+    $examStatement = db()->prepare('SELECT COUNT(*) FROM exams WHERE user_id = :user_id');
+    $examStatement->execute(['user_id' => $user['id']]);
 
     return [
         'users' => 1,
         'questions' => (int) $statement->fetchColumn(),
+        'exams' => (int) $examStatement->fetchColumn(),
         'local_admins' => 0,
     ];
 }

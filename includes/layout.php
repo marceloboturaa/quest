@@ -32,6 +32,7 @@ function render_header(string $title, string $subtitle = ''): void
                 <?php if ($user): ?>
                     <a href="dashboard.php">Dashboard</a>
                     <a href="questions.php">Questoes</a>
+                    <a href="exams.php">Provas</a>
                     <?php if (can_manage_users()): ?>
                         <a href="users.php">Usuarios</a>
                     <?php endif; ?>
