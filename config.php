@@ -9,8 +9,8 @@ return [
     'db' => [
         'host' => getenv('QUEST_DB_HOST') ?: 'localhost',
         'port' => (int) (getenv('QUEST_DB_PORT') ?: 3306),
-        'database' => getenv('QUEST_DB_NAME') ?: 'u488847015_quest_baseDado',
-        'username' => getenv('QUEST_DB_USER') ?: 'u488847015_quest_userName',
+        'database' => getenv('QUEST_DB_NAME') ?: '',
+        'username' => getenv('QUEST_DB_USER') ?: '',
         'password' => getenv('QUEST_DB_PASS') ?: '',
         'charset' => 'utf8mb4',
     ],
