@@ -206,9 +206,9 @@ function question_clone(int $userId): never
     try {
         $insert = db()->prepare(
             'INSERT INTO questions
-             (author_id,based_on_question_id,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,drawing_height_px,true_false_answer,usage_count,created_at,updated_at)
+             (author_id,based_on_question_id,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,drawing_height_px,true_false_answer,source_name,source_url,source_reference,usage_count,created_at,updated_at)
              VALUES
-             (:author_id,:based_on_question_id,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,:drawing_height_px,:true_false_answer,0,NOW(),NOW())'
+             (:author_id,:based_on_question_id,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,:drawing_height_px,:true_false_answer,:source_name,:source_url,:source_reference,0,NOW(),NOW())'
         );
         $insert->execute([
             'author_id' => $userId,
@@ -229,6 +229,9 @@ function question_clone(int $userId): never
             'drawing_size' => $source['drawing_size'],
             'drawing_height_px' => $source['drawing_height_px'],
             'true_false_answer' => $source['true_false_answer'],
+            'source_name' => $source['source_name'],
+            'source_url' => $source['source_url'],
+            'source_reference' => $source['source_reference'],
         ]);
 
         $newId = (int) db()->lastInsertId();
@@ -306,8 +309,22 @@ function question_save(int $userId, bool $isUpdate): never
     $trueFalseAnswer = isset($_POST['true_false_answer']) && in_array((string) $_POST['true_false_answer'], ['0', '1'], true)
         ? (int) $_POST['true_false_answer']
         : null;
+    $officialSourceKey = trim((string) ($_POST['official_source_key'] ?? ''));
+    $sourceReference = trim((string) ($_POST['source_reference'] ?? ''));
     $options = parsed_options((array) ($_POST['options'] ?? []));
+    $officialSources = function_exists('official_question_sources') ? official_question_sources() : [];
+    $sourceName = null;
+    $sourceUrl = null;
     $errors = [];
+
+    if ($officialSourceKey !== '') {
+        if (!array_key_exists($officialSourceKey, $officialSources)) {
+            $errors[] = 'Fonte oficial invalida.';
+        } else {
+            $sourceName = $officialSources[$officialSourceKey]['name'];
+            $sourceUrl = $officialSources[$officialSourceKey]['url'];
+        }
+    }
 
     if ($title === '' || $prompt === '') {
         $errors[] = 'Titulo e enunciado sao obrigatorios.';
@@ -419,6 +436,9 @@ function question_save(int $userId, bool $isUpdate): never
                  drawing_size = :drawing_size,
                  drawing_height_px = :drawing_height_px,
                  true_false_answer = :true_false_answer,
+                 source_name = :source_name,
+                 source_url = :source_url,
+                 source_reference = :source_reference,
                  updated_at = NOW()
                  WHERE id = :id AND author_id = :author_id'
             );
@@ -438,6 +458,9 @@ function question_save(int $userId, bool $isUpdate): never
                 'drawing_size' => $drawingSize,
                 'drawing_height_px' => $drawingHeightPx,
                 'true_false_answer' => $trueFalseAnswer,
+                'source_name' => $sourceName,
+                'source_url' => $sourceUrl,
+                'source_reference' => $sourceReference !== '' ? $sourceReference : null,
                 'id' => $editing['id'],
                 'author_id' => $userId,
             ]);
@@ -448,9 +471,9 @@ function question_save(int $userId, bool $isUpdate): never
         } else {
             $insert = db()->prepare(
                 'INSERT INTO questions
-                 (author_id, based_on_question_id, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, usage_count, created_at, updated_at)
+                 (author_id, based_on_question_id, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, source_name, source_url, source_reference, usage_count, created_at, updated_at)
                  VALUES
-                 (:author_id, NULL, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, :discursive_answer, :response_lines, :drawing_size, :drawing_height_px, :true_false_answer, 0, NOW(), NOW())'
+                 (:author_id, NULL, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, :discursive_answer, :response_lines, :drawing_size, :drawing_height_px, :true_false_answer, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
             );
             $insert->execute([
                 'author_id' => $userId,
@@ -470,6 +493,9 @@ function question_save(int $userId, bool $isUpdate): never
                 'drawing_size' => $drawingSize,
                 'drawing_height_px' => $drawingHeightPx,
                 'true_false_answer' => $trueFalseAnswer,
+                'source_name' => $sourceName,
+                'source_url' => $sourceUrl,
+                'source_reference' => $sourceReference !== '' ? $sourceReference : null,
             ]);
 
             $questionId = (int) db()->lastInsertId();

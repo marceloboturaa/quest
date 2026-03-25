@@ -27,6 +27,7 @@ Subir estes arquivos e pastas para o servidor:
 - includes/exam_actions.php
 - includes/exam_repository.php
 - includes/pdf_builder.php
+- includes/public_sources.php
 
 3. Assets
 - assets/js/app.js
@@ -34,6 +35,7 @@ Subir estes arquivos e pastas para o servidor:
 
 4. Banco de dados
 - executar database_update_20260325.sql no phpMyAdmin da hospedagem
+- executar database_update_20260325_public_sources.sql no phpMyAdmin da hospedagem
 
 5. Arquivos opcionais
 - README.md

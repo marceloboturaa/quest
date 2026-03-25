@@ -51,13 +51,13 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
                             <input type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>" <?= $preselectedQuestionId === (int) $question['id'] ? 'checked' : '' ?>>
                             <span>
                                 <strong><?= h($question['title']) ?></strong>
-                                <small>
-                                    <?= h(question_type_label($question['question_type'])) ?> |
-                                    <?= h($question['discipline_name'] ?? 'Sem disciplina') ?> |
-                                    <?= h($question['subject_name'] ?? 'Sem assunto') ?> |
-                                    Autor: <?= h($question['author_name']) ?> |
-                                    Uso: <?= h((string) $question['usage_count']) ?>
-                                </small>
+                                 <small>
+                                     <?= h(question_type_label($question['question_type'])) ?> |
+                                     <?= h($question['discipline_name'] ?? 'Sem disciplina') ?> |
+                                     <?= h($question['subject_name'] ?? 'Sem assunto') ?> |
+                                     <?= !empty($question['source_name']) ? 'Fonte: ' . h($question['source_name']) : 'Autor: ' . h($question['author_name']) ?> |
+                                     Uso: <?= h((string) $question['usage_count']) ?>
+                                 </small>
                             </span>
                         </label>
                     <?php endforeach; ?>

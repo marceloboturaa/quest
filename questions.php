@@ -5,6 +5,7 @@ require __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/includes/question_helpers.php';
 require_once __DIR__ . '/includes/question_repository.php';
 require_once __DIR__ . '/includes/question_actions.php';
+require_once __DIR__ . '/includes/public_sources.php';
 require_login();
 
 $user = current_user();
@@ -21,6 +22,7 @@ $subjects = question_subjects();
 $filters = question_filters($_GET);
 [$questions, $questionOptions] = question_list($filters, $userId);
 $authors = question_authors();
+$officialSources = official_question_sources();
 
 render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifique por disciplina e assunto, favorite, clone e reutilize em provas.');
 ?>
@@ -150,6 +152,38 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
                         <option value="dificil" <?= $selectedDifficulty === 'dificil' ? 'selected' : '' ?>>Dificil</option>
                     </select>
                 </label>
+            </div>
+            <div class="panel panel-nested">
+                <h3>Fonte publica oficial (opcional)</h3>
+                <?php
+                    $selectedSourceKey = '';
+                    foreach ($officialSources as $sourceKey => $source) {
+                        if (($edit['source_name'] ?? null) === $source['name'] && ($edit['source_url'] ?? null) === $source['url']) {
+                            $selectedSourceKey = $sourceKey;
+                            break;
+                        }
+                    }
+                ?>
+                <div class="form-grid two-columns">
+                    <label>Origem oficial
+                        <select name="official_source_key">
+                            <option value="">Sem origem externa</option>
+                            <?php foreach ($officialSources as $sourceKey => $source): ?>
+                                <option
+                                    value="<?= h($sourceKey) ?>"
+                                    data-source-name="<?= h($source['name']) ?>"
+                                    data-source-url="<?= h($source['url']) ?>"
+                                    <?= $selectedSourceKey === $sourceKey ? 'selected' : '' ?>
+                                >
+                                    <?= h($source['label']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label>Referencia da fonte
+                        <input type="text" name="source_reference" value="<?= h($edit['source_reference'] ?? '') ?>" placeholder="Ex.: Caderno azul, questao 12">
+                    </label>
+                </div>
             </div>
             <div data-question-section="multiple_choice">
                 <label class="checkbox-row"><input type="checkbox" name="allow_multiple_correct" value="1" <?= !empty($edit['allow_multiple_correct']) ? 'checked' : '' ?>> Permitir multiplas corretas</label>
@@ -312,12 +346,17 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
             <span class="badge"><?= h(education_level_label($question['education_level'])) ?></span>
             <span class="badge"><?= h($question['discipline_name'] ?? 'Sem disciplina') ?></span>
             <span class="badge"><?= h($question['subject_name'] ?? 'Sem assunto') ?></span>
-            <span>Autor: <?= h($question['author_name']) ?></span>
+            <?php if (!empty($question['source_name'])): ?>
+                <span>Fonte: <?= h($question['source_name']) ?></span>
+            <?php else: ?>
+                <span>Autor: <?= h($question['author_name']) ?></span>
+            <?php endif; ?>
             <span>Uso em provas: <?= h((string) $question['usage_count']) ?></span>
         </div>
         <h3><?= h($question['title']) ?></h3>
         <p><?= nl2br(h($question['prompt'])) ?></p>
         <?php if (!empty($question['prompt_image_url'])): ?><p><a href="<?= h($question['prompt_image_url']) ?>" target="_blank" rel="noreferrer">Abrir imagem do enunciado</a></p><?php endif; ?>
+        <?php if (!empty($question['source_url'])): ?><p class="helper-text">Origem oficial: <a href="<?= h($question['source_url']) ?>" target="_blank" rel="noreferrer"><?= h($question['source_name']) ?></a><?php if (!empty($question['source_reference'])): ?> | <?= h($question['source_reference']) ?><?php endif; ?></p><?php endif; ?>
         <?php if (!empty($question['based_on_author_name'])): ?><p class="helper-text">Baseada na questao de <?= h($question['based_on_author_name']) ?>.</p><?php endif; ?>
         <?php if ($question['question_type'] === 'multiple_choice'): ?>
             <ul class="option-list">

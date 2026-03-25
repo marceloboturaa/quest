@@ -5,6 +5,7 @@ function exam_available_questions(int $userId): array
 {
     $statement = db()->prepare(
         'SELECT questions.id, questions.title, questions.question_type, questions.visibility, questions.usage_count,
+                questions.source_name,
                 disciplines.name AS discipline_name, subjects.name AS subject_name, users.name AS author_name
          FROM questions
          INNER JOIN users ON users.id = questions.author_id
