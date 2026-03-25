@@ -8,85 +8,127 @@ if (current_user() !== null) {
 }
 
 render_header(
-    'Quest para equipes de ensino',
-    'Um MVP em PHP para gestao de usuarios, banco colaborativo de questoes e montagem inicial de provas.'
+    'Quest para criar, organizar e montar avaliacoes',
+    'Projeto pessoal de Marcelo Botura, com a ideia apoiada pelo CNI.'
 );
 ?>
-<section class="hero-grid">
-    <article class="panel">
-        <p class="eyebrow">Projeto pessoal de Marcelo Botura</p>
-        <h2>Uma base unica para criar, compartilhar e reutilizar questoes.</h2>
-        <p>
-            O Quest organiza autoria, colaboracao e montagem de provas em um unico fluxo. A plataforma ja separa
-            acesso de <strong>master admin</strong>, <strong>admin local</strong> e <strong>usuario</strong>.
+<section class="home-hero">
+    <article class="home-intro">
+        <p class="eyebrow">Marcelo Botura + CNI</p>
+        <h2>Um banco de questoes pensado para professores que precisam ganhar tempo sem perder organizacao.</h2>
+        <p class="home-lead">
+            O Quest centraliza criacao de questoes, classificacao por disciplina e assunto, visibilidade publica ou
+            privada e montagem de provas em um fluxo simples.
         </p>
 
         <div class="form-actions">
             <a class="button" href="login.php">Entrar no sistema</a>
-            <a class="button-secondary" href="register.php">Criar nova conta</a>
+            <a class="button-secondary" href="register.php">Criar conta</a>
+        </div>
+
+        <div class="home-signals">
+            <span>Projeto pessoal de Marcelo Botura</span>
+            <span>Ideia apoiada pelo CNI</span>
+            <span>Base em evolucao continua</span>
         </div>
     </article>
 
-    <article class="panel">
+    <article class="home-showcase">
         <div class="status-pill">
             <span class="status-dot"></span>
-            <span>MVP funcional em desenvolvimento com apoio do CNI</span>
+            <span>Versao ativa com recursos reais ja disponiveis</span>
         </div>
 
-        <div class="kicker-grid">
-            <div class="kicker-card">
-                <strong>Banco colaborativo</strong>
-                <span>Questoes privadas ou publicas com clonagem e rastreio de autoria base.</span>
+        <div class="home-showcase-grid">
+            <div class="home-showcase-card">
+                <span class="home-showcase-label">Criacao</span>
+                <strong>Multipla escolha, discursiva, desenho e verdadeiro ou falso</strong>
             </div>
-            <div class="kicker-card">
-                <strong>Classificacao academica</strong>
-                <span>Disciplina, assunto, nivel de ensino e tipo de questao em uma mesma base.</span>
+            <div class="home-showcase-card">
+                <span class="home-showcase-label">Organizacao</span>
+                <strong>Disciplina, assunto, nivel de ensino, filtros e favoritos</strong>
             </div>
-            <div class="kicker-card">
-                <strong>Montagem inicial de provas</strong>
-                <span>Selecao de questoes do banco com contador de uso automatico.</span>
+            <div class="home-showcase-card">
+                <span class="home-showcase-label">Colaboracao</span>
+                <strong>Questoes publicas podem ser clonadas sem alterar a original</strong>
+            </div>
+            <div class="home-showcase-card">
+                <span class="home-showcase-label">Provas</span>
+                <strong>Selecao de questoes, contador de uso e exportacao em PDF</strong>
             </div>
         </div>
     </article>
 </section>
 
-<section class="stats-grid">
+<section class="home-metrics">
     <article>
-        <span class="metric-copy">Perfis</span>
+        <span class="metric-copy">Perfis de acesso</span>
         <strong class="metric-number">3</strong>
-        <p>Master admin, admin local e usuario com acessos separados.</p>
+        <p>Master admin, admin local e usuario com niveis diferentes de acao.</p>
     </article>
     <article>
         <span class="metric-copy">Tipos de questao</span>
         <strong class="metric-number">4</strong>
-        <p>Multipla escolha, discursiva, desenho com espaco livre e verdadeiro ou falso.</p>
+        <p>Base pronta para questoes objetivas, abertas, visuais e de validacao rapida.</p>
     </article>
     <article>
-        <span class="metric-copy">Fluxos</span>
-        <strong class="metric-number">4</strong>
-        <p>Cadastro, login, reset de senha e montagem inicial de provas.</p>
+        <span class="metric-copy">Fluxos centrais</span>
+        <strong class="metric-number">5</strong>
+        <p>Cadastro, autenticacao, banco de questoes, provas e exportacao em PDF.</p>
     </article>
 </section>
 
-<section class="info-grid">
-    <article class="panel">
-        <h2>O que ja funciona</h2>
+<section class="home-strip">
+    <article class="home-strip-card">
+        <span class="home-strip-kicker">Hoje no produto</span>
+        <h2>O sistema ja resolve o ciclo principal de trabalho.</h2>
+        <p>
+            O professor cria, classifica, salva como publico ou privado, pesquisa no banco, monta a prova e exporta.
+        </p>
+    </article>
+</section>
+
+<section class="info-grid home-detail-grid">
+    <article class="panel home-panel">
+        <h2>O que ja esta funcionando</h2>
         <ul class="mini-list">
-            <li>Cadastro e autenticacao de usuarios.</li>
-            <li>Recuperacao de senha com token.</li>
-            <li>Gestao de perfis pelo master admin.</li>
-            <li>Questoes de multipla escolha, discursiva, desenho e verdadeiro ou falso.</li>
+            <li>Cadastro, login e recuperacao de senha.</li>
+            <li>Criacao de questoes com alternativas dinamicas.</li>
+            <li>Visibilidade publica ou privada com bloqueio de edicao por terceiros.</li>
+            <li>Clonagem de questoes publicas com preservacao da referencia de origem.</li>
+            <li>Filtros por disciplina, assunto, tipo, nivel, autor e visibilidade.</li>
         </ul>
     </article>
 
-    <article class="panel">
+    <article class="panel home-panel">
         <h2>Como a base cresce</h2>
         <ul class="mini-list">
-            <li>O autor cria uma questao privada ou publica.</li>
-            <li>Questoes publicas podem ser favoritas, clonadas e reutilizadas.</li>
-            <li>Cada reutilizacao em prova incrementa o contador de uso.</li>
-            <li>O historico de origem ajuda a manter autoria e contexto.</li>
+            <li>Cada usuario pode construir seu proprio acervo e reutilizar o que ja foi publicado.</li>
+            <li>Questoes favoritas ajudam a montar provas mais rapido.</li>
+            <li>O contador de uso mostra o que ja foi mais aproveitado em avaliacoes.</li>
+            <li>A classificacao academica deixa a busca mais precisa conforme a base aumenta.</li>
+            <li>A fonte oficial pode ser registrada quando a questao vem de material publico.</li>
         </ul>
+    </article>
+</section>
+
+<section class="home-flow">
+    <article class="panel home-flow-card">
+        <span class="home-strip-kicker">Fluxo simples</span>
+        <div class="home-flow-steps">
+            <div>
+                <strong>1. Criar</strong>
+                <p>Cadastre a questao, escolha o tipo e defina a classificacao.</p>
+            </div>
+            <div>
+                <strong>2. Organizar</strong>
+                <p>Filtre por disciplina, assunto, nivel e visibilidade sempre que precisar.</p>
+            </div>
+            <div>
+                <strong>3. Montar</strong>
+                <p>Selecione as melhores questoes e gere a prova em PDF.</p>
+            </div>
+        </div>
     </article>
 </section>
 <?php render_footer(); ?>
