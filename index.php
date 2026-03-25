@@ -7,6 +7,21 @@ if (current_user() !== null) {
     redirect('dashboard.php');
 }
 
+$homeStats = [
+    'questions' => 0,
+    'public_questions' => 0,
+];
+
+try {
+    $homeStats['questions'] = (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn();
+    $homeStats['public_questions'] = (int) db()->query("SELECT COUNT(*) FROM questions WHERE visibility = 'public'")->fetchColumn();
+} catch (Throwable) {
+    $homeStats = [
+        'questions' => 0,
+        'public_questions' => 0,
+    ];
+}
+
 render_header(
     'Quest para criar, organizar e montar avaliacoes',
     'Projeto pessoal de Marcelo Botura, com a ideia apoiada pelo CNI.'
@@ -29,7 +44,7 @@ render_header(
         <div class="home-signals">
             <span>Projeto pessoal de Marcelo Botura</span>
             <span>Ideia apoiada pelo CNI</span>
-            <span>Base em evolucao continua</span>
+            <span><?= $homeStats['questions'] ?> questoes cadastradas</span>
         </div>
     </article>
 
@@ -62,6 +77,11 @@ render_header(
 
 <section class="home-metrics">
     <article>
+        <span class="metric-copy">Questoes cadastradas</span>
+        <strong class="metric-number"><?= $homeStats['questions'] ?></strong>
+        <p><?= $homeStats['public_questions'] ?> publicas prontas para busca, clonagem e reutilizacao.</p>
+    </article>
+    <article>
         <span class="metric-copy">Perfis de acesso</span>
         <strong class="metric-number">3</strong>
         <p>Master admin, admin local e usuario com niveis diferentes de acao.</p>
@@ -70,11 +90,6 @@ render_header(
         <span class="metric-copy">Tipos de questao</span>
         <strong class="metric-number">4</strong>
         <p>Base pronta para questoes objetivas, abertas, visuais e de validacao rapida.</p>
-    </article>
-    <article>
-        <span class="metric-copy">Fluxos centrais</span>
-        <strong class="metric-number">5</strong>
-        <p>Cadastro, autenticacao, banco de questoes, provas e exportacao em PDF.</p>
     </article>
 </section>
 
