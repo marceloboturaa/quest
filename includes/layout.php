@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-function render_header(string $title, string $subtitle = ''): void
+function render_header(string $title, string $subtitle = '', bool $showHero = true): void
 {
     $user = function_exists('current_user') ? current_user() : null;
     $flashes = function_exists('pull_flashes') ? pull_flashes() : [];
@@ -45,21 +45,23 @@ function render_header(string $title, string $subtitle = ''): void
         </header>
 
         <main class="page-content">
-            <section class="page-hero">
-                <div>
-                    <p class="eyebrow">CNI apoiando a ideia</p>
-                    <h1><?= h($title) ?></h1>
-                    <?php if ($subtitle !== ''): ?>
-                        <p class="page-subtitle"><?= h($subtitle) ?></p>
-                    <?php endif; ?>
-                </div>
-                <?php if ($user): ?>
-                    <div class="user-badge">
-                        <span><?= h($user['name']) ?></span>
-                        <small><?= h(role_label($user['role'])) ?></small>
+            <?php if ($showHero): ?>
+                <section class="page-hero">
+                    <div>
+                        <p class="eyebrow">CNI apoiando a ideia</p>
+                        <h1><?= h($title) ?></h1>
+                        <?php if ($subtitle !== ''): ?>
+                            <p class="page-subtitle"><?= h($subtitle) ?></p>
+                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
-            </section>
+                    <?php if ($user): ?>
+                        <div class="user-badge">
+                            <span><?= h($user['name']) ?></span>
+                            <small><?= h(role_label($user['role'])) ?></small>
+                        </div>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
 
             <?php foreach ($flashes as $flash): ?>
                 <div class="flash flash-<?= h($flash['type']) ?>"><?= h($flash['message']) ?></div>

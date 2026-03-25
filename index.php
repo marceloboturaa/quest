@@ -23,127 +23,117 @@ try {
 }
 
 render_header(
-    'Quest para criar, organizar e montar avaliacoes',
-    'Projeto pessoal de Marcelo Botura, com a ideia apoiada pelo CNI.'
+    'Quest para criar, organizar e montar avaliações',
+    'Projeto pessoal de Marcelo Botura, com a ideia apoiada pelo CNI.',
+    false
 );
 ?>
-<section class="home-hero">
-    <article class="home-intro">
-        <p class="eyebrow">Marcelo Botura + CNI</p>
-        <h2>Um banco de questoes pensado para professores que precisam ganhar tempo sem perder organizacao.</h2>
+<section class="home-stage">
+    <article class="home-stage-copy">
+        <p class="eyebrow">Projeto pessoal de Marcelo Botura</p>
+        <h1>Banco de questões para criar, organizar e montar avaliações com mais clareza.</h1>
         <p class="home-lead">
-            O Quest centraliza criacao de questoes, classificacao por disciplina e assunto, visibilidade publica ou
-            privada e montagem de provas em um fluxo simples.
+            O Quest reúne criação de questões, classificação por disciplina e assunto, visibilidade pública ou privada
+            e montagem de provas em um fluxo direto, sem complicar o trabalho do professor.
         </p>
 
-        <div class="form-actions">
+        <div class="form-actions home-actions">
             <a class="button" href="login.php">Entrar no sistema</a>
             <a class="button-secondary" href="register.php">Criar conta</a>
         </div>
 
         <div class="home-signals">
-            <span>Projeto pessoal de Marcelo Botura</span>
             <span>Ideia apoiada pelo CNI</span>
-            <span><?= $homeStats['questions'] ?> questoes cadastradas</span>
+            <span><?= $homeStats['questions'] ?> questões cadastradas</span>
+            <span><?= $homeStats['public_questions'] ?> públicas disponíveis</span>
         </div>
     </article>
 
-    <article class="home-showcase">
+    <aside class="home-stage-panel">
         <div class="status-pill">
             <span class="status-dot"></span>
-            <span>Versao ativa com recursos reais ja disponiveis</span>
+            <span>Plataforma em desenvolvimento ativo</span>
         </div>
 
-        <div class="home-showcase-grid">
-            <div class="home-showcase-card">
-                <span class="home-showcase-label">Criacao</span>
-                <strong>Multipla escolha, discursiva, desenho e verdadeiro ou falso</strong>
+        <div class="home-panel-list">
+            <div class="home-panel-item">
+                <strong>Questões em um só lugar</strong>
+                <p>Múltipla escolha, discursiva, desenho e verdadeiro ou falso na mesma base.</p>
             </div>
-            <div class="home-showcase-card">
-                <span class="home-showcase-label">Organizacao</span>
-                <strong>Disciplina, assunto, nivel de ensino, filtros e favoritos</strong>
+            <div class="home-panel-item">
+                <strong>Organização de verdade</strong>
+                <p>Filtros por disciplina, assunto, nível, autor e visibilidade.</p>
             </div>
-            <div class="home-showcase-card">
-                <span class="home-showcase-label">Colaboracao</span>
-                <strong>Questoes publicas podem ser clonadas sem alterar a original</strong>
-            </div>
-            <div class="home-showcase-card">
-                <span class="home-showcase-label">Provas</span>
-                <strong>Selecao de questoes, contador de uso e exportacao em PDF</strong>
+            <div class="home-panel-item">
+                <strong>Reuso com controle</strong>
+                <p>Questões públicas podem ser clonadas sem alterar a original.</p>
             </div>
         </div>
-    </article>
+    </aside>
 </section>
 
 <section class="home-metrics">
     <article>
-        <span class="metric-copy">Questoes cadastradas</span>
+        <span class="metric-copy">Questões cadastradas</span>
         <strong class="metric-number"><?= $homeStats['questions'] ?></strong>
-        <p><?= $homeStats['public_questions'] ?> publicas prontas para busca, clonagem e reutilizacao.</p>
+        <p><?= $homeStats['public_questions'] ?> públicas prontas para busca, clonagem e reutilização.</p>
     </article>
     <article>
         <span class="metric-copy">Perfis de acesso</span>
         <strong class="metric-number">3</strong>
-        <p>Master admin, admin local e usuario com niveis diferentes de acao.</p>
+        <p>Master admin, admin local e usuário com níveis diferentes de ação.</p>
     </article>
     <article>
-        <span class="metric-copy">Tipos de questao</span>
+        <span class="metric-copy">Tipos de questão</span>
         <strong class="metric-number">4</strong>
-        <p>Base pronta para questoes objetivas, abertas, visuais e de validacao rapida.</p>
+        <p>Base pronta para questões objetivas, abertas, visuais e de validação rápida.</p>
     </article>
 </section>
 
-<section class="home-strip">
-    <article class="home-strip-card">
-        <span class="home-strip-kicker">Hoje no produto</span>
-        <h2>O sistema ja resolve o ciclo principal de trabalho.</h2>
-        <p>
-            O professor cria, classifica, salva como publico ou privado, pesquisa no banco, monta a prova e exporta.
-        </p>
-    </article>
-</section>
-
-<section class="info-grid home-detail-grid">
-    <article class="panel home-panel">
-        <h2>O que ja esta funcionando</h2>
+<section class="home-columns">
+    <article class="panel home-card">
+        <span class="home-card-kicker">O que já funciona</span>
+        <h2>O núcleo do sistema já está pronto para uso.</h2>
         <ul class="mini-list">
-            <li>Cadastro, login e recuperacao de senha.</li>
-            <li>Criacao de questoes com alternativas dinamicas.</li>
-            <li>Visibilidade publica ou privada com bloqueio de edicao por terceiros.</li>
-            <li>Clonagem de questoes publicas com preservacao da referencia de origem.</li>
-            <li>Filtros por disciplina, assunto, tipo, nivel, autor e visibilidade.</li>
+            <li>Cadastro, login e recuperação de senha.</li>
+            <li>Criação de questões com alternativas dinâmicas.</li>
+            <li>Controle de visibilidade pública ou privada.</li>
+            <li>Clonagem de questões públicas com referência de origem.</li>
+            <li>Busca com filtros por disciplina, assunto, tipo, nível, autor e visibilidade.</li>
         </ul>
     </article>
 
-    <article class="panel home-panel">
-        <h2>Como a base cresce</h2>
+    <article class="panel home-card">
+        <span class="home-card-kicker">Como cresce</span>
+        <h2>A base fica mais útil conforme o uso aumenta.</h2>
         <ul class="mini-list">
-            <li>Cada usuario pode construir seu proprio acervo e reutilizar o que ja foi publicado.</li>
-            <li>Questoes favoritas ajudam a montar provas mais rapido.</li>
-            <li>O contador de uso mostra o que ja foi mais aproveitado em avaliacoes.</li>
-            <li>A classificacao academica deixa a busca mais precisa conforme a base aumenta.</li>
-            <li>A fonte oficial pode ser registrada quando a questao vem de material publico.</li>
+            <li>Cada usuário pode montar seu próprio acervo e reaproveitar o que foi publicado.</li>
+            <li>Favoritos aceleram a seleção para novas provas.</li>
+            <li>O contador de uso mostra o que já foi mais aproveitado em avaliações.</li>
+            <li>A classificação por disciplina e assunto melhora a pesquisa da base.</li>
+            <li>A origem pode ser registrada quando a questão vier de fonte pública.</li>
         </ul>
     </article>
 </section>
 
-<section class="home-flow">
-    <article class="panel home-flow-card">
-        <span class="home-strip-kicker">Fluxo simples</span>
-        <div class="home-flow-steps">
-            <div>
-                <strong>1. Criar</strong>
-                <p>Cadastre a questao, escolha o tipo e defina a classificacao.</p>
-            </div>
-            <div>
-                <strong>2. Organizar</strong>
-                <p>Filtre por disciplina, assunto, nivel e visibilidade sempre que precisar.</p>
-            </div>
-            <div>
-                <strong>3. Montar</strong>
-                <p>Selecione as melhores questoes e gere a prova em PDF.</p>
-            </div>
+<section class="panel home-flow-card">
+    <div class="home-flow-head">
+        <span class="home-card-kicker">Fluxo simples</span>
+        <h2>Três passos para sair da questão até a prova.</h2>
+    </div>
+    <div class="home-flow-steps">
+        <div>
+            <strong>1. Criar</strong>
+            <p>Cadastre a questão, escolha o tipo e defina a classificação.</p>
         </div>
-    </article>
+        <div>
+            <strong>2. Organizar</strong>
+            <p>Filtre por disciplina, assunto, nível e visibilidade sempre que precisar.</p>
+        </div>
+        <div>
+            <strong>3. Montar</strong>
+            <p>Selecione as melhores questões e gere a prova em PDF.</p>
+        </div>
+    </div>
 </section>
 <?php render_footer(); ?>

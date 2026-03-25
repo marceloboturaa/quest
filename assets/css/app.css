@@ -510,74 +510,68 @@ th {
     font-family: 'Space Grotesk', Arial, sans-serif;
 }
 
-.home-hero,
+.home-stage,
 .home-metrics article,
-.home-strip-card,
-.home-panel,
+.home-card,
 .home-flow-card {
-    animation: riseIn 0.7s ease both;
+    animation: riseIn 0.65s ease both;
 }
 
-.home-hero {
-    position: relative;
+.home-stage {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-    gap: 22px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 20px;
+    align-items: stretch;
 }
 
-.home-intro,
-.home-showcase,
+.home-stage-copy,
+.home-stage-panel,
 .home-metrics article,
-.home-strip-card,
+.home-card,
 .home-flow-card {
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 4px);
-    background: rgba(255, 255, 255, 0.76);
+    border-radius: calc(var(--radius) + 2px);
+    background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(18px);
     box-shadow: var(--shadow);
 }
 
-.home-intro,
-.home-showcase,
-.home-strip-card,
+.home-stage-copy,
+.home-stage-panel,
 .home-flow-card {
     padding: 30px;
 }
 
-.home-intro::after,
-.home-showcase::after {
+.home-stage-copy::before,
+.home-stage-panel::before {
     content: '';
     position: absolute;
-    inset: auto auto -80px -70px;
+    inset: auto -70px -90px auto;
     width: 180px;
     height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(23, 53, 87, 0.1), rgba(23, 53, 87, 0));
+    background: radial-gradient(circle, rgba(224, 30, 90, 0.1), rgba(224, 30, 90, 0));
     pointer-events: none;
 }
 
-.home-intro h2,
-.home-strip-card h2,
-.home-panel h2 {
-    margin: 0;
-    font-size: clamp(2rem, 4vw, 3.2rem);
-    line-height: 1.02;
-    max-width: 13ch;
-}
-
-.home-panel h2 {
-    font-size: 1.65rem;
-    max-width: none;
+.home-stage-copy h1 {
+    max-width: 12ch;
+    font-size: clamp(2.4rem, 5vw, 4.6rem);
+    line-height: 0.94;
 }
 
 .home-lead {
     max-width: 58ch;
     margin: 18px 0 0;
-    font-size: 1.06rem;
+    font-size: 1.08rem;
     line-height: 1.7;
     color: var(--ink-soft);
+}
+
+.home-actions {
+    margin-top: 24px;
 }
 
 .home-signals {
@@ -593,48 +587,49 @@ th {
     background: rgba(23, 53, 87, 0.06);
     border: 1px solid rgba(23, 53, 87, 0.08);
     color: var(--ink-soft);
+    font-size: 0.95rem;
 }
 
-.home-showcase {
+.home-stage-panel {
+    display: grid;
+    gap: 18px;
+    align-content: start;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 241, 232, 0.92)),
-        rgba(255, 255, 255, 0.78);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(245, 239, 231, 0.98)),
+        rgba(255, 255, 255, 0.82);
 }
 
-.home-showcase-grid {
+.home-panel-list {
     display: grid;
     gap: 12px;
-    margin-top: 18px;
 }
 
-.home-showcase-card {
+.home-panel-item {
     padding: 18px;
     border-radius: 18px;
     background: rgba(23, 53, 87, 0.04);
     border: 1px solid rgba(23, 53, 87, 0.08);
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.home-showcase-card:hover {
-    transform: translateY(-3px);
-    background: rgba(23, 53, 87, 0.06);
+.home-panel-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(23, 53, 87, 0.18);
 }
 
-.home-showcase-label,
-.home-strip-kicker {
-    display: inline-block;
-    margin-bottom: 8px;
-    color: var(--accent);
-    font-family: 'Space Grotesk', Arial, sans-serif;
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-}
-
-.home-showcase-card strong {
+.home-panel-item strong,
+.home-flow-steps strong {
     display: block;
+    margin-bottom: 8px;
+    font-family: 'Space Grotesk', Arial, sans-serif;
     font-size: 1.02rem;
-    line-height: 1.45;
+}
+
+.home-panel-item p,
+.home-flow-steps p {
+    margin: 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
 }
 
 .home-metrics {
@@ -645,65 +640,65 @@ th {
 
 .home-metrics article {
     padding: 24px;
-    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.home-metrics article:hover {
-    transform: translateY(-3px);
-    border-color: rgba(23, 53, 87, 0.2);
-}
-
-.home-strip-card {
+.home-columns {
     display: grid;
-    gap: 10px;
-    background:
-        linear-gradient(135deg, rgba(23, 53, 87, 0.94), rgba(33, 76, 122, 0.88)),
-        rgba(23, 53, 87, 0.94);
-    color: #fff;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
 }
 
-.home-strip-card p,
-.home-strip-card .home-strip-kicker {
-    color: rgba(255, 255, 255, 0.82);
+.home-card {
+    padding: 28px;
 }
 
-.home-detail-grid {
-    align-items: start;
+.home-card-kicker {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: var(--accent);
+    font-family: 'Space Grotesk', Arial, sans-serif;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
 }
 
-.home-panel .mini-list {
+.home-card h2,
+.home-flow-head h2 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    line-height: 1.05;
+    max-width: 18ch;
+}
+
+.home-card .mini-list {
     margin-top: 18px;
 }
 
-.home-panel .mini-list li {
+.home-card .mini-list li {
     background: rgba(23, 53, 87, 0.04);
+}
+
+.home-flow-card {
+    display: grid;
+    gap: 18px;
+}
+
+.home-flow-head {
+    display: grid;
+    gap: 8px;
 }
 
 .home-flow-steps {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
-    margin-top: 18px;
 }
 
-.home-flow-steps div {
+.home-flow-steps > div {
     padding: 18px;
     border-radius: 18px;
     background: rgba(23, 53, 87, 0.05);
     border: 1px solid rgba(23, 53, 87, 0.08);
-}
-
-.home-flow-steps strong {
-    display: block;
-    margin-bottom: 8px;
-    font-family: 'Space Grotesk', Arial, sans-serif;
-    font-size: 1.05rem;
-}
-
-.home-flow-steps p {
-    margin: 0;
-    color: var(--ink-soft);
-    line-height: 1.6;
 }
 
 .auth-note {
@@ -743,8 +738,9 @@ th {
 }
 
 @media (max-width: 920px) {
-    .home-hero,
+    .home-stage,
     .home-metrics,
+    .home-columns,
     .home-flow-steps,
     .hero-grid,
     .split-card,
@@ -764,20 +760,43 @@ th {
 @media (max-width: 640px) {
     .page-shell {
         width: min(100% - 20px, 1180px);
+        padding: 16px 0 32px;
     }
 
-    .home-intro,
-    .home-showcase,
-    .home-strip-card,
+    .topbar {
+        padding: 14px;
+        border-radius: 28px;
+    }
+
+    .page-hero,
+    .panel,
+    .auth-card,
+    .question-card,
+    .split-card > section,
+    .empty-state,
+    .home-stage-copy,
+    .home-stage-panel,
+    .home-card,
     .home-flow-card {
-        padding: 22px;
+        padding: 20px;
+    }
+
+    .home-stage-copy h1 {
+        max-width: none;
+        font-size: clamp(2rem, 11vw, 3rem);
+    }
+
+    .home-card h2,
+    .home-flow-head h2 {
+        max-width: none;
     }
 
     .form-actions,
     .inline-actions,
     .question-actions,
     .topbar-nav,
-    .option-editor-row {
+    .option-editor-row,
+    .home-actions {
         flex-direction: column;
         align-items: stretch;
     }
@@ -785,5 +804,10 @@ th {
     .option-editor-row,
     .question-pick-item {
         grid-template-columns: 1fr;
+    }
+
+    .home-signals {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
