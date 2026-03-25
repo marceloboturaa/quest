@@ -24,6 +24,7 @@ function question_authors(): array
 function question_filters(array $source): array
 {
     return [
+        'term' => trim((string) ($source['term'] ?? '')),
         'discipline_id' => (int) ($source['discipline_id'] ?? 0),
         'subject_id' => (int) ($source['subject_id'] ?? 0),
         'education_level' => trim((string) ($source['education_level'] ?? '')),
@@ -75,6 +76,17 @@ function question_list(array $filters, int $userId): array
         'favorite_user_id' => $userId,
         'current_user_id' => $userId,
     ];
+
+    if ($filters['term'] !== '') {
+        $query .= ' AND (
+            questions.title LIKE :term
+            OR questions.prompt LIKE :term
+            OR authors.name LIKE :term
+            OR COALESCE(questions.source_name, "") LIKE :term
+            OR COALESCE(questions.source_reference, "") LIKE :term
+        )';
+        $params['term'] = '%' . $filters['term'] . '%';
+    }
 
     if ($filters['discipline_id'] > 0) {
         $query .= ' AND questions.discipline_id = :discipline_id';

@@ -29,6 +29,9 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
 <section class="panel">
     <h2>Filtros do banco</h2>
     <form method="get" class="form-grid two-columns filter-grid">
+        <label>Buscar questao
+            <input type="text" name="term" value="<?= h($filters['term']) ?>" placeholder="Titulo, enunciado, autor ou fonte">
+        </label>
         <label>Disciplina
             <select name="discipline_id" data-discipline-select data-target="filter-subject-select">
                 <option value="0">Todas</option>
