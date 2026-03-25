@@ -3,20 +3,38 @@
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-173557)
 ![Instituição](https://img.shields.io/badge/instituição-cni-E01E5A)
 
-## Sobre o projeto
+O **Quest** e um projeto pessoal de **Marcelo Botura**, com a ideia apoiada pelo **CNI**.
 
-O **Quest** e um projeto pessoal de **Marcelo Botura**, desenvolvido como uma iniciativa autoral com foco em construir uma solucao relevante e de impacto.
+## O que existe agora
 
-O projeto esta em fase de desenvolvimento e representa uma ideia em evolucao, ainda em processo de estruturacao, validacao e amadurecimento.
+- autenticacao com login, cadastro e logout;
+- recuperacao de senha por token;
+- painel com perfis `master_admin`, `local_admin` e `user`;
+- pagina master para promover usuarios para admin local;
+- cadastro de questoes de multipla escolha, discursiva e verdadeiro ou falso.
 
-## Apoio institucional
+## Banco de dados
 
-A iniciativa conta com o **apoio do CNI**, que reconhece o potencial da ideia e acompanha este momento inicial de construcao.
+Configuracao atual no projeto:
 
-## Status
+- banco: `u488847015_quest_baseDado`
+- usuario: `u488847015_quest_userName`
+- dominio: `quest.cidadenovainforma.com.br`
 
-Atualmente, o projeto segue **em desenvolvimento**, com ajustes, melhorias e definicoes acontecendo de forma continua.
+O arquivo [database.sql](/c:/xampp/htdocs/quest/database.sql) cria as tabelas principais e insere um master admin inicial:
 
-## Contexto
+- e-mail: `master@quest.local`
+- senha: `Admin123!`
 
-Este repositorio registra a fase inicial do Quest e funciona como base de apresentacao da proposta.
+Troque essa senha assim que iniciar o sistema.
+
+## Como subir no XAMPP
+
+1. Importe o arquivo `database.sql` no MySQL.
+2. Ajuste a senha do banco em [config.php](/c:/xampp/htdocs/quest/config.php), se necessario.
+3. Inicie o Apache no XAMPP.
+4. Acesse `http://localhost/quest/`.
+
+## Observacao
+
+O fluxo de reset de senha tenta enviar e-mail via `mail()` e tambem grava o conteudo em `storage/mail.log`, o que facilita testes locais sem SMTP configurado.

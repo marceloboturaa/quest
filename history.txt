@@ -5,7 +5,10 @@ Instituicao: CNI
 
 2026-03-24
 - Criacao da landing page inicial em HTML.
-- Correcao do CSS global com `box-sizing: border-box`.
-- Ajuste de responsividade para telas menores.
-- Inclusao de confirmacao visual ao clicar em "Me avise!".
+- Evolucao para um MVP em PHP com autenticacao e painel administrativo.
+- Separacao de perfis em `master_admin`, `local_admin` e `user`.
+- Inclusao de cadastro, login, logout e recuperacao de senha por token.
+- Implementacao de gerenciamento de usuarios pelo master admin.
+- Implementacao de cadastro de questoes de multipla escolha, discursiva e verdadeiro ou falso.
+- Criacao do schema MySQL em `database.sql`.
 - Atualizacao da documentacao principal do projeto.

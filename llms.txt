@@ -1,25 +1,32 @@
 Project: Quest
 Institution: CNI
 Status: Em desenvolvimento
-Type: Static landing page
+Type: PHP/MySQL educational platform MVP
 
 Summary:
-Quest is a pre-launch landing page focused on presenting an educational product idea.
-The current page shows branding, a short product message, an email input field, and a client-side confirmation message after form submission.
+Quest is a personal project by Marcelo Botura with idea support from CNI.
+The repository now contains an MVP for authentication, role-based access control, password reset, user management, and question authoring.
 
 Files:
-- index.html: main page with inline HTML, CSS, and JavaScript.
+- index.php: entry page for the PHP application.
+- dashboard.php: role-aware application dashboard.
+- users.php: master admin page to promote users to local admin.
+- questions.php: question creation and management page.
+- database.sql: MySQL schema and initial master admin seed.
+- config.php: application and database configuration.
 - README.md: human-readable project overview and local run instructions.
 - history.txt: short change log and project history.
 
 Current behavior:
-- Displays the message "Menos tempo formatando, mais tempo ensinando."
-- Accepts a valid email in the browser form.
-- Shows a thank-you confirmation after clicking the submit button.
-- Does not persist data or connect to a backend service.
+- Supports user registration, login, logout, and password reset.
+- Uses three roles: master_admin, local_admin, and user.
+- Allows master_admin to manage user roles.
+- Allows authenticated users to create questions.
+- Supports multiple choice, discursive, and true/false question types.
+- Stores data in MySQL through PDO.
 
 Notes for LLMs:
-- This repository is currently small and static.
 - The project status is development.
 - The institution associated with the project is CNI.
-- Prefer simple edits and preserve the landing-page purpose.
+- Marcelo Botura is the personal project owner.
+- Prefer preserving the role and permission model already implemented.

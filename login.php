@@ -1,0 +1,65 @@
+<?php
+declare(strict_types=1);
+
+require __DIR__ . '/bootstrap.php';
+
+require_guest();
+
+if (is_post()) {
+    abort_if_invalid_csrf();
+
+    $email = trim((string) ($_POST['email'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+
+    remember_input(['email' => $email]);
+
+    if ($email === '' || $password === '') {
+        flash('error', 'Preencha e-mail e senha.');
+        redirect('login.php');
+    }
+
+    $statement = db()->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+    $statement->execute(['email' => $email]);
+    $user = $statement->fetch();
+
+    if (!$user || !password_verify($password, $user['password_hash'])) {
+        flash('error', 'Credenciais invalidas.');
+        redirect('login.php');
+    }
+
+    login_user($user);
+    forget_old_input();
+    flash('success', 'Login realizado com sucesso.');
+    redirect('dashboard.php');
+}
+
+render_header('Entrar', 'Use sua conta para acessar o painel do Quest.');
+?>
+<div class="auth-wrap">
+    <section class="auth-card">
+        <h2>Login</h2>
+        <p>Entre com seu e-mail e senha.</p>
+
+        <form method="post" class="form-grid">
+            <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+
+            <label>
+                E-mail
+                <input type="email" name="email" value="<?= h(old('email')) ?>" required>
+            </label>
+
+            <label>
+                Senha
+                <input type="password" name="password" required>
+            </label>
+
+            <div class="form-actions">
+                <button class="button" type="submit">Entrar</button>
+                <a class="ghost-button" href="forgot-password.php">Esqueci minha senha</a>
+                <a class="ghost-button" href="register.php">Criar conta</a>
+            </div>
+        </form>
+    </section>
+</div>
+<?php forget_old_input(); ?>
+<?php render_footer(); ?>
