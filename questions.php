@@ -2,399 +2,25 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/includes/question_helpers.php';
+require_once __DIR__ . '/includes/question_repository.php';
+require_once __DIR__ . '/includes/question_actions.php';
 require_login();
 
 $user = current_user();
 $userId = (int) $user['id'];
 
-function own_question(int $id, int $userId): ?array
-{
-    $s = db()->prepare('SELECT * FROM questions WHERE id = :id AND author_id = :author_id LIMIT 1');
-    $s->execute(['id' => $id, 'author_id' => $userId]);
-    return $s->fetch() ?: null;
-}
-
-function visible_question_row(int $id, int $userId): ?array
-{
-    $s = db()->prepare('SELECT * FROM questions WHERE id = :id AND (visibility = "public" OR author_id = :author_id) LIMIT 1');
-    $s->execute(['id' => $id, 'author_id' => $userId]);
-    return $s->fetch() ?: null;
-}
-
-function belongs_subject(int $subjectId, int $disciplineId): bool
-{
-    $s = db()->prepare('SELECT COUNT(*) FROM subjects WHERE id = :id AND discipline_id = :discipline_id');
-    $s->execute(['id' => $subjectId, 'discipline_id' => $disciplineId]);
-    return (int) $s->fetchColumn() > 0;
-}
-
-function option_rows(array $raw): array
-{
-    $rows = [];
-    foreach ($raw as $item) {
-        $text = trim((string) ($item['text'] ?? $item['option_text'] ?? ''));
-        if ($text === '' && isset($item['option_text'])) {
-            continue;
-        }
-        $rows[] = ['text' => $text, 'is_correct' => !empty($item['is_correct'])];
-    }
-    while (count($rows) < 4) {
-        $rows[] = ['text' => '', 'is_correct' => false];
-    }
-    return array_values($rows);
-}
-
-function parsed_options(array $raw): array
-{
-    $rows = [];
-    foreach ($raw as $item) {
-        $text = trim((string) ($item['text'] ?? ''));
-        if ($text === '') {
-            continue;
-        }
-        $rows[] = ['text' => $text, 'is_correct' => !empty($item['is_correct']) ? 1 : 0];
-    }
-    return $rows;
-}
-
 if (is_post()) {
     abort_if_invalid_csrf();
-    $action = (string) ($_POST['action'] ?? '');
-
-    if ($action === 'create_discipline' && can_manage_catalogs()) {
-        $name = trim((string) ($_POST['discipline_name'] ?? ''));
-        if ($name === '') {
-            flash('error', 'Informe a disciplina.');
-        } else {
-            $i = db()->prepare('INSERT IGNORE INTO disciplines (name, created_by, created_at) VALUES (:name, :created_by, NOW())');
-            $i->execute(['name' => $name, 'created_by' => $userId]);
-            flash('success', 'Disciplina cadastrada.');
-        }
-        redirect('questions.php');
-    }
-
-    if ($action === 'create_subject' && can_manage_catalogs()) {
-        $disciplineId = (int) ($_POST['discipline_id'] ?? 0);
-        $name = trim((string) ($_POST['subject_name'] ?? ''));
-        if ($disciplineId <= 0 || $name === '') {
-            flash('error', 'Informe disciplina e assunto.');
-        } else {
-            $i = db()->prepare('INSERT IGNORE INTO subjects (discipline_id, name, created_by, created_at) VALUES (:discipline_id, :name, :created_by, NOW())');
-            $i->execute(['discipline_id' => $disciplineId, 'name' => $name, 'created_by' => $userId]);
-            flash('success', 'Assunto cadastrado.');
-        }
-        redirect('questions.php');
-    }
-
-    if ($action === 'toggle_favorite') {
-        $questionId = (int) ($_POST['question_id'] ?? 0);
-        $q = visible_question_row($questionId, $userId);
-        if (!$q) {
-            flash('error', 'Questao nao encontrada.');
-            redirect('questions.php');
-        }
-        $s = db()->prepare('SELECT id FROM question_favorites WHERE question_id = :question_id AND user_id = :user_id LIMIT 1');
-        $s->execute(['question_id' => $questionId, 'user_id' => $userId]);
-        $favorite = $s->fetch();
-        if ($favorite) {
-            $d = db()->prepare('DELETE FROM question_favorites WHERE id = :id');
-            $d->execute(['id' => $favorite['id']]);
-            flash('success', 'Questao removida dos favoritos.');
-        } else {
-            $i = db()->prepare('INSERT INTO question_favorites (question_id, user_id, created_at) VALUES (:question_id, :user_id, NOW())');
-            $i->execute(['question_id' => $questionId, 'user_id' => $userId]);
-            flash('success', 'Questao favoritada.');
-        }
-        redirect('questions.php');
-    }
-
-    if ($action === 'clone_question') {
-        $questionId = (int) ($_POST['question_id'] ?? 0);
-        $source = visible_question_row($questionId, $userId);
-        if (!$source || ($source['visibility'] !== 'public' && (int) $source['author_id'] !== $userId)) {
-            flash('error', 'Questao nao pode ser clonada.');
-            redirect('questions.php');
-        }
-        $originId = $source['based_on_question_id'] ? (int) $source['based_on_question_id'] : (int) $source['id'];
-        db()->beginTransaction();
-        try {
-            $i = db()->prepare('INSERT INTO questions
-                (author_id,based_on_question_id,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,true_false_answer,usage_count,created_at,updated_at)
-                VALUES
-                (:author_id,:based_on_question_id,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,:true_false_answer,0,NOW(),NOW())');
-            $i->execute([
-                'author_id' => $userId,
-                'based_on_question_id' => $originId,
-                'title' => $source['title'] . ' (copia)',
-                'prompt' => $source['prompt'],
-                'prompt_image_url' => $source['prompt_image_url'],
-                'question_type' => $source['question_type'],
-                'visibility' => 'private',
-                'discipline_id' => $source['discipline_id'],
-                'subject_id' => $source['subject_id'],
-                'education_level' => $source['education_level'],
-                'difficulty' => $source['difficulty'],
-                'status' => $source['status'],
-                'allow_multiple_correct' => $source['allow_multiple_correct'],
-                'discursive_answer' => $source['discursive_answer'],
-                'response_lines' => $source['response_lines'],
-                'drawing_size' => $source['drawing_size'],
-                'true_false_answer' => $source['true_false_answer'],
-            ]);
-            $newId = (int) db()->lastInsertId();
-            $s = db()->prepare('SELECT option_text,is_correct,display_order FROM question_options WHERE question_id = :question_id ORDER BY display_order ASC');
-            $s->execute(['question_id' => $questionId]);
-            foreach ($s->fetchAll() as $row) {
-                $opt = db()->prepare('INSERT INTO question_options (question_id,option_text,is_correct,display_order,created_at) VALUES (:question_id,:option_text,:is_correct,:display_order,NOW())');
-                $opt->execute([
-                    'question_id' => $newId,
-                    'option_text' => $row['option_text'],
-                    'is_correct' => $row['is_correct'],
-                    'display_order' => $row['display_order'],
-                ]);
-            }
-            db()->commit();
-            flash('success', 'Questao clonada como privada.');
-        } catch (Throwable $e) {
-            db()->rollBack();
-            flash('error', 'Falha ao clonar: ' . $e->getMessage());
-        }
-        redirect('questions.php');
-    }
-
-    if ($action === 'delete_question') {
-        $questionId = (int) ($_POST['question_id'] ?? 0);
-        $q = own_question($questionId, $userId);
-        if (!$q) {
-            flash('error', 'Somente o autor pode excluir.');
-        } else {
-            $d = db()->prepare('DELETE FROM questions WHERE id = :id');
-            $d->execute(['id' => $questionId]);
-            flash('success', 'Questao excluida.');
-        }
-        redirect('questions.php');
-    }
-
-    if (in_array($action, ['create_question', 'update_question'], true)) {
-        $questionId = (int) ($_POST['question_id'] ?? 0);
-        $editing = $action === 'update_question' ? own_question($questionId, $userId) : null;
-        if ($action === 'update_question' && !$editing) {
-            flash('error', 'Questao nao encontrada.');
-            redirect('questions.php');
-        }
-
-        $title = trim((string) ($_POST['title'] ?? ''));
-        $prompt = trim((string) ($_POST['prompt'] ?? ''));
-        $promptImageUrl = trim((string) ($_POST['prompt_image_url'] ?? ''));
-        $type = (string) ($_POST['question_type'] ?? '');
-        $visibility = (string) ($_POST['visibility'] ?? 'private');
-        $disciplineId = (int) ($_POST['discipline_id'] ?? 0);
-        $subjectId = (int) ($_POST['subject_id'] ?? 0);
-        $level = (string) ($_POST['education_level'] ?? 'medio');
-        $difficulty = (string) ($_POST['difficulty'] ?? 'medio');
-        $allowMulti = !empty($_POST['allow_multiple_correct']) ? 1 : 0;
-        $discursiveAnswer = trim((string) ($_POST['discursive_answer'] ?? ''));
-        $responseLines = (int) ($_POST['response_lines'] ?? 5);
-        $drawingSize = (string) ($_POST['drawing_size'] ?? 'medium');
-        $options = parsed_options((array) ($_POST['options'] ?? []));
-        $errors = [];
-
-        if ($title === '' || $prompt === '') {
-            $errors[] = 'Titulo e enunciado sao obrigatorios.';
-        }
-        if ($promptImageUrl !== '' && !filter_var($promptImageUrl, FILTER_VALIDATE_URL)) {
-            $errors[] = 'Imagem deve ser uma URL valida.';
-        }
-        if (!in_array($type, ['multiple_choice', 'discursive', 'drawing'], true)) {
-            $errors[] = 'Tipo de questao invalido.';
-        }
-        if (!in_array($visibility, ['private', 'public'], true)) {
-            $errors[] = 'Visibilidade invalida.';
-        }
-        if ($disciplineId <= 0 || $subjectId <= 0 || !belongs_subject($subjectId, $disciplineId)) {
-            $errors[] = 'Disciplina e assunto precisam ser validos.';
-        }
-        if (!in_array($level, ['fundamental', 'medio', 'tecnico', 'superior'], true)) {
-            $errors[] = 'Nivel invalido.';
-        }
-        if (!in_array($difficulty, ['facil', 'medio', 'dificil'], true)) {
-            $errors[] = 'Dificuldade invalida.';
-        }
-        if ($type === 'multiple_choice') {
-            $correctCount = count(array_filter($options, static fn(array $o): bool => (int) $o['is_correct'] === 1));
-            if (count($options) < 2) {
-                $errors[] = 'Informe pelo menos duas alternativas.';
-            }
-            if ($correctCount === 0) {
-                $errors[] = 'Marque ao menos uma alternativa correta.';
-            }
-            if ($allowMulti === 0 && $correctCount > 1) {
-                $errors[] = 'Sem multiplas corretas, marque apenas uma alternativa.';
-            }
-        } else {
-            $allowMulti = 0;
-            $options = [];
-        }
-        if ($type === 'discursive' && $responseLines < 1) {
-            $errors[] = 'Numero de linhas invalido.';
-        }
-        if ($type !== 'discursive') {
-            $responseLines = null;
-            $discursiveAnswer = '';
-        }
-        if ($type === 'drawing' && !in_array($drawingSize, ['small', 'medium', 'large'], true)) {
-            $errors[] = 'Tamanho do espaco invalido.';
-        }
-        if ($type !== 'drawing') {
-            $drawingSize = null;
-        }
-
-        if ($errors) {
-            flash('error', implode(' ', $errors));
-            redirect('questions.php' . ($editing ? '?edit=' . $editing['id'] : ''));
-        }
-
-        db()->beginTransaction();
-        try {
-            if ($editing) {
-                $u = db()->prepare('UPDATE questions SET
-                    title=:title,prompt=:prompt,prompt_image_url=:prompt_image_url,question_type=:question_type,visibility=:visibility,
-                    discipline_id=:discipline_id,subject_id=:subject_id,education_level=:education_level,difficulty=:difficulty,
-                    allow_multiple_correct=:allow_multiple_correct,discursive_answer=:discursive_answer,response_lines=:response_lines,
-                    drawing_size=:drawing_size,updated_at=NOW()
-                    WHERE id=:id AND author_id=:author_id');
-                $u->execute([
-                    'title' => $title,
-                    'prompt' => $prompt,
-                    'prompt_image_url' => $promptImageUrl !== '' ? $promptImageUrl : null,
-                    'question_type' => $type,
-                    'visibility' => $visibility,
-                    'discipline_id' => $disciplineId,
-                    'subject_id' => $subjectId,
-                    'education_level' => $level,
-                    'difficulty' => $difficulty,
-                    'allow_multiple_correct' => $allowMulti,
-                    'discursive_answer' => $discursiveAnswer !== '' ? $discursiveAnswer : null,
-                    'response_lines' => $responseLines,
-                    'drawing_size' => $drawingSize,
-                    'id' => $editing['id'],
-                    'author_id' => $userId,
-                ]);
-                $questionId = (int) $editing['id'];
-                $d = db()->prepare('DELETE FROM question_options WHERE question_id = :question_id');
-                $d->execute(['question_id' => $questionId]);
-            } else {
-                $i = db()->prepare('INSERT INTO questions
-                    (author_id,based_on_question_id,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,usage_count,created_at,updated_at)
-                    VALUES
-                    (:author_id,NULL,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,0,NOW(),NOW())');
-                $i->execute([
-                    'author_id' => $userId,
-                    'title' => $title,
-                    'prompt' => $prompt,
-                    'prompt_image_url' => $promptImageUrl !== '' ? $promptImageUrl : null,
-                    'question_type' => $type,
-                    'visibility' => $visibility,
-                    'discipline_id' => $disciplineId,
-                    'subject_id' => $subjectId,
-                    'education_level' => $level,
-                    'difficulty' => $difficulty,
-                    'status' => 'published',
-                    'allow_multiple_correct' => $allowMulti,
-                    'discursive_answer' => $discursiveAnswer !== '' ? $discursiveAnswer : null,
-                    'response_lines' => $responseLines,
-                    'drawing_size' => $drawingSize,
-                ]);
-                $questionId = (int) db()->lastInsertId();
-            }
-            if ($type === 'multiple_choice') {
-                $i = db()->prepare('INSERT INTO question_options (question_id,option_text,is_correct,display_order,created_at) VALUES (:question_id,:option_text,:is_correct,:display_order,NOW())');
-                foreach (array_values($options) as $index => $option) {
-                    $i->execute([
-                        'question_id' => $questionId,
-                        'option_text' => $option['text'],
-                        'is_correct' => $option['is_correct'],
-                        'display_order' => $index + 1,
-                    ]);
-                }
-            }
-            db()->commit();
-            flash('success', $editing ? 'Questao atualizada.' : 'Questao criada.');
-        } catch (Throwable $e) {
-            db()->rollBack();
-            flash('error', 'Falha ao salvar questao: ' . $e->getMessage());
-        }
-        redirect('questions.php');
-    }
+    handle_question_request($userId);
 }
 
-$disciplines = db()->query('SELECT id,name FROM disciplines ORDER BY name ASC')->fetchAll();
-$subjects = db()->query('SELECT subjects.id,subjects.name,subjects.discipline_id,disciplines.name AS discipline_name FROM subjects INNER JOIN disciplines ON disciplines.id = subjects.discipline_id ORDER BY disciplines.name ASC, subjects.name ASC')->fetchAll();
-
-$edit = null;
-$editOptions = option_rows([]);
-if (isset($_GET['edit'])) {
-    $edit = own_question((int) $_GET['edit'], $userId);
-    if (!$edit) {
-        flash('error', 'Voce so pode editar questoes da sua autoria.');
-        redirect('questions.php');
-    }
-    $s = db()->prepare('SELECT option_text,is_correct FROM question_options WHERE question_id = :question_id ORDER BY display_order ASC');
-    $s->execute(['question_id' => $edit['id']]);
-    $editOptions = option_rows($s->fetchAll());
-}
-
-$filters = [
-    'discipline_id' => (int) ($_GET['discipline_id'] ?? 0),
-    'subject_id' => (int) ($_GET['subject_id'] ?? 0),
-    'education_level' => trim((string) ($_GET['education_level'] ?? '')),
-    'question_type' => trim((string) ($_GET['question_type'] ?? '')),
-    'author_id' => (int) ($_GET['author_id'] ?? 0),
-    'visibility' => trim((string) ($_GET['visibility'] ?? '')),
-];
-
-$query = 'SELECT questions.*,authors.name AS author_name,disciplines.name AS discipline_name,subjects.name AS subject_name,base_authors.name AS based_on_author_name,CASE WHEN question_favorites.id IS NULL THEN 0 ELSE 1 END AS is_favorite
-FROM questions
-INNER JOIN users AS authors ON authors.id = questions.author_id
-LEFT JOIN disciplines ON disciplines.id = questions.discipline_id
-LEFT JOIN subjects ON subjects.id = questions.subject_id
-LEFT JOIN questions AS base_questions ON base_questions.id = questions.based_on_question_id
-LEFT JOIN users AS base_authors ON base_authors.id = base_questions.author_id
-LEFT JOIN question_favorites ON question_favorites.question_id = questions.id AND question_favorites.user_id = :favorite_user_id
-WHERE (questions.visibility = "public" OR questions.author_id = :current_user_id)';
-$params = ['favorite_user_id' => $userId, 'current_user_id' => $userId];
-
-if ($filters['discipline_id'] > 0) {
-    $query .= ' AND questions.discipline_id = :discipline_id';
-    $params['discipline_id'] = $filters['discipline_id'];
-}
-if ($filters['subject_id'] > 0) {
-    $query .= ' AND questions.subject_id = :subject_id';
-    $params['subject_id'] = $filters['subject_id'];
-}
-if ($filters['education_level'] !== '' && in_array($filters['education_level'], ['fundamental', 'medio', 'tecnico', 'superior'], true)) {
-    $query .= ' AND questions.education_level = :education_level';
-    $params['education_level'] = $filters['education_level'];
-}
-if ($filters['question_type'] !== '' && in_array($filters['question_type'], ['multiple_choice', 'discursive', 'drawing'], true)) {
-    $query .= ' AND questions.question_type = :question_type';
-    $params['question_type'] = $filters['question_type'];
-}
-if ($filters['author_id'] > 0) {
-    $query .= ' AND questions.author_id = :author_id';
-    $params['author_id'] = $filters['author_id'];
-}
-if ($filters['visibility'] !== '' && in_array($filters['visibility'], ['public', 'private'], true)) {
-    $query .= ' AND questions.visibility = :visibility';
-    $params['visibility'] = $filters['visibility'];
-}
-$query .= ' ORDER BY questions.created_at DESC';
-
-$s = db()->prepare($query);
-$s->execute($params);
-$questions = $s->fetchAll();
-$questionOptions = find_question_options(array_map(static fn(array $q): int => (int) $q['id'], $questions));
-$authors = db()->query('SELECT id,name FROM users ORDER BY name ASC')->fetchAll();
+$disciplines = question_disciplines();
+$subjects = question_subjects();
+[$edit, $editOptions] = question_edit_payload($userId, isset($_GET['edit']) ? (int) $_GET['edit'] : null);
+$filters = question_filters($_GET);
+[$questions, $questionOptions] = question_list($filters, $userId);
+$authors = question_authors();
 
 render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifique por disciplina e assunto, favorite, clone e reutilize em provas.');
 ?>
@@ -432,6 +58,7 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
                 <option value="multiple_choice" <?= $filters['question_type'] === 'multiple_choice' ? 'selected' : '' ?>>Multipla escolha</option>
                 <option value="discursive" <?= $filters['question_type'] === 'discursive' ? 'selected' : '' ?>>Discursiva</option>
                 <option value="drawing" <?= $filters['question_type'] === 'drawing' ? 'selected' : '' ?>>Desenho / espaco livre</option>
+                <option value="true_false" <?= $filters['question_type'] === 'true_false' ? 'selected' : '' ?>>Verdadeiro ou falso</option>
             </select>
         </label>
         <label>Autor
@@ -474,6 +101,7 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
                         <option value="multiple_choice" <?= $selectedType === 'multiple_choice' ? 'selected' : '' ?>>Multipla escolha</option>
                         <option value="discursive" <?= $selectedType === 'discursive' ? 'selected' : '' ?>>Discursiva</option>
                         <option value="drawing" <?= $selectedType === 'drawing' ? 'selected' : '' ?>>Desenho / espaco livre</option>
+                        <option value="true_false" <?= $selectedType === 'true_false' ? 'selected' : '' ?>>Verdadeiro ou falso</option>
                     </select>
                 </label>
                 <label>Visibilidade
@@ -546,10 +174,24 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
             <div class="hidden" data-question-section="drawing">
                 <?php $selectedDrawing = $edit['drawing_size'] ?? 'medium'; ?>
                 <label>Altura do espaco
-                    <select name="drawing_size">
+                    <select name="drawing_size" data-drawing-size-select>
                         <option value="small" <?= $selectedDrawing === 'small' ? 'selected' : '' ?>>Pequeno</option>
                         <option value="medium" <?= $selectedDrawing === 'medium' ? 'selected' : '' ?>>Medio</option>
                         <option value="large" <?= $selectedDrawing === 'large' ? 'selected' : '' ?>>Grande</option>
+                        <option value="custom" <?= $selectedDrawing === 'custom' ? 'selected' : '' ?>>Customizado</option>
+                    </select>
+                </label>
+                <label class="<?= $selectedDrawing === 'custom' ? '' : 'hidden' ?>" data-drawing-custom-field>
+                    Altura customizada (px)
+                    <input type="number" name="drawing_height_px" min="120" max="1200" step="10" value="<?= h((string) ($edit['drawing_height_px'] ?? 320)) ?>">
+                </label>
+            </div>
+            <div class="hidden" data-question-section="true_false">
+                <?php $selectedTrueFalseAnswer = array_key_exists('true_false_answer', (array) $edit) && $edit['true_false_answer'] !== null ? (int) $edit['true_false_answer'] : 1; ?>
+                <label>Resposta correta
+                    <select name="true_false_answer">
+                        <option value="1" <?= $selectedTrueFalseAnswer === 1 ? 'selected' : '' ?>>Verdadeiro</option>
+                        <option value="0" <?= $selectedTrueFalseAnswer === 0 ? 'selected' : '' ?>>Falso</option>
                     </select>
                 </label>
             </div>
@@ -578,6 +220,32 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
                     <button class="button-secondary" type="submit">Cadastrar disciplina</button>
                 </form>
             </div>
+            <?php if ($disciplines !== []): ?>
+                <div class="panel panel-nested">
+                    <h2>Disciplinas cadastradas</h2>
+                    <div class="question-list compact-list">
+                        <?php foreach ($disciplines as $discipline): ?>
+                            <article class="question-card">
+                                <form method="post" class="form-grid">
+                                    <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="action" value="update_discipline">
+                                    <input type="hidden" name="discipline_id" value="<?= h((string) $discipline['id']) ?>">
+                                    <label>Nome da disciplina<input type="text" name="discipline_name" value="<?= h($discipline['name']) ?>" required></label>
+                                    <div class="form-actions">
+                                        <button class="button-secondary" type="submit">Salvar</button>
+                                    </div>
+                                </form>
+                                <form method="post" class="inline-actions">
+                                    <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="action" value="delete_discipline">
+                                    <input type="hidden" name="discipline_id" value="<?= h((string) $discipline['id']) ?>">
+                                    <button class="button-danger" type="submit" onclick="return confirm('Excluir esta disciplina?')">Excluir</button>
+                                </form>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="panel panel-nested">
                 <h2>Novo assunto</h2>
                 <form method="post" class="form-grid">
@@ -595,6 +263,39 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
                     <button class="button-secondary" type="submit">Cadastrar assunto</button>
                 </form>
             </div>
+            <?php if ($subjects !== []): ?>
+                <div class="panel panel-nested">
+                    <h2>Assuntos cadastrados</h2>
+                    <div class="question-list compact-list">
+                        <?php foreach ($subjects as $subject): ?>
+                            <article class="question-card">
+                                <form method="post" class="form-grid">
+                                    <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="action" value="update_subject">
+                                    <input type="hidden" name="subject_id" value="<?= h((string) $subject['id']) ?>">
+                                    <label>Disciplina
+                                        <select name="discipline_id" required>
+                                            <?php foreach ($disciplines as $discipline): ?>
+                                                <option value="<?= h((string) $discipline['id']) ?>" <?= (int) $subject['discipline_id'] === (int) $discipline['id'] ? 'selected' : '' ?>><?= h($discipline['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </label>
+                                    <label>Nome do assunto<input type="text" name="subject_name" value="<?= h($subject['name']) ?>" required></label>
+                                    <div class="form-actions">
+                                        <button class="button-secondary" type="submit">Salvar</button>
+                                    </div>
+                                </form>
+                                <form method="post" class="inline-actions">
+                                    <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                                    <input type="hidden" name="action" value="delete_subject">
+                                    <input type="hidden" name="subject_id" value="<?= h((string) $subject['id']) ?>">
+                                    <button class="button-danger" type="submit" onclick="return confirm('Excluir este assunto?')">Excluir</button>
+                                </form>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 <?php endif; ?>
     </section>
@@ -627,8 +328,10 @@ render_header('Banco de questoes', 'Crie questoes privadas e publicas, classifiq
         <?php elseif ($question['question_type'] === 'discursive'): ?>
             <p><strong>Linhas:</strong> <?= h((string) ($question['response_lines'] ?? 5)) ?></p>
             <?php if (!empty($question['discursive_answer'])): ?><p><strong>Resposta de referencia:</strong> <?= nl2br(h($question['discursive_answer'])) ?></p><?php endif; ?>
+        <?php elseif ($question['question_type'] === 'true_false'): ?>
+            <p><strong>Resposta correta:</strong> <?= (int) $question['true_false_answer'] === 1 ? 'Verdadeiro' : 'Falso' ?></p>
         <?php else: ?>
-            <p><strong>Espaco:</strong> <?= h(drawing_size_label($question['drawing_size'])) ?></p>
+            <p><strong>Espaco:</strong> <?= h(drawing_size_label($question['drawing_size'], isset($question['drawing_height_px']) ? (int) $question['drawing_height_px'] : null)) ?></p>
         <?php endif; ?>
         <div class="question-actions">
             <form method="post">

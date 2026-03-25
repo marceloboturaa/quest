@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const multipleChoiceSection = questionForm.querySelector('[data-question-section="multiple_choice"]');
     const discursiveSection = questionForm.querySelector('[data-question-section="discursive"]');
     const drawingSection = questionForm.querySelector('[data-question-section="drawing"]');
+    const trueFalseSection = questionForm.querySelector('[data-question-section="true_false"]');
+    const drawingSizeSelect = questionForm.querySelector('[data-drawing-size-select]');
+    const drawingCustomField = questionForm.querySelector('[data-drawing-custom-field]');
     const optionsContainer = questionForm.querySelector('[data-options-container]');
     const addOptionButton = questionForm.querySelector('[data-add-option]');
     const template = document.getElementById('question-option-template');
@@ -66,6 +69,17 @@ document.addEventListener('DOMContentLoaded', function () {
         multipleChoiceSection.classList.toggle('hidden', type !== 'multiple_choice');
         discursiveSection.classList.toggle('hidden', type !== 'discursive');
         drawingSection.classList.toggle('hidden', type !== 'drawing');
+        trueFalseSection.classList.toggle('hidden', type !== 'true_false');
+        toggleDrawingCustomField();
+    }
+
+    function toggleDrawingCustomField() {
+        if (!drawingSizeSelect || !drawingCustomField) {
+            return;
+        }
+
+        const showCustomField = typeField.value === 'drawing' && drawingSizeSelect.value === 'custom';
+        drawingCustomField.classList.toggle('hidden', !showCustomField);
     }
 
     function refreshOptionLabels() {
@@ -112,6 +126,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     typeField.addEventListener('change', toggleQuestionSections);
+    if (drawingSizeSelect) {
+        drawingSizeSelect.addEventListener('change', toggleDrawingCustomField);
+    }
     toggleQuestionSections();
     refreshOptionLabels();
 });

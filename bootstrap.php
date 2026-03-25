@@ -78,6 +78,14 @@ function app_url(string $path = ''): string
     return $path === '' ? $base : $base . '/' . $path;
 }
 
+function storage_path(string $path = ''): string
+{
+    $base = rtrim((string) config('storage_path', sys_get_temp_dir()), '\\/');
+    $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+
+    return $normalized === '' ? $base : $base . DIRECTORY_SEPARATOR . ltrim($normalized, DIRECTORY_SEPARATOR);
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . $path);
@@ -275,10 +283,11 @@ function education_level_label(string $level): string
     };
 }
 
-function drawing_size_label(?string $size): string
+function drawing_size_label(?string $size, ?int $height = null): string
 {
     return match ($size) {
         'small' => 'Pequeno',
+        'custom' => $height !== null ? 'Customizado (' . $height . ' px)' : 'Customizado',
         'large' => 'Grande',
         default => 'Medio',
     };
@@ -337,8 +346,14 @@ function send_password_reset_email(array $user, string $token): bool
         'Content-Type: text/plain; charset=UTF-8',
     ];
 
+    $logDirectory = storage_path();
+
+    if (!is_dir($logDirectory)) {
+        mkdir($logDirectory, 0775, true);
+    }
+
     $logLine = '[' . date('Y-m-d H:i:s') . '] TO ' . $user['email'] . PHP_EOL . $message . PHP_EOL . PHP_EOL;
-    file_put_contents(__DIR__ . '/storage/mail.log', $logLine, FILE_APPEND);
+    file_put_contents(storage_path('mail.log'), $logLine, FILE_APPEND);
 
     return @mail($user['email'], $subject, $message, implode("\r\n", $headers));
 }

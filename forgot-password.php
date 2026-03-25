@@ -46,7 +46,7 @@ render_header('Recuperar senha', 'Informe seu e-mail para gerar um link de redef
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Esqueci minha senha</h2>
-        <p>O sistema tenta enviar o link por e-mail e registra o conteudo em <code>storage/mail.log</code>.</p>
+        <p>O sistema tenta enviar o link por e-mail e registra o conteudo em armazenamento privado para teste local.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

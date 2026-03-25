@@ -58,8 +58,8 @@ render_header(
     </article>
     <article>
         <span class="metric-copy">Tipos de questao</span>
-        <strong class="metric-number">3</strong>
-        <p>Multipla escolha, discursiva e desenho com espaco livre.</p>
+        <strong class="metric-number">4</strong>
+        <p>Multipla escolha, discursiva, desenho com espaco livre e verdadeiro ou falso.</p>
     </article>
     <article>
         <span class="metric-copy">Fluxos</span>
@@ -75,7 +75,7 @@ render_header(
             <li>Cadastro e autenticacao de usuarios.</li>
             <li>Recuperacao de senha com token.</li>
             <li>Gestao de perfis pelo master admin.</li>
-            <li>Questoes de multipla escolha, discursiva e desenho.</li>
+            <li>Questoes de multipla escolha, discursiva, desenho e verdadeiro ou falso.</li>
         </ul>
     </article>
 

@@ -34,7 +34,7 @@ render_header(
 <section class="card-grid">
     <article class="panel">
         <h2>Banco de questoes</h2>
-        <p>Cadastre questoes de multipla escolha, discursivas e de desenho com classificacao, visibilidade e colaboracao.</p>
+        <p>Cadastre questoes de multipla escolha, discursivas, verdadeiro ou falso e desenho com classificacao, visibilidade e colaboracao.</p>
         <div class="form-actions">
             <a class="button" href="questions.php">Abrir questoes</a>
         </div>

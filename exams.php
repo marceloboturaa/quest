@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/includes/exam_repository.php';
+require_once __DIR__ . '/includes/exam_actions.php';
 require_login();
 
 $user = current_user();
@@ -10,99 +12,11 @@ $preselectedQuestionId = (int) ($_GET['question_id'] ?? 0);
 
 if (is_post()) {
     abort_if_invalid_csrf();
-
-    if ((string) ($_POST['action'] ?? '') === 'create_exam') {
-        $title = trim((string) ($_POST['title'] ?? ''));
-        $instructions = trim((string) ($_POST['instructions'] ?? ''));
-        $questionIds = array_values(array_unique(array_map('intval', (array) ($_POST['question_ids'] ?? []))));
-
-        if ($title === '') {
-            flash('error', 'Informe o titulo da prova.');
-            redirect('exams.php');
-        }
-
-        if ($questionIds === []) {
-            flash('error', 'Selecione pelo menos uma questao.');
-            redirect('exams.php');
-        }
-
-        $placeholders = implode(',', array_fill(0, count($questionIds), '?'));
-        $params = array_merge($questionIds, [$userId]);
-        $visible = db()->prepare(
-            "SELECT id FROM questions WHERE id IN ($placeholders) AND (visibility = 'public' OR author_id = ?)"
-        );
-        $visible->execute($params);
-        $visibleIds = array_map(static fn(array $row): int => (int) $row['id'], $visible->fetchAll());
-
-        if (count($visibleIds) !== count($questionIds)) {
-            flash('error', 'Uma ou mais questoes selecionadas nao podem ser usadas.');
-            redirect('exams.php');
-        }
-
-        db()->beginTransaction();
-
-        try {
-            $insertExam = db()->prepare(
-                'INSERT INTO exams (user_id, title, instructions, created_at, updated_at)
-                 VALUES (:user_id, :title, :instructions, NOW(), NOW())'
-            );
-            $insertExam->execute([
-                'user_id' => $userId,
-                'title' => $title,
-                'instructions' => $instructions !== '' ? $instructions : null,
-            ]);
-
-            $examId = (int) db()->lastInsertId();
-            $insertQuestion = db()->prepare(
-                'INSERT INTO exam_questions (exam_id, question_id, display_order, created_at)
-                 VALUES (:exam_id, :question_id, :display_order, NOW())'
-            );
-
-            foreach ($questionIds as $index => $questionId) {
-                $insertQuestion->execute([
-                    'exam_id' => $examId,
-                    'question_id' => $questionId,
-                    'display_order' => $index + 1,
-                ]);
-            }
-
-            $updateUsage = db()->prepare("UPDATE questions SET usage_count = usage_count + 1 WHERE id IN ($placeholders)");
-            $updateUsage->execute($questionIds);
-
-            db()->commit();
-            flash('success', 'Prova criada com sucesso.');
-        } catch (Throwable $throwable) {
-            db()->rollBack();
-            flash('error', 'Falha ao criar prova: ' . $throwable->getMessage());
-        }
-
-        redirect('exams.php');
-    }
+    handle_exam_request($userId);
 }
 
-$availableQuestions = db()->prepare(
-    'SELECT questions.id, questions.title, questions.question_type, questions.visibility, questions.usage_count,
-            disciplines.name AS discipline_name, subjects.name AS subject_name, users.name AS author_name
-     FROM questions
-     INNER JOIN users ON users.id = questions.author_id
-     LEFT JOIN disciplines ON disciplines.id = questions.discipline_id
-     LEFT JOIN subjects ON subjects.id = questions.subject_id
-     WHERE questions.visibility = "public" OR questions.author_id = :author_id
-     ORDER BY questions.created_at DESC'
-);
-$availableQuestions->execute(['author_id' => $userId]);
-$availableQuestions = $availableQuestions->fetchAll();
-
-$exams = db()->prepare(
-    'SELECT exams.*, COUNT(exam_questions.id) AS total_questions
-     FROM exams
-     LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-     WHERE exams.user_id = :user_id
-     GROUP BY exams.id
-     ORDER BY exams.created_at DESC'
-);
-$exams->execute(['user_id' => $userId]);
-$exams = $exams->fetchAll();
+$availableQuestions = exam_available_questions($userId);
+$exams = exam_list($userId);
 
 render_header('Montagem de provas', 'Selecione questoes visiveis no banco e monte provas misturando tipos diferentes.');
 ?>
@@ -178,6 +92,9 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
                         <?php else: ?>
                             <p class="helper-text">Sem instrucoes adicionais.</p>
                         <?php endif; ?>
+                        <div class="form-actions">
+                            <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Exportar PDF</a>
+                        </div>
                     </article>
                 <?php endforeach; ?>
             </div>
@@ -197,7 +114,7 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
 
     <article class="panel">
         <h2>Estado atual</h2>
-        <p>A montagem inicial de provas ja funciona. Exportacao PDF e refinamentos de impressao ainda ficam para a proxima etapa.</p>
+        <p>A montagem de provas ja funciona com exportacao PDF basica para distribuicao e impressao.</p>
     </article>
 </section>
 <?php render_footer(); ?>
