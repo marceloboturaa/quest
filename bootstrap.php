@@ -232,7 +232,10 @@ function require_login(): void
     }
 }
 
-function has_role(string|array $roles): bool
+/**
+ * @param string|array $roles
+ */
+function has_role($roles): bool
 {
     $user = current_user();
 
@@ -243,7 +246,10 @@ function has_role(string|array $roles): bool
     return in_array($user['role'], (array) $roles, true);
 }
 
-function require_role(string|array $roles): void
+/**
+ * @param string|array $roles
+ */
+function require_role($roles): void
 {
     require_login();
 
@@ -255,60 +261,82 @@ function require_role(string|array $roles): void
 
 function role_label(string $role): string
 {
-    return match ($role) {
-        'master_admin' => 'Master Admin',
-        'local_admin' => 'Admin Local',
-        default => 'Usuario',
-    };
+    switch ($role) {
+        case 'master_admin':
+            return 'Master Admin';
+        case 'local_admin':
+            return 'Admin Local';
+        default:
+            return 'Usuario';
+    }
 }
 
 function question_type_label(string $type): string
 {
-    return match ($type) {
-        'multiple_choice' => 'Multipla escolha',
-        'discursive' => 'Discursiva',
-        'drawing' => 'Desenho / espaco livre',
-        'true_false' => 'Verdadeiro ou falso',
-        default => 'Nao definido',
-    };
+    switch ($type) {
+        case 'multiple_choice':
+            return 'Multipla escolha';
+        case 'discursive':
+            return 'Discursiva';
+        case 'drawing':
+            return 'Desenho / espaco livre';
+        case 'true_false':
+            return 'Verdadeiro ou falso';
+        default:
+            return 'Nao definido';
+    }
 }
 
 function visibility_label(string $visibility): string
 {
-    return match ($visibility) {
-        'public' => 'Publica',
-        default => 'Privada',
-    };
+    switch ($visibility) {
+        case 'public':
+            return 'Publica';
+        default:
+            return 'Privada';
+    }
 }
 
 function education_level_label(string $level): string
 {
-    return match ($level) {
-        'fundamental' => 'Ensino Fundamental',
-        'medio' => 'Ensino Medio',
-        'tecnico' => 'Tecnico',
-        'superior' => 'Superior',
-        default => 'Nao definido',
-    };
+    switch ($level) {
+        case 'fundamental':
+            return 'Ensino Fundamental';
+        case 'medio':
+            return 'Ensino Medio';
+        case 'tecnico':
+            return 'Tecnico';
+        case 'superior':
+            return 'Superior';
+        default:
+            return 'Nao definido';
+    }
 }
 
 function drawing_size_label(?string $size, ?int $height = null): string
 {
-    return match ($size) {
-        'small' => 'Pequeno',
-        'custom' => $height !== null ? 'Customizado (' . $height . ' px)' : 'Customizado',
-        'large' => 'Grande',
-        default => 'Medio',
-    };
+    switch ($size) {
+        case 'small':
+            return 'Pequeno';
+        case 'custom':
+            return $height !== null ? 'Customizado (' . $height . ' px)' : 'Customizado';
+        case 'large':
+            return 'Grande';
+        default:
+            return 'Medio';
+    }
 }
 
 function status_label(string $status): string
 {
-    return match ($status) {
-        'published' => 'Publicada',
-        'review' => 'Em revisao',
-        default => 'Rascunho',
-    };
+    switch ($status) {
+        case 'published':
+            return 'Publicada';
+        case 'review':
+            return 'Em revisao';
+        default:
+            return 'Rascunho';
+    }
 }
 
 function can_manage_users(): bool

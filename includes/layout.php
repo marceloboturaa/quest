@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-function render_header(string $title, string $subtitle = '', bool $showHero = true): void
+function render_header(string $title, string $subtitle = '', bool $showHero = true, bool $showTopbar = true): void
 {
     $user = function_exists('current_user') ? current_user() : null;
     $flashes = function_exists('pull_flashes') ? pull_flashes() : [];
@@ -19,30 +19,32 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
 </head>
 <body>
     <div class="page-shell">
-        <header class="topbar">
-            <a class="brand" href="<?= $user ? 'dashboard.php' : 'index.php' ?>">
-                <span class="brand-mark">Q</span>
-                <span>
-                    <strong>Quest</strong>
-                    <small>Banco inteligente de questoes</small>
-                </span>
-            </a>
+        <?php if ($showTopbar): ?>
+            <header class="topbar">
+                <a class="brand" href="<?= $user ? 'dashboard.php' : 'index.php' ?>">
+                    <span class="brand-mark">Q</span>
+                    <span>
+                        <strong>Quest</strong>
+                        <small>Banco inteligente de questoes</small>
+                    </span>
+                </a>
 
-            <nav class="topbar-nav">
-                <?php if ($user): ?>
-                    <a href="dashboard.php">Dashboard</a>
-                    <a href="questions.php">Questoes</a>
-                    <a href="exams.php">Provas</a>
-                    <?php if (can_manage_users()): ?>
-                        <a href="users.php">Usuarios</a>
+                <nav class="topbar-nav">
+                    <?php if ($user): ?>
+                        <a href="dashboard.php">Dashboard</a>
+                        <a href="questions.php">Questoes</a>
+                        <a href="exams.php">Provas</a>
+                        <?php if (can_manage_users()): ?>
+                            <a href="users.php">Usuarios</a>
+                        <?php endif; ?>
+                        <a class="ghost-button" href="logout.php">Sair</a>
+                    <?php else: ?>
+                        <a href="login.php">Entrar</a>
+                        <a class="ghost-button" href="register.php">Criar conta</a>
                     <?php endif; ?>
-                    <a class="ghost-button" href="logout.php">Sair</a>
-                <?php else: ?>
-                    <a href="login.php">Entrar</a>
-                    <a class="ghost-button" href="register.php">Criar conta</a>
-                <?php endif; ?>
-            </nav>
-        </header>
+                </nav>
+            </header>
+        <?php endif; ?>
 
         <main class="page-content">
             <?php if ($showHero): ?>
@@ -69,14 +71,16 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
 <?php
 }
 
-function render_footer(): void
+function render_footer(bool $showFooter = true): void
 {
     ?>
         </main>
-        <footer class="site-footer">
-            <p>Quest. Projeto pessoal de Marcelo Botura com apoio do CNI.</p>
-            <small>Banco colaborativo de questoes, gestao de usuarios e montagem inicial de provas.</small>
-        </footer>
+        <?php if ($showFooter): ?>
+            <footer class="site-footer">
+                <p>Quest. Projeto pessoal de Marcelo Botura com apoio do CNI.</p>
+                <small>Banco colaborativo de questoes, gestao de usuarios e montagem inicial de provas.</small>
+            </footer>
+        <?php endif; ?>
     </div>
     <script src="<?= h(asset_url('assets/js/app.js')) ?>"></script>
 </body>

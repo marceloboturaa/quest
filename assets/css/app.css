@@ -322,6 +322,65 @@ h1 {
     margin: 0 auto;
 }
 
+.auth-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(340px, 520px);
+    gap: 24px;
+    align-items: stretch;
+}
+
+.auth-intro,
+.auth-card-login {
+    min-height: 100%;
+}
+
+.auth-intro {
+    position: relative;
+    overflow: hidden;
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background:
+        radial-gradient(circle at top left, rgba(248, 196, 66, 0.2), transparent 34%),
+        linear-gradient(160deg, rgba(23, 53, 87, 0.98), rgba(15, 34, 57, 0.94));
+    box-shadow: var(--shadow);
+    color: #fff;
+}
+
+.auth-intro .eyebrow,
+.auth-intro-copy,
+.auth-highlights p {
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.auth-intro h1 {
+    max-width: 8ch;
+}
+
+.auth-intro-copy {
+    max-width: 34ch;
+    margin: 16px 0 0;
+    font-size: 1.05rem;
+}
+
+.auth-highlights {
+    display: grid;
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.auth-highlights > div {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.auth-highlights strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
 label {
     display: grid;
     gap: 8px;
@@ -742,6 +801,7 @@ th {
     .home-metrics,
     .home-columns,
     .home-flow-steps,
+    .auth-layout,
     .hero-grid,
     .split-card,
     .stats-grid,

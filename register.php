@@ -68,7 +68,7 @@ if (is_post()) {
     redirect('dashboard.php');
 }
 
-render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicial de usuario.');
+render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicial de usuario.', false, false);
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
@@ -113,4 +113,4 @@ render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicia
     </section>
 </div>
 <?php forget_old_input(); ?>
-<?php render_footer(); ?>
+<?php render_footer(false); ?>

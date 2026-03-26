@@ -33,11 +33,11 @@ if (is_post()) {
     redirect('dashboard.php');
 }
 
-render_header('Entrar', 'Use sua conta para acessar o painel do Quest.');
+render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, false);
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
-        <h2>Login</h2>
+        <h2>Acesse sua conta</h2>
         <p>Entre com seu e-mail e senha para acessar o banco de questoes e o painel do sistema.</p>
 
         <form method="post" class="form-grid">
@@ -67,4 +67,4 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.');
     </section>
 </div>
 <?php forget_old_input(); ?>
-<?php render_footer(); ?>
+<?php render_footer(false); ?>
