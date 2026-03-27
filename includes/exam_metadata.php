@@ -7,6 +7,7 @@ const EXAM_META_END = '[/quest_exam_meta]';
 function exam_default_metadata(): array
 {
     return [
+        'exam_template' => 'version_1',
         'exam_style' => 'double_column',
         'exam_label' => 'AVALIACAO',
         'discipline' => '',
@@ -109,6 +110,7 @@ function exam_parse_stored_instructions(?string $stored): array
 function exam_metadata_labels(): array
 {
     return [
+        'exam_template' => 'Modelo',
         'exam_style' => 'Formato',
         'exam_label' => 'Tipo',
         'discipline' => 'Disciplina',
@@ -135,6 +137,7 @@ function exam_metadata_summary(array $metadata): array
             'label' => $labels[$key] ?? $key,
             'value' => match ($key) {
                 'application_date' => exam_format_date($value),
+                'exam_template' => exam_template_label($value),
                 'exam_style' => exam_style_label($value),
                 default => $value,
             },
@@ -159,6 +162,21 @@ function exam_style_options(): array
         'economic' => 'Estilo economico',
         'accessibility' => 'Modo de acessibilidade',
     ];
+}
+
+function exam_template_options(): array
+{
+    return [
+        'version_1' => 'Avaliacao - Versao 1',
+        'version_2' => 'Avaliacao - Versao 2',
+        'version_3_1' => 'Avaliacao - Versao 3.1',
+    ];
+}
+
+function exam_template_label(string $template): string
+{
+    $options = exam_template_options();
+    return $options[$template] ?? $options['version_1'];
 }
 
 function exam_style_label(string $style): string

@@ -44,6 +44,13 @@ render_header(
             </label>
 
             <div class="form-grid two-columns">
+                <label>Modelo da prova
+                    <select name="exam_template">
+                        <?php foreach (exam_template_options() as $templateValue => $templateLabel): ?>
+                            <option value="<?= h($templateValue) ?>"><?= h($templateLabel) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
                 <label>Formato da prova
                     <select name="exam_style">
                         <?php foreach (exam_style_options() as $styleValue => $styleLabel): ?>
