@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuToggle = document.querySelector('[data-menu-toggle]');
     const menuPanel = document.querySelector('[data-menu-panel]');
     const topbar = document.querySelector('.topbar');
+    const examMetaForm = document.querySelector('[data-exam-meta-form]');
 
     if (menuToggle && menuPanel && topbar) {
         menuToggle.addEventListener('click', function () {
@@ -54,6 +55,50 @@ document.addEventListener('DOMContentLoaded', function () {
             void constructionScene.offsetWidth;
             constructionScene.classList.add('is-bumping');
         }, 3200);
+    }
+
+    if (examMetaForm) {
+        const summaryFields = examMetaForm.ownerDocument.querySelectorAll('[data-summary-field]');
+
+        function formatDate(value) {
+            if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                return 'Não informada';
+            }
+
+            const parts = value.split('-');
+            return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+
+        function fieldValue(name) {
+            const input = examMetaForm.querySelector('[name="' + name + '"]');
+            return input ? input.value.trim() : '';
+        }
+
+        function resolvedSummaryValue(name) {
+            const values = {
+                exam_label: fieldValue('exam_label') || 'AVALIAÇÃO',
+                school_name: fieldValue('school_name') || 'COLÉGIO / ESCOLA',
+                teacher_name: fieldValue('teacher_name') || 'Professor não informado',
+                component_name: fieldValue('component_name') || fieldValue('discipline') || 'Não informado',
+                year_reference: fieldValue('year_reference') || 'Não informado',
+                class_name: fieldValue('class_name') || 'Não informado',
+                application_date: formatDate(fieldValue('application_date')),
+                discipline: fieldValue('discipline') || 'Não informada'
+            };
+
+            return values[name] || '';
+        }
+
+        function syncExamHeaderSummary() {
+            summaryFields.forEach(function (field) {
+                const key = field.dataset.summaryField || '';
+                field.textContent = resolvedSummaryValue(key);
+            });
+        }
+
+        examMetaForm.addEventListener('input', syncExamHeaderSummary);
+        examMetaForm.addEventListener('change', syncExamHeaderSummary);
+        syncExamHeaderSummary();
     }
 
     function setQuestionModalState(isOpen) {

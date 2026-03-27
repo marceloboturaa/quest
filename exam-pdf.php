@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/includes/exam_repository.php';
+require_once __DIR__ . '/includes/exam_browser_pdf.php';
 require_once __DIR__ . '/includes/exam_document_renderer.php';
 
 use Dompdf\Dompdf;
@@ -30,6 +31,17 @@ if ($questions === []) {
 
 $document = exam_document_view_data($exam, $questions, $questionOptions);
 $html = exam_document_render_html($document);
+$browserPdf = exam_pdf_render_with_browser($html);
+
+if ($browserPdf !== null) {
+    $filename = 'prova-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $exam['title'])) . '.pdf';
+
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="' . $filename . '"');
+    header('X-Quest-Pdf-Engine: chrome');
+    echo $browserPdf;
+    exit;
+}
 
 $options = new Options();
 $options->set('isHtml5ParserEnabled', true);
@@ -45,5 +57,6 @@ $filename = 'prova-' . preg_replace('/[^a-z0-9]+/i', '-', strtolower((string) $e
 
 header('Content-Type: application/pdf');
 header('Content-Disposition: inline; filename="' . $filename . '"');
+header('X-Quest-Pdf-Engine: dompdf');
 echo $dompdf->output();
 exit;

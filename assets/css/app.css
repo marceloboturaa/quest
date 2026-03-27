@@ -790,6 +790,42 @@ th {
     background: rgba(47, 93, 124, 0.06);
 }
 
+.exam-header-summary {
+    display: grid;
+    gap: 14px;
+}
+
+.exam-header-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.exam-header-summary-grid div {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid rgba(36, 52, 71, 0.08);
+}
+
+.exam-header-summary-grid strong,
+.exam-header-summary-grid span {
+    display: block;
+}
+
+.exam-header-summary-grid strong {
+    margin-bottom: 4px;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+}
+
+.exam-header-summary-grid span {
+    color: var(--ink);
+    line-height: 1.4;
+}
+
 .assessment-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
