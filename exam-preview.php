@@ -31,30 +31,21 @@ render_header(
 <?= exam_document_styles(false) ?>
 </style>
 
-<section class="split-card">
-    <section class="panel">
-        <div class="workspace-panel-head">
-            <div>
-                <p class="workspace-kicker">Preview</p>
-                <h2><?= h((string) $exam['title']) ?></h2>
-            </div>
-            <div class="form-actions">
-                <a class="ghost-button" href="exams.php">Voltar</a>
-                <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Abrir PDF</a>
-            </div>
+<section class="panel">
+    <div class="workspace-panel-head">
+        <div>
+            <p class="workspace-kicker">Preview</p>
+            <h2><?= h((string) $exam['title']) ?></h2>
         </div>
+        <div class="form-actions">
+            <a class="ghost-button" href="exams.php">Voltar</a>
+            <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Abrir PDF</a>
+        </div>
+    </div>
 
-        <?= exam_document_render_sheet($document) ?>
-    </section>
-
-    <aside class="panel">
-        <h2>Checklist</h2>
-        <ul class="mini-list">
-            <li>Confira se o cabecalho esta completo.</li>
-            <li>Revise a ordem das questoes antes do PDF.</li>
-            <li>Use o PDF para impressao e distribuicao.</li>
-        </ul>
-    </aside>
+    <?= exam_document_render_sheet($document) ?>
 </section>
+
+<?= exam_document_render_preview_notes($document) ?>
 
 <?php render_footer(); ?>
