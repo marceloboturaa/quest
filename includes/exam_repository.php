@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function exam_available_questions(int $userId, array $filters = []): array
 {
-    $query = 'SELECT questions.id, questions.title, questions.question_type, questions.visibility, questions.usage_count,
+    $query = 'SELECT questions.id, questions.title, questions.prompt, questions.question_type, questions.visibility, questions.usage_count,
                      questions.source_name, questions.education_level, questions.difficulty,
                      disciplines.name AS discipline_name, subjects.name AS subject_name, users.name AS author_name
               FROM questions
@@ -109,4 +109,21 @@ function exam_questions(int $examId, int $userId): array
     $questions = $statement->fetchAll();
 
     return [$questions, find_question_options(array_map(static fn(array $question): int => (int) $question['id'], $questions))];
+}
+
+function exam_question_ids(int $examId, int $userId): array
+{
+    $statement = db()->prepare(
+        'SELECT exam_questions.question_id
+         FROM exam_questions
+         INNER JOIN exams ON exams.id = exam_questions.exam_id
+         WHERE exam_questions.exam_id = :exam_id AND exams.user_id = :user_id
+         ORDER BY exam_questions.display_order ASC'
+    );
+    $statement->execute([
+        'exam_id' => $examId,
+        'user_id' => $userId,
+    ]);
+
+    return array_map(static fn(array $row): int => (int) $row['question_id'], $statement->fetchAll());
 }

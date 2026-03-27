@@ -5,29 +5,43 @@ require_once __DIR__ . '/exam_metadata.php';
 
 function handle_exam_request(int $userId): void
 {
-    if ((string) ($_POST['action'] ?? '') !== 'create_exam') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if (!in_array($action, ['create_exam', 'update_exam'], true)) {
         return;
     }
 
+    $isUpdate = $action === 'update_exam';
+    $examId = (int) ($_POST['exam_id'] ?? 0);
     $title = trim((string) ($_POST['title'] ?? ''));
     $instructions = trim((string) ($_POST['instructions'] ?? ''));
     $questionIds = array_values(array_unique(array_map('intval', (array) ($_POST['question_ids'] ?? []))));
+    $redirectPath = 'exams.php';
 
     if ($title === '') {
-        flash('error', 'Informe o titulo da prova.');
-        redirect('exams.php');
+        flash('error', 'Informe o título da prova.');
+        redirect($redirectPath);
     }
 
     if ($questionIds === []) {
-        flash('error', 'Selecione pelo menos uma questao.');
-        redirect('exams.php');
+        flash('error', 'Selecione pelo menos uma questão.');
+        redirect($redirectPath);
+    }
+
+    if ($isUpdate) {
+        $exam = exam_find($examId, $userId);
+
+        if (!$exam) {
+            flash('error', 'Prova não encontrada para edição.');
+            redirect($redirectPath);
+        }
     }
 
     $visibleIds = exam_visible_question_ids($questionIds, $userId);
 
     if (count($visibleIds) !== count($questionIds)) {
-        flash('error', 'Uma ou mais questoes selecionadas nao podem ser usadas.');
-        redirect('exams.php');
+        flash('error', 'Uma ou mais questões selecionadas não podem ser usadas.');
+        redirect($redirectPath);
     }
 
     $metadata = exam_collect_metadata($_POST);
@@ -35,17 +49,38 @@ function handle_exam_request(int $userId): void
     db()->beginTransaction();
 
     try {
-        $insertExam = db()->prepare(
-            'INSERT INTO exams (user_id, title, instructions, created_at, updated_at)
-             VALUES (:user_id, :title, :instructions, NOW(), NOW())'
-        );
-        $insertExam->execute([
-            'user_id' => $userId,
-            'title' => $title,
-            'instructions' => exam_build_stored_instructions($instructions, $metadata),
-        ]);
+        if ($isUpdate) {
+            $existingQuestionIds = exam_question_ids($examId, $userId);
 
-        $examId = (int) db()->lastInsertId();
+            $updateExam = db()->prepare(
+                'UPDATE exams
+                 SET title = :title, instructions = :instructions, updated_at = NOW()
+                 WHERE id = :id AND user_id = :user_id'
+            );
+            $updateExam->execute([
+                'id' => $examId,
+                'user_id' => $userId,
+                'title' => $title,
+                'instructions' => exam_build_stored_instructions($instructions, $metadata),
+            ]);
+
+            $deleteQuestions = db()->prepare('DELETE FROM exam_questions WHERE exam_id = :exam_id');
+            $deleteQuestions->execute(['exam_id' => $examId]);
+        } else {
+            $existingQuestionIds = [];
+            $insertExam = db()->prepare(
+                'INSERT INTO exams (user_id, title, instructions, created_at, updated_at)
+                 VALUES (:user_id, :title, :instructions, NOW(), NOW())'
+            );
+            $insertExam->execute([
+                'user_id' => $userId,
+                'title' => $title,
+                'instructions' => exam_build_stored_instructions($instructions, $metadata),
+            ]);
+
+            $examId = (int) db()->lastInsertId();
+        }
+
         $insertQuestion = db()->prepare(
             'INSERT INTO exam_questions (exam_id, question_id, display_order, created_at)
              VALUES (:exam_id, :question_id, :display_order, NOW())'
@@ -59,16 +94,28 @@ function handle_exam_request(int $userId): void
             ]);
         }
 
-        $placeholders = implode(',', array_fill(0, count($questionIds), '?'));
-        $updateUsage = db()->prepare("UPDATE questions SET usage_count = usage_count + 1 WHERE id IN ($placeholders)");
-        $updateUsage->execute($questionIds);
+        $addedQuestionIds = array_values(array_diff($questionIds, $existingQuestionIds));
+        $removedQuestionIds = array_values(array_diff($existingQuestionIds, $questionIds));
+
+        if ($addedQuestionIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($addedQuestionIds), '?'));
+            $updateUsage = db()->prepare("UPDATE questions SET usage_count = usage_count + 1 WHERE id IN ($placeholders)");
+            $updateUsage->execute($addedQuestionIds);
+        }
+
+        if ($removedQuestionIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($removedQuestionIds), '?'));
+            $decreaseUsage = db()->prepare("UPDATE questions SET usage_count = GREATEST(usage_count - 1, 0) WHERE id IN ($placeholders)");
+            $decreaseUsage->execute($removedQuestionIds);
+        }
 
         db()->commit();
-        flash('success', 'Prova criada com sucesso.');
+        flash('success', $isUpdate ? 'Prova atualizada com sucesso.' : 'Prova criada com sucesso.');
+        redirect('exam-preview.php?id=' . $examId);
     } catch (Throwable $throwable) {
         db()->rollBack();
-        flash('error', 'Falha ao criar prova: ' . $throwable->getMessage());
+        flash('error', $isUpdate ? 'Falha ao atualizar a prova.' : 'Falha ao criar prova.');
     }
 
-    redirect('exams.php');
+    redirect($redirectPath);
 }

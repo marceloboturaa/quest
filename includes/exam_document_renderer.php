@@ -115,12 +115,13 @@ function exam_document_styles(bool $forPdf = false): string
 {
     $sheetWidth = $forPdf ? '100%' : 'min(100%, 1120px)';
     $bodyBackground = $forPdf ? '#ffffff' : '#efe8df';
+    $fontFamily = $forPdf ? "'DejaVu Sans', Arial, sans-serif" : "'Poppins', Arial, sans-serif";
 
     return <<<CSS
 body {
     margin: 0;
     color: #1f1f1f;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: {$fontFamily};
     background: {$bodyBackground};
 }
 
@@ -133,9 +134,9 @@ body {
 
 .exam-page {
     background: #ffffff;
-    border: 1px solid #bfbfbf;
-    border-radius: 10px;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(36, 52, 71, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(36, 52, 71, 0.08);
     overflow: hidden;
 }
 
@@ -151,11 +152,11 @@ body {
     gap: 18px;
     margin-bottom: 10px;
     font-size: 12px;
-    color: #5c5c5c;
+    color: #66768a;
 }
 
 .exam-header {
-    border-bottom: 1px solid #d1d1d1;
+    border-bottom: 1px solid rgba(36, 52, 71, 0.12);
     padding-bottom: 12px;
 }
 
@@ -173,11 +174,11 @@ body {
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    border: 2px solid #6b86ab;
-    color: #355178;
+    border: 2px solid rgba(47, 93, 124, 0.2);
+    color: #2f5d7c;
     font-weight: 800;
     font-size: 14px;
-    background: #f7fbff;
+    background: #f7fafc;
 }
 
 .exam-school-copy {
@@ -193,7 +194,7 @@ body {
 .exam-school-copy strong {
     font-size: 16px;
     line-height: 1.25;
-    color: #666666;
+    color: #243447;
     letter-spacing: 0.02em;
 }
 
@@ -201,7 +202,7 @@ body {
     margin-top: 2px;
     font-size: 12px;
     line-height: 1.25;
-    color: #787878;
+    color: #66768a;
     font-weight: 700;
 }
 
@@ -209,7 +210,7 @@ body {
     text-align: center;
     font-size: 12px;
     font-weight: 700;
-    color: #5a5a5a;
+    color: #243447;
 }
 
 .exam-header-grid {
@@ -220,9 +221,9 @@ body {
 
 .exam-header-grid td {
     padding: 4px 6px;
-    border: 1px solid #b7b7b7;
+    border: 1px solid rgba(36, 52, 71, 0.18);
     font-size: 12px;
-    color: #4d4d4d;
+    color: #243447;
 }
 
 .exam-header-grid .exam-header-title {
@@ -230,14 +231,14 @@ body {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    background: #f3f3f3;
+    background: #f8fafc;
 }
 
 .exam-instructions {
     margin-top: 10px;
     font-size: 12px;
     line-height: 1.45;
-    color: #333333;
+    color: #425466;
 }
 
 .exam-instructions p {
@@ -270,6 +271,7 @@ body {
     margin: 0 0 6px;
     font-size: 15px;
     line-height: 1.35;
+    color: #243447;
 }
 
 .exam-question p {
@@ -277,6 +279,7 @@ body {
     font-size: 13px;
     line-height: 1.45;
     text-align: justify;
+    color: #243447;
 }
 
 .exam-option-list {
@@ -298,19 +301,21 @@ body {
 
 .exam-discursive-line {
     height: 22px;
-    border-bottom: 1px solid #7d7d7d;
+    border-bottom: 1px solid rgba(36, 52, 71, 0.42);
 }
 
 .exam-drawing-box {
     min-height: 180px;
-    border: 1px solid #9d9d9d;
+    border: 1px solid rgba(36, 52, 71, 0.24);
+    border-radius: 10px;
+    background: #fbfcfd;
 }
 
 .exam-footer {
     margin-top: 18px;
     text-align: center;
     font-size: 11px;
-    color: #5f5f5f;
+    color: #66768a;
 }
 
 .exam-answer-sheet-title {
@@ -345,7 +350,7 @@ body {
     justify-content: center;
     width: 24px;
     height: 24px;
-    border: 1px solid #666666;
+    border: 1px solid rgba(36, 52, 71, 0.44);
     border-radius: 50%;
     margin-left: 6px;
     font-size: 12px;
@@ -360,14 +365,15 @@ body {
 .exam-preview-note-panel {
     padding: 18px 20px;
     border-radius: 16px;
-    background: #fff9f1;
-    border: 1px solid rgba(123, 97, 72, 0.16);
+    background: #ffffff;
+    border: 1px solid rgba(36, 52, 71, 0.12);
+    box-shadow: 0 10px 24px rgba(36, 52, 71, 0.06);
 }
 
 .exam-preview-note-panel h3 {
     margin: 0 0 10px;
     font-size: 16px;
-    color: #4d341d;
+    color: #243447;
 }
 
 .exam-preview-note-panel p,
@@ -390,8 +396,8 @@ body {
 .exam-preview-summary-grid div {
     padding: 12px 14px;
     border-radius: 12px;
-    background: #ffffff;
-    border: 1px solid rgba(123, 97, 72, 0.14);
+    background: #f8fafc;
+    border: 1px solid rgba(36, 52, 71, 0.08);
 }
 
 .exam-preview-summary-grid strong,
@@ -403,12 +409,12 @@ body {
     margin-bottom: 4px;
     font-size: 12px;
     text-transform: uppercase;
-    color: #7a6759;
+    color: #66768a;
 }
 
 .exam-preview-summary-grid span {
     font-size: 14px;
-    color: #2c2c2c;
+    color: #243447;
 }
 
 @media print {

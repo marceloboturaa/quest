@@ -5,6 +5,10 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
 {
     $user = function_exists('current_user') ? current_user() : null;
     $flashes = function_exists('pull_flashes') ? pull_flashes() : [];
+    $currentPath = basename((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+    $isActive = static function (array $paths) use ($currentPath): bool {
+        return in_array($currentPath, $paths, true);
+    };
     ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -14,39 +18,59 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
     <title><?= h($title . ' | Quest') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= h(asset_url('assets/css/app.css')) ?>">
 </head>
 <body>
-    <div class="page-shell">
-        <?php if ($showTopbar): ?>
-            <header class="topbar">
-                <a class="brand" href="<?= $user ? 'dashboard.php' : 'index.php' ?>">
-                    <span class="brand-mark">Q</span>
-                    <span>
-                        <strong>Quest</strong>
-                        <small>Banco inteligente de questoes</small>
-                    </span>
-                </a>
+    <?php if ($showTopbar): ?>
+        <header class="topbar">
+            <div class="topbar-inner <?= $user ? '' : 'topbar-inner-public' ?>">
+                <div class="topbar-branding">
+                    <a class="brand" href="<?= $user ? 'dashboard.php' : 'index.php' ?>">
+                        <span class="brand-mark">Q</span>
+                        <span>
+                            <span class="brand-title-row">
+                                <strong>Quest</strong>
+                                <small class="brand-beta">Beta</small>
+                            </span>
+                            <small>Plataforma de provas</small>
+                        </span>
+                    </a>
 
-                <nav class="topbar-nav">
                     <?php if ($user): ?>
-                        <a href="dashboard.php">Dashboard</a>
-                        <a href="questions.php">Questoes</a>
-                        <a href="exam-create.php">Nova prova</a>
-                        <a href="exams.php">Montagem</a>
-                        <a href="enem.php">API ENEM</a>
-                        <?php if (can_manage_users()): ?>
-                            <a href="users.php">Usuarios</a>
-                        <?php endif; ?>
-                        <a class="ghost-button" href="logout.php">Sair</a>
-                    <?php else: ?>
-                        <a href="login.php">Entrar</a>
-                        <a class="ghost-button" href="register.php">Criar conta</a>
+                        <button
+                            class="topbar-menu-toggle"
+                            type="button"
+                            aria-expanded="false"
+                            aria-controls="topbar-nav"
+                            data-menu-toggle
+                        >
+                            Menu
+                        </button>
                     <?php endif; ?>
-                </nav>
-            </header>
-        <?php endif; ?>
+                </div>
+
+                <?php if ($user): ?>
+                    <nav id="topbar-nav" class="topbar-nav" data-menu-panel>
+                        <div class="topbar-nav-group">
+                            <a class="<?= $isActive(['dashboard.php']) ? 'is-active' : '' ?>" href="dashboard.php">Início</a>
+                            <a class="<?= $isActive(['questions.php', 'enem.php']) ? 'is-active' : '' ?>" href="questions.php">Questões</a>
+                            <a class="<?= $isActive(['exam-create.php', 'exams.php', 'exam-preview.php', 'exam-pdf.php']) ? 'is-active' : '' ?>" href="exam-create.php">Provas</a>
+                            <?php if (can_manage_users()): ?>
+                                <a class="<?= $isActive(['users.php']) ? 'is-active' : '' ?>" href="users.php">Usuários</a>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="topbar-nav-group topbar-nav-group-end">
+                            <a class="ghost-button" href="logout.php">Sair</a>
+                        </div>
+                    </nav>
+                <?php endif; ?>
+            </div>
+        </header>
+    <?php endif; ?>
+
+    <div class="page-shell">
 
         <main class="page-content">
             <?php if ($showHero): ?>
@@ -80,7 +104,7 @@ function render_footer(bool $showFooter = true): void
         <?php if ($showFooter): ?>
             <footer class="site-footer">
                 <p>Quest. Projeto pessoal de Marcelo Botura com apoio do CNI.</p>
-                <small>Banco colaborativo de questoes, gestao de usuarios e montagem inicial de provas.</small>
+                <small>Banco colaborativo de questões, gestão de usuários e montagem de provas.</small>
             </footer>
         <?php endif; ?>
     </div>

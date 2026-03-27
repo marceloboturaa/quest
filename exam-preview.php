@@ -38,6 +38,7 @@ render_header(
             <h2><?= h((string) $exam['title']) ?></h2>
         </div>
         <div class="form-actions">
+            <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>">Editar prova</a>
             <a class="ghost-button" href="exams.php">Voltar</a>
             <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Abrir PDF</a>
         </div>

@@ -23,7 +23,7 @@ if (is_post()) {
     $user = $statement->fetch();
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
-        flash('error', 'Credenciais invalidas.');
+        flash('error', 'Credenciais inválidas.');
         redirect('login.php');
     }
 
@@ -38,7 +38,7 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Acesse sua conta</h2>
-        <p>Entre com seu e-mail e senha para acessar o banco de questoes e o painel do sistema.</p>
+        <p>Entre com seu e-mail e senha para acessar o banco de questões e o painel do sistema.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -62,7 +62,11 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
 
         <div class="auth-note">
             <strong>Acesso</strong><br>
-            Se voce ainda nao tem conta, crie um cadastro. O perfil inicial entra como usuario comum.
+            Se você ainda não tem conta, crie um cadastro. O perfil inicial entra como usuário comum.
+        </div>
+
+        <div class="auth-back-link-wrap">
+            <a class="auth-back-link" href="index.php">Voltar ao início</a>
         </div>
     </section>
 </div>

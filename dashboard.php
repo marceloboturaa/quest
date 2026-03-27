@@ -91,6 +91,7 @@ render_header(
                         <strong><?= h((string) $exam['title']) ?></strong>
                         <p><?= h((string) $exam['total_questions']) ?> questoes | <?= h(date('d/m/Y H:i', strtotime((string) $exam['created_at']))) ?></p>
                         <div class="form-actions">
+                            <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>">Editar</a>
                             <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
                             <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
                         </div>

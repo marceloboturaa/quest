@@ -24,7 +24,7 @@ if (is_post()) {
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        flash('error', 'Informe um e-mail valido.');
+        flash('error', 'Informe um e-mail válido.');
         redirect('register.php');
     }
 
@@ -34,7 +34,7 @@ if (is_post()) {
     }
 
     if ($password !== $passwordConfirmation) {
-        flash('error', 'As senhas nao conferem.');
+        flash('error', 'As senhas não conferem.');
         redirect('register.php');
     }
 
@@ -68,12 +68,12 @@ if (is_post()) {
     redirect('dashboard.php');
 }
 
-render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicial de usuario.', false, false);
+render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inicial de usuário.', false, false);
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Novo cadastro</h2>
-        <p>Depois do cadastro, a conta entra como usuario comum. O master admin pode promover para admin local quando necessario.</p>
+        <p>Depois do cadastro, a conta entra como usuário comum. O master admin pode promover para admin local quando necessário.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -102,13 +102,14 @@ render_header('Criar conta', 'Cadastre novos usuarios no Quest com perfil inicia
 
             <div class="form-actions">
                 <button class="button" type="submit">Criar conta</button>
-                <a class="ghost-button" href="login.php">Ja tenho login</a>
+                <a class="ghost-button" href="login.php">Já tenho login</a>
+                <a class="ghost-button" href="index.php">Voltar</a>
             </div>
         </form>
 
         <div class="auth-note">
             <strong>Perfil inicial</strong><br>
-            Usuarios comuns podem criar questoes, editar as proprias e montar provas com questoes visiveis.
+            Usuários comuns podem criar questões, editar as próprias e montar provas com questões visíveis.
         </div>
     </section>
 </div>

@@ -7,6 +7,54 @@ document.addEventListener('DOMContentLoaded', function () {
     const examBuilderForm = document.querySelector('[data-exam-builder-form]');
     const selectedCount = document.querySelector('[data-selected-count]');
     const selectedList = document.querySelector('[data-selected-list]');
+    const menuToggle = document.querySelector('[data-menu-toggle]');
+    const menuPanel = document.querySelector('[data-menu-panel]');
+    const topbar = document.querySelector('.topbar');
+
+    if (menuToggle && menuPanel && topbar) {
+        menuToggle.addEventListener('click', function () {
+            const isOpen = topbar.classList.toggle('is-open');
+            menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!topbar.contains(event.target)) {
+                topbar.classList.remove('is-open');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    const constructionWord = document.querySelector('[data-construction-word]');
+    const constructionDots = document.querySelector('[data-construction-dots]');
+    const constructionScene = document.querySelector('.home-minimal-scene');
+
+    if (constructionWord && constructionDots) {
+        const words = ['detalhes', 'ideias', 'blocos', 'provas', 'acabamentos'];
+        let wordIndex = 0;
+        let dotsCount = 3;
+
+        window.setInterval(function () {
+            wordIndex = (wordIndex + 1) % words.length;
+            constructionWord.textContent = words[wordIndex];
+            constructionWord.parentElement?.classList.remove('is-pulsing');
+            void constructionWord.offsetWidth;
+            constructionWord.parentElement?.classList.add('is-pulsing');
+        }, 1800);
+
+        window.setInterval(function () {
+            dotsCount = dotsCount % 3 + 1;
+            constructionDots.textContent = '.'.repeat(dotsCount);
+        }, 420);
+    }
+
+    if (constructionScene) {
+        window.setInterval(function () {
+            constructionScene.classList.remove('is-bumping');
+            void constructionScene.offsetWidth;
+            constructionScene.classList.add('is-bumping');
+        }, 3200);
+    }
 
     function setQuestionModalState(isOpen) {
         if (!questionModal) {
@@ -53,7 +101,19 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const checkedItems = Array.from(examBuilderForm.querySelectorAll('[data-exam-question]:checked'));
+        const allItems = Array.from(examBuilderForm.querySelectorAll('[data-exam-question]'));
+        const checkedItems = allItems.filter(function (item) {
+            return item.checked;
+        });
+
+        allItems.forEach(function (item) {
+            const stateLabel = item.parentElement?.querySelector('.exam-question-picker-check');
+
+            if (stateLabel) {
+                stateLabel.textContent = item.checked ? 'Selecionada' : 'Selecionar';
+            }
+        });
+
         selectedCount.textContent = checkedItems.length + ' questoes selecionadas';
         selectedList.innerHTML = '';
 
