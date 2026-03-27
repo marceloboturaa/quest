@@ -1,6 +1,49 @@
 document.addEventListener('DOMContentLoaded', function () {
     const questionForm = document.querySelector('[data-question-form]');
     const disciplineSelects = document.querySelectorAll('[data-discipline-select]');
+    const questionModal = document.querySelector('[data-question-modal]');
+    const openQuestionModalButtons = document.querySelectorAll('[data-open-question-modal]');
+    const closeQuestionModalButtons = document.querySelectorAll('[data-close-question-modal]');
+
+    function setQuestionModalState(isOpen) {
+        if (!questionModal) {
+            return;
+        }
+
+        questionModal.classList.toggle('is-open', isOpen);
+        document.body.classList.toggle('has-modal-open', isOpen);
+    }
+
+    openQuestionModalButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            setQuestionModalState(true);
+        });
+    });
+
+    closeQuestionModalButtons.forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            if (button.tagName === 'A') {
+                return;
+            }
+
+            event.preventDefault();
+            setQuestionModalState(false);
+        });
+    });
+
+    if (questionModal && questionModal.classList.contains('is-open')) {
+        document.body.classList.add('has-modal-open');
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && questionModal && questionModal.classList.contains('is-open')) {
+            const editingMode = !!questionForm?.querySelector('[name="question_id"]');
+
+            if (!editingMode) {
+                setQuestionModalState(false);
+            }
+        }
+    });
 
     function optionLabel(index) {
         let label = '';

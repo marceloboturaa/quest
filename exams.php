@@ -9,6 +9,8 @@ require_login();
 $user = current_user();
 $userId = (int) $user['id'];
 $preselectedQuestionId = (int) ($_GET['question_id'] ?? 0);
+$draftTitle = trim((string) ($_GET['draft_title'] ?? ''));
+$draftInstructions = trim((string) ($_GET['draft_instructions'] ?? ''));
 
 if (is_post()) {
     abort_if_invalid_csrf();
@@ -31,12 +33,12 @@ render_header('Montagem de provas', 'Selecione questoes visiveis no banco e mont
 
             <label>
                 Titulo da prova
-                <input type="text" name="title" required>
+                <input type="text" name="title" required value="<?= h($draftTitle) ?>">
             </label>
 
             <label>
                 Instrucoes (opcional)
-                <textarea name="instructions"></textarea>
+                <textarea name="instructions"><?= h($draftInstructions) ?></textarea>
             </label>
 
             <?php if ($availableQuestions === []): ?>

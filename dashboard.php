@@ -67,6 +67,14 @@ render_header(
             <a class="ghost-button" href="exams.php">Abrir provas</a>
         </div>
     </article>
+
+    <article class="panel">
+        <h2>API ENEM</h2>
+        <p>Consulte provas de 2009 a 2023, navegue pelas questoes oficiais e importe itens direto para o banco interno.</p>
+        <div class="form-actions">
+            <a class="button-secondary" href="enem.php">Explorar API ENEM</a>
+        </div>
+    </article>
 </section>
 
 <section class="info-grid">
@@ -85,6 +93,7 @@ render_header(
         <div class="form-actions">
             <a class="button" href="questions.php">Criar questao</a>
             <a class="button-secondary" href="exams.php">Montar prova</a>
+            <a class="ghost-button" href="enem.php">Importar do ENEM</a>
             <?php if (can_manage_users()): ?>
                 <a class="ghost-button" href="users.php">Revisar usuarios</a>
             <?php endif; ?>

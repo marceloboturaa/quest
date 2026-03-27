@@ -79,13 +79,18 @@ function question_list(array $filters, int $userId): array
 
     if ($filters['term'] !== '') {
         $query .= ' AND (
-            questions.title LIKE :term
-            OR questions.prompt LIKE :term
-            OR authors.name LIKE :term
-            OR COALESCE(questions.source_name, "") LIKE :term
-            OR COALESCE(questions.source_reference, "") LIKE :term
+            questions.title LIKE :term_title
+            OR questions.prompt LIKE :term_prompt
+            OR authors.name LIKE :term_author
+            OR COALESCE(questions.source_name, "") LIKE :term_source_name
+            OR COALESCE(questions.source_reference, "") LIKE :term_source_reference
         )';
-        $params['term'] = '%' . $filters['term'] . '%';
+        $term = '%' . $filters['term'] . '%';
+        $params['term_title'] = $term;
+        $params['term_prompt'] = $term;
+        $params['term_author'] = $term;
+        $params['term_source_name'] = $term;
+        $params['term_source_reference'] = $term;
     }
 
     if ($filters['discipline_id'] > 0) {
@@ -125,4 +130,87 @@ function question_list(array $filters, int $userId): array
     $questions = $statement->fetchAll();
 
     return [$questions, find_question_options(array_map(static fn(array $question): int => (int) $question['id'], $questions))];
+}
+
+function question_find_by_source_reference(int $userId, string $sourceName, string $sourceReference): ?array
+{
+    $statement = db()->prepare(
+        'SELECT * FROM questions
+         WHERE author_id = :author_id
+           AND source_name = :source_name
+           AND source_reference = :source_reference
+         LIMIT 1'
+    );
+    $statement->execute([
+        'author_id' => $userId,
+        'source_name' => $sourceName,
+        'source_reference' => $sourceReference,
+    ]);
+
+    return $statement->fetch() ?: null;
+}
+
+function question_find_or_create_discipline(string $name, array $aliases, int $userId): int
+{
+    $candidates = array_values(array_unique(array_filter(array_merge([$name], $aliases))));
+
+    foreach ($candidates as $candidate) {
+        $statement = db()->prepare('SELECT id FROM disciplines WHERE LOWER(name) = LOWER(:name) LIMIT 1');
+        $statement->execute(['name' => $candidate]);
+        $disciplineId = (int) $statement->fetchColumn();
+
+        if ($disciplineId > 0) {
+            return $disciplineId;
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        $statement = db()->prepare('SELECT id FROM disciplines WHERE LOWER(name) LIKE LOWER(:name) LIMIT 1');
+        $statement->execute(['name' => $candidate . '%']);
+        $disciplineId = (int) $statement->fetchColumn();
+
+        if ($disciplineId > 0) {
+            return $disciplineId;
+        }
+    }
+
+    $insert = db()->prepare('INSERT INTO disciplines (name, created_by, created_at) VALUES (:name, :created_by, NOW())');
+    $insert->execute([
+        'name' => $name,
+        'created_by' => $userId,
+    ]);
+
+    return (int) db()->lastInsertId();
+}
+
+function question_find_or_create_subject(int $disciplineId, string $name, int $userId): int
+{
+    $statement = db()->prepare(
+        'SELECT id FROM subjects
+         WHERE discipline_id = :discipline_id
+           AND LOWER(name) = LOWER(:name)
+         LIMIT 1'
+    );
+    $statement->execute([
+        'discipline_id' => $disciplineId,
+        'name' => $name,
+    ]);
+
+    $subjectId = (int) $statement->fetchColumn();
+
+    if ($subjectId > 0) {
+        return $subjectId;
+    }
+
+    $insert = db()->prepare(
+        'INSERT INTO subjects (discipline_id, name, created_by, created_at)
+         VALUES (:discipline_id, :name, :created_by, NOW())'
+    );
+    $insert->execute([
+        'discipline_id' => $disciplineId,
+        'name' => $name,
+        'created_by' => $userId,
+    ]);
+
+    return (int) db()->lastInsertId();
 }

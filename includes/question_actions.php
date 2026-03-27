@@ -6,6 +6,12 @@ function question_redirect(?int $editId = null): never
     redirect('questions.php' . ($editId ? '?edit=' . $editId : ''));
 }
 
+function question_redirect_query(string $query = ''): never
+{
+    $query = ltrim(trim($query), '?');
+    redirect('questions.php' . ($query !== '' ? '?' . $query : ''));
+}
+
 function handle_question_request(int $userId): void
 {
     $action = (string) ($_POST['action'] ?? '');
@@ -44,6 +50,10 @@ function handle_question_request(int $userId): void
 
     if ($action === 'delete_question') {
         question_delete($userId);
+    }
+
+    if ($action === 'import_enem_question') {
+        question_import_enem($userId);
     }
 
     if (in_array($action, ['create_question', 'update_question'], true)) {
@@ -525,4 +535,137 @@ function question_save(int $userId, bool $isUpdate): never
     }
 
     question_redirect();
+}
+
+function question_import_enem(int $userId): never
+{
+    $year = (int) ($_POST['enem_year'] ?? 0);
+    $index = (int) ($_POST['enem_index'] ?? 0);
+    $language = trim((string) ($_POST['enem_language'] ?? ''));
+    $redirectQuery = (string) ($_POST['redirect_query'] ?? '');
+    $sourceName = 'API ENEM';
+
+    if ($year <= 0 || $index <= 0) {
+        flash('error', 'Informe uma questao valida do ENEM para importar.');
+        question_redirect_query($redirectQuery);
+    }
+
+    if ($language !== '' && !array_key_exists($language, enem_api_supported_languages())) {
+        flash('error', 'Idioma do ENEM invalido.');
+        question_redirect_query($redirectQuery);
+    }
+
+    $sourceReference = enem_api_reference($year, $index, $language !== '' ? $language : null);
+    $existing = question_find_by_source_reference($userId, $sourceName, $sourceReference);
+
+    if ($existing !== null) {
+        flash('success', 'Essa questao do ENEM ja foi importada para a sua conta.');
+        question_redirect_query($redirectQuery);
+    }
+
+    try {
+        $question = enem_api_get_question($year, $index, $language !== '' ? $language : null);
+        $disciplineName = enem_api_discipline_name($question['discipline'] ?? null);
+        $disciplineAliases = [
+            $disciplineName,
+            match ((string) ($question['discipline'] ?? '')) {
+                'linguagens' => 'Linguagens, Codigos e suas Tecnologias',
+                'ciencias-humanas' => 'Ciencias Humanas e suas Tecnologias',
+                'ciencias-natureza' => 'Ciencias da Natureza e suas Tecnologias',
+                'matematica' => 'Matematica e suas Tecnologias',
+                default => '',
+            },
+        ];
+        $disciplineId = question_find_or_create_discipline($disciplineName, $disciplineAliases, $userId);
+        $subjectId = question_find_or_create_subject($disciplineId, 'ENEM', $userId);
+        $prompt = enem_api_join_prompt($question);
+        $promptImageUrl = null;
+        $questionFiles = array_values(array_filter((array) ($question['files'] ?? []), static fn(mixed $file): bool => is_string($file) && trim($file) !== ''));
+
+        if ($questionFiles !== []) {
+            $promptImageUrl = $questionFiles[0];
+        }
+
+        $alternatives = [];
+
+        foreach ((array) ($question['alternatives'] ?? []) as $alternative) {
+            $text = enem_api_to_text($alternative['text'] ?? null);
+            $file = trim((string) ($alternative['file'] ?? ''));
+
+            if ($file !== '') {
+                $text = $text !== '' ? $text . ' [Arquivo: ' . $file . ']' : 'Arquivo: ' . $file;
+            }
+
+            if ($text === '') {
+                continue;
+            }
+
+            $alternatives[] = [
+                'text' => $text,
+                'is_correct' => !empty($alternative['isCorrect']) ? 1 : 0,
+            ];
+        }
+
+        if ($prompt === '') {
+            throw new RuntimeException('A API ENEM retornou uma questao sem enunciado utilizavel.');
+        }
+
+        if (count($alternatives) < 2) {
+            throw new RuntimeException('A API ENEM retornou menos de duas alternativas validas.');
+        }
+
+        $allowMultipleCorrect = count(array_filter($alternatives, static fn(array $alternative): bool => $alternative['is_correct'] === 1)) > 1 ? 1 : 0;
+
+        db()->beginTransaction();
+
+        $insert = db()->prepare(
+            'INSERT INTO questions
+             (author_id, based_on_question_id, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, source_name, source_url, source_reference, usage_count, created_at, updated_at)
+             VALUES
+             (:author_id, NULL, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, NULL, NULL, NULL, NULL, NULL, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
+        );
+        $insert->execute([
+            'author_id' => $userId,
+            'title' => trim((string) ($question['title'] ?? 'Questao ENEM ' . $year)),
+            'prompt' => $prompt,
+            'prompt_image_url' => $promptImageUrl,
+            'question_type' => 'multiple_choice',
+            'visibility' => 'private',
+            'discipline_id' => $disciplineId,
+            'subject_id' => $subjectId,
+            'education_level' => 'medio',
+            'difficulty' => 'medio',
+            'status' => 'published',
+            'allow_multiple_correct' => $allowMultipleCorrect,
+            'source_name' => $sourceName,
+            'source_url' => enem_api_source_url($year, $index, $language !== '' ? $language : null),
+            'source_reference' => $sourceReference,
+        ]);
+
+        $questionId = (int) db()->lastInsertId();
+        $insertOption = db()->prepare(
+            'INSERT INTO question_options (question_id, option_text, is_correct, display_order, created_at)
+             VALUES (:question_id, :option_text, :is_correct, :display_order, NOW())'
+        );
+
+        foreach (array_values($alternatives) as $position => $alternative) {
+            $insertOption->execute([
+                'question_id' => $questionId,
+                'option_text' => $alternative['text'],
+                'is_correct' => $alternative['is_correct'],
+                'display_order' => $position + 1,
+            ]);
+        }
+
+        db()->commit();
+        flash('success', 'Questao do ENEM importada para o banco como privada.');
+    } catch (Throwable $throwable) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+
+        flash('error', 'Falha ao importar questao do ENEM: ' . $throwable->getMessage());
+    }
+
+    question_redirect_query($redirectQuery);
 }
