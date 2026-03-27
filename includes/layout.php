@@ -33,7 +33,8 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
                     <?php if ($user): ?>
                         <a href="dashboard.php">Dashboard</a>
                         <a href="questions.php">Questoes</a>
-                        <a href="exams.php">Provas</a>
+                        <a href="exam-create.php">Nova prova</a>
+                        <a href="exams.php">Montagem</a>
                         <a href="enem.php">API ENEM</a>
                         <?php if (can_manage_users()): ?>
                             <a href="users.php">Usuarios</a>

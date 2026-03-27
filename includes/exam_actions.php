@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/exam_metadata.php';
+
 function handle_exam_request(int $userId): void
 {
     if ((string) ($_POST['action'] ?? '') !== 'create_exam') {
@@ -28,6 +30,8 @@ function handle_exam_request(int $userId): void
         redirect('exams.php');
     }
 
+    $metadata = exam_collect_metadata($_POST);
+
     db()->beginTransaction();
 
     try {
@@ -38,7 +42,7 @@ function handle_exam_request(int $userId): void
         $insertExam->execute([
             'user_id' => $userId,
             'title' => $title,
-            'instructions' => $instructions !== '' ? $instructions : null,
+            'instructions' => exam_build_stored_instructions($instructions, $metadata),
         ]);
 
         $examId = (int) db()->lastInsertId();

@@ -83,7 +83,7 @@ try {
     ];
 }
 
-$questionModalOpen = $edit !== null;
+$questionModalOpen = $edit !== null || isset($_GET['new']);
 $draftExamTitle = trim((string) ($_GET['draft_exam_title'] ?? ''));
 $draftExamInstructions = trim((string) ($_GET['draft_exam_instructions'] ?? ''));
 $quickQuestions = array_slice($questions, 0, 4);
@@ -329,7 +329,7 @@ render_header(
                 <div class="workspace-quick-links">
                     <h3>Atalhos rapidos</h3>
                     <?php foreach ($quickQuestions as $quickQuestion): ?>
-                        <a class="workspace-question-link" href="exams.php?question_id=<?= h((string) $quickQuestion['id']) ?>">
+                        <a class="workspace-question-link" href="exam-create.php?question_ids%5B%5D=<?= h((string) $quickQuestion['id']) ?>">
                             <strong><?= h($quickQuestion['title']) ?></strong>
                             <small><?= h($quickQuestion['discipline_name'] ?? 'Sem disciplina') ?> | <?= h(question_type_label($quickQuestion['question_type'])) ?></small>
                         </a>
@@ -357,8 +357,11 @@ render_header(
             <h2>Questoes cadastradas</h2>
         </div>
         <div class="form-actions">
+            <form id="question-bulk-exam-form" method="get" action="exam-create.php" class="inline-actions">
+                <button class="button-secondary" type="submit">Adicionar selecionadas a prova</button>
+            </form>
             <button class="button" type="button" data-open-question-modal>Criar nova questao</button>
-            <a class="ghost-button" href="exams.php">Ir para provas</a>
+            <a class="ghost-button" href="exam-create.php">Nova prova</a>
         </div>
     </div>
 
@@ -372,6 +375,10 @@ render_header(
             <?php foreach ($questions as $question): ?>
                 <article class="question-card question-card-workspace">
                     <span class="question-card-ribbon question-card-ribbon-<?= h($question['visibility']) ?>"><?= h(visibility_label($question['visibility'])) ?></span>
+                    <label class="question-select-toggle">
+                        <input form="question-bulk-exam-form" type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>">
+                        <span>Selecionar para prova</span>
+                    </label>
                     <div class="question-meta">
                         <span class="badge"><?= h(question_type_label($question['question_type'])) ?></span>
                         <span class="badge"><?= h(education_level_label($question['education_level'])) ?></span>
@@ -414,7 +421,7 @@ render_header(
                                 <input type="hidden" name="question_id" value="<?= h((string) $question['id']) ?>">
                                 <button class="<?= (int) $question['is_favorite'] === 1 ? 'button-secondary' : 'ghost-button' ?>" type="submit"><?= (int) $question['is_favorite'] === 1 ? 'Favoritada' : 'Favoritar' ?></button>
                             </form>
-                            <a class="ghost-button" href="exams.php?question_id=<?= h((string) $question['id']) ?>">Usar em prova</a>
+                            <a class="ghost-button" href="exam-create.php?question_ids%5B%5D=<?= h((string) $question['id']) ?>">Usar em prova</a>
                             <?php if ($question['visibility'] === 'public' || (int) $question['author_id'] === $userId): ?>
                                 <form method="post">
                                     <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

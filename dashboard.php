@@ -2,55 +2,70 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/includes/dashboard_repository.php';
 
 require_login();
 
 $user = current_user();
 $metrics = dashboard_metrics($user);
+$recentQuestions = dashboard_recent_questions((int) $user['id'], can_manage_all_questions(), 5);
+$recentExams = dashboard_recent_exams((int) $user['id'], can_manage_all_questions(), 5);
+$publicQuestionsTotal = dashboard_public_questions_total();
+$myQuestionsTotal = dashboard_user_questions_total((int) $user['id']);
 
 render_header(
     'Dashboard',
-    'Painel central para acompanhar usuarios, permissoes, banco de questoes e montagem de provas.'
+    'Centro de controle para acompanhar questoes, provas, publicacao de itens e proximos passos da operacao.'
 );
 ?>
+
 <section class="stats-grid">
     <article>
-        <span class="metric-copy">Usuarios</span>
-        <strong class="metric-number"><?= h((string) $metrics['users']) ?></strong>
-        <p><?= has_role('user') ? 'Seu acesso individual no sistema.' : 'Visao do total de usuarios cadastrados.' ?></p>
-    </article>
-    <article>
-        <span class="metric-copy">Questoes</span>
+        <span class="metric-copy">Total de questoes</span>
         <strong class="metric-number"><?= h((string) $metrics['questions']) ?></strong>
-        <p><?= has_role('user') ? 'Quantidade de questoes criadas pela sua conta.' : 'Volume atual do banco de questoes.' ?></p>
+        <p>Volume atual do banco pronto para busca, reutilizacao e montagem.</p>
     </article>
     <article>
-        <span class="metric-copy">Provas</span>
+        <span class="metric-copy">Total de provas</span>
         <strong class="metric-number"><?= h((string) $metrics['exams']) ?></strong>
-        <p><?= has_role('user') ? 'Quantidade de provas montadas pela sua conta.' : 'Volume atual de provas geradas no sistema.' ?></p>
+        <p>Avaliacoes criadas no ambiente com contador de questoes e exportacao.</p>
+    </article>
+    <article>
+        <span class="metric-copy">Questoes publicas</span>
+        <strong class="metric-number"><?= h((string) $publicQuestionsTotal) ?></strong>
+        <p>Itens compartilhados no banco colaborativo e disponiveis para outras contas.</p>
     </article>
 </section>
 
 <section class="card-grid">
     <article class="panel">
-        <h2>Banco de questoes</h2>
-        <p>Cadastre questoes de multipla escolha, discursivas, verdadeiro ou falso e desenho com classificacao, visibilidade e colaboracao.</p>
+        <h2>Suas questoes</h2>
+        <p><?= h((string) $myQuestionsTotal) ?> itens vinculados a sua conta para edicao, prova e publicacao.</p>
         <div class="form-actions">
-            <a class="button" href="questions.php">Abrir questoes</a>
+            <a class="button" href="questions.php">Abrir workspace</a>
+            <a class="ghost-button" href="questions.php?new=1">Criar questao</a>
+        </div>
+    </article>
+
+    <article class="panel">
+        <h2>Nova prova</h2>
+        <p>Comece pelos dados da avaliacao e siga para a montagem com filtros e selecao direta de questoes.</p>
+        <div class="form-actions">
+            <a class="button-secondary" href="exam-create.php">+ Nova prova</a>
+        </div>
+    </article>
+
+    <article class="panel">
+        <h2>Importacao ENEM</h2>
+        <p>Busque questoes oficiais por ano e idioma e traga para o banco interno como base de trabalho.</p>
+        <div class="form-actions">
+            <a class="ghost-button" href="enem.php">Abrir API ENEM</a>
         </div>
     </article>
 
     <article class="panel">
         <h2>Controle de acesso</h2>
-        <p>
-            <?php if (can_manage_users()): ?>
-                O master admin pode promover usuarios para admin local e acompanhar toda a base.
-            <?php elseif (can_manage_all_questions()): ?>
-                O admin local tem visao operacional ampliada sobre as questoes do sistema.
-            <?php else: ?>
-                Seu perfil atual permite criar e acompanhar suas proprias questoes.
-            <?php endif; ?>
-        </p>
+        <p><?= can_manage_users() ? 'Voce pode administrar usuarios e perfis do sistema.' : (can_manage_all_questions() ? 'Seu perfil acompanha a operacao ampliada do banco de questoes.' : 'Seu perfil atual esta focado na sua producao e nas suas provas.') ?></p>
         <div class="form-actions">
             <?php if (can_manage_users()): ?>
                 <a class="button-secondary" href="users.php">Gerenciar usuarios</a>
@@ -59,45 +74,74 @@ render_header(
             <?php endif; ?>
         </div>
     </article>
+</section>
 
-    <article class="panel">
-        <h2>Montagem de provas</h2>
-        <p>Selecione questoes do banco colaborativo, misture tipos e gere provas com contador automatico de uso.</p>
-        <div class="form-actions">
-            <a class="ghost-button" href="exams.php">Abrir provas</a>
-        </div>
-    </article>
+<section class="split-card">
+    <section>
+        <h2>Provas recentes</h2>
+        <?php if ($recentExams === []): ?>
+            <div class="empty-state">
+                <h2>Nenhuma prova recente</h2>
+                <p>Crie a primeira avaliacao para acompanhar o historico aqui.</p>
+            </div>
+        <?php else: ?>
+            <div class="workspace-quick-list">
+                <?php foreach ($recentExams as $exam): ?>
+                    <article class="workspace-quick-item">
+                        <strong><?= h((string) $exam['title']) ?></strong>
+                        <p><?= h((string) $exam['total_questions']) ?> questoes | <?= h(date('d/m/Y H:i', strtotime((string) $exam['created_at']))) ?></p>
+                        <div class="form-actions">
+                            <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
+                            <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
 
-    <article class="panel">
-        <h2>API ENEM</h2>
-        <p>Consulte provas de 2009 a 2023, navegue pelas questoes oficiais e importe itens direto para o banco interno.</p>
-        <div class="form-actions">
-            <a class="button-secondary" href="enem.php">Explorar API ENEM</a>
-        </div>
-    </article>
+    <section>
+        <h2>Questoes recentes</h2>
+        <?php if ($recentQuestions === []): ?>
+            <div class="empty-state">
+                <h2>Nenhuma questao recente</h2>
+                <p>Crie ou importe uma questao para iniciar o banco.</p>
+            </div>
+        <?php else: ?>
+            <div class="workspace-quick-list">
+                <?php foreach ($recentQuestions as $question): ?>
+                    <article class="workspace-quick-item">
+                        <strong><?= h((string) $question['title']) ?></strong>
+                        <p><?= h(question_type_label((string) $question['question_type'])) ?> | <?= h($question['discipline_name'] ?? 'Sem disciplina') ?></p>
+                        <div class="form-actions">
+                            <span class="badge"><?= h(visibility_label((string) $question['visibility'])) ?></span>
+                            <a class="ghost-button" href="questions.php?edit=<?= h((string) $question['id']) ?>">Abrir</a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
 </section>
 
 <section class="info-grid">
     <article class="panel">
-        <h2>Leitura rapida do sistema</h2>
-        <ul class="mini-list">
-            <li>Usuarios criam e editam as proprias questoes.</li>
-            <li>Admins locais acompanham a operacao do banco de questoes.</li>
-            <li>Master admin gerencia os perfis da plataforma.</li>
-            <li>Provas aproveitam questoes visiveis no banco colaborativo.</li>
-        </ul>
+        <h2>Acoes rapidas</h2>
+        <div class="form-actions">
+            <a class="button" href="exam-create.php">+ Nova prova</a>
+            <a class="button-secondary" href="questions.php?new=1">+ Nova questao</a>
+            <a class="ghost-button" href="enem.php">Importar ENEM</a>
+        </div>
     </article>
 
     <article class="panel">
-        <h2>Acoes sugeridas</h2>
-        <div class="form-actions">
-            <a class="button" href="questions.php">Criar questao</a>
-            <a class="button-secondary" href="exams.php">Montar prova</a>
-            <a class="ghost-button" href="enem.php">Importar do ENEM</a>
-            <?php if (can_manage_users()): ?>
-                <a class="ghost-button" href="users.php">Revisar usuarios</a>
-            <?php endif; ?>
-        </div>
+        <h2>Leitura do sistema</h2>
+        <ul class="mini-list">
+            <li>Questoes entram pelo workspace ou pela importacao ENEM.</li>
+            <li>Provas agora seguem um fluxo separado: criar, montar, visualizar e exportar.</li>
+            <li>O dashboard virou um painel operacional, nao apenas um resumo numerico.</li>
+        </ul>
     </article>
 </section>
+
 <?php render_footer(); ?>

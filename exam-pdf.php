@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/includes/exam_repository.php';
+require_once __DIR__ . '/includes/exam_metadata.php';
 require_once __DIR__ . '/includes/pdf_builder.php';
 require_login();
 
@@ -17,6 +18,9 @@ if (!$exam) {
 }
 
 [$questions, $questionOptions] = exam_questions($examId, $userId);
+$parsed = exam_parse_stored_instructions((string) ($exam['instructions'] ?? ''));
+$metadata = array_replace(exam_default_metadata(), $parsed['metadata']);
+$styleLabel = exam_style_label((string) $metadata['exam_style']);
 
 if ($questions === []) {
     flash('error', 'Essa prova ainda nao possui questoes.');
@@ -25,9 +29,15 @@ if ($questions === []) {
 
 $lines = [];
 $lines = array_merge($lines, pdf_wrap_text('Quest - ' . $exam['title'], 80), ['']);
+$lines = array_merge($lines, pdf_wrap_text('Formato: ' . $styleLabel, 90));
+$lines = array_merge($lines, pdf_wrap_text('Escola: ' . ($metadata['school_name'] !== '' ? $metadata['school_name'] : 'Quest'), 90));
+$lines = array_merge($lines, pdf_wrap_text('Professor: ' . ($metadata['teacher_name'] !== '' ? $metadata['teacher_name'] : '________________'), 90));
+$lines = array_merge($lines, pdf_wrap_text('Comp. Curricular: ' . ($metadata['component_name'] !== '' ? $metadata['component_name'] : '________________'), 90));
+$lines = array_merge($lines, pdf_wrap_text('Aluno(a): ____________________  Ano: ' . ($metadata['year_reference'] !== '' ? $metadata['year_reference'] : '________') . '  Turma: ' . ($metadata['class_name'] !== '' ? $metadata['class_name'] : '________'), 90));
+$lines = array_merge($lines, pdf_wrap_text('Data: ' . ($metadata['application_date'] !== '' ? exam_format_date((string) $metadata['application_date']) : '____/____/______') . '  Assin. Resp.: ____________________  Valor obtido: ______', 90), ['']);
 
-if (!empty($exam['instructions'])) {
-    $lines = array_merge($lines, pdf_wrap_text('Instrucoes: ' . (string) $exam['instructions'], 90), ['']);
+if ($parsed['instructions'] !== '') {
+    $lines = array_merge($lines, pdf_wrap_text('Instrucoes: ' . $parsed['instructions'], 90), ['']);
 }
 
 foreach ($questions as $index => $question) {

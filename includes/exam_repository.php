@@ -1,20 +1,44 @@
 <?php
 declare(strict_types=1);
 
-function exam_available_questions(int $userId): array
+function exam_available_questions(int $userId, array $filters = []): array
 {
-    $statement = db()->prepare(
-        'SELECT questions.id, questions.title, questions.question_type, questions.visibility, questions.usage_count,
-                questions.source_name,
-                disciplines.name AS discipline_name, subjects.name AS subject_name, users.name AS author_name
-         FROM questions
-         INNER JOIN users ON users.id = questions.author_id
-         LEFT JOIN disciplines ON disciplines.id = questions.discipline_id
-         LEFT JOIN subjects ON subjects.id = questions.subject_id
-         WHERE questions.visibility = "public" OR questions.author_id = :author_id
-         ORDER BY questions.created_at DESC'
-    );
-    $statement->execute(['author_id' => $userId]);
+    $query = 'SELECT questions.id, questions.title, questions.question_type, questions.visibility, questions.usage_count,
+                     questions.source_name, questions.education_level, questions.difficulty,
+                     disciplines.name AS discipline_name, subjects.name AS subject_name, users.name AS author_name
+              FROM questions
+              INNER JOIN users ON users.id = questions.author_id
+              LEFT JOIN disciplines ON disciplines.id = questions.discipline_id
+              LEFT JOIN subjects ON subjects.id = questions.subject_id
+              WHERE questions.visibility = "public" OR questions.author_id = :author_id';
+    $params = ['author_id' => $userId];
+
+    if (($filters['term'] ?? '') !== '') {
+        $query .= ' AND (questions.title LIKE :term_title OR questions.prompt LIKE :term_prompt)';
+        $term = '%' . trim((string) $filters['term']) . '%';
+        $params['term_title'] = $term;
+        $params['term_prompt'] = $term;
+    }
+
+    if (($filters['discipline_id'] ?? 0) > 0) {
+        $query .= ' AND questions.discipline_id = :discipline_id';
+        $params['discipline_id'] = (int) $filters['discipline_id'];
+    }
+
+    if (($filters['question_type'] ?? '') !== '' && in_array((string) $filters['question_type'], ['multiple_choice', 'discursive', 'drawing', 'true_false'], true)) {
+        $query .= ' AND questions.question_type = :question_type';
+        $params['question_type'] = (string) $filters['question_type'];
+    }
+
+    if (($filters['visibility'] ?? '') !== '' && in_array((string) $filters['visibility'], ['public', 'private'], true)) {
+        $query .= ' AND questions.visibility = :visibility';
+        $params['visibility'] = (string) $filters['visibility'];
+    }
+
+    $query .= ' ORDER BY questions.created_at DESC';
+
+    $statement = db()->prepare($query);
+    $statement->execute($params);
 
     return $statement->fetchAll();
 }

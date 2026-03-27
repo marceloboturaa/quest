@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const questionModal = document.querySelector('[data-question-modal]');
     const openQuestionModalButtons = document.querySelectorAll('[data-open-question-modal]');
     const closeQuestionModalButtons = document.querySelectorAll('[data-close-question-modal]');
+    const examBuilderForm = document.querySelector('[data-exam-builder-form]');
+    const selectedCount = document.querySelector('[data-selected-count]');
+    const selectedList = document.querySelector('[data-selected-list]');
 
     function setQuestionModalState(isOpen) {
         if (!questionModal) {
@@ -44,6 +47,44 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    function syncExamBuilderSelection() {
+        if (!examBuilderForm || !selectedCount || !selectedList) {
+            return;
+        }
+
+        const checkedItems = Array.from(examBuilderForm.querySelectorAll('[data-exam-question]:checked'));
+        selectedCount.textContent = checkedItems.length + ' questoes selecionadas';
+        selectedList.innerHTML = '';
+
+        if (checkedItems.length === 0) {
+            selectedList.innerHTML = '<div class="workspace-quick-item" data-selected-empty><strong>Nenhuma questao selecionada</strong><p>Marque itens no banco ao lado para montar a prova.</p></div>';
+            return;
+        }
+
+        checkedItems.forEach(function (item, index) {
+            const title = item.dataset.questionTitle || ('Questao ' + (index + 1));
+            const wrapper = document.createElement('div');
+            const heading = document.createElement('strong');
+            const text = document.createElement('p');
+
+            wrapper.className = 'workspace-quick-item';
+            heading.textContent = (index + 1) + '. ' + title;
+            text.textContent = 'Item pronto para entrar na prova atual.';
+            wrapper.appendChild(heading);
+            wrapper.appendChild(text);
+            selectedList.appendChild(wrapper);
+        });
+    }
+
+    if (examBuilderForm) {
+        examBuilderForm.addEventListener('change', function (event) {
+            if (event.target.matches('[data-exam-question]')) {
+                syncExamBuilderSelection();
+            }
+        });
+        syncExamBuilderSelection();
+    }
 
     function optionLabel(index) {
         let label = '';
