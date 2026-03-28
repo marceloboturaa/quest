@@ -2,19 +2,36 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/exam_metadata.php';
+require_once __DIR__ . '/exam_repository.php';
 
 function handle_exam_request(int $userId): void
 {
     $action = (string) ($_POST['action'] ?? '');
 
-    if (!in_array($action, ['create_exam', 'update_exam'], true)) {
+    if (!in_array($action, ['create_exam', 'update_exam', 'delete_exam'], true)) {
         return;
+    }
+
+    if ($action === 'delete_exam') {
+        $examId = (int) ($_POST['exam_id'] ?? 0);
+
+        if ($examId <= 0) {
+            flash('error', 'Prova não encontrada para exclusão.');
+            redirect('dashboard.php');
+        }
+
+        if (!exam_delete($examId, $userId)) {
+            flash('error', 'Não foi possível excluir a prova agora.');
+            redirect('exam-preview.php?id=' . $examId);
+        }
+
+        flash('success', 'Prova excluída com sucesso.');
+        redirect('dashboard.php');
     }
 
     $isUpdate = $action === 'update_exam';
     $examId = (int) ($_POST['exam_id'] ?? 0);
     $title = trim((string) ($_POST['title'] ?? ''));
-    $instructions = trim((string) ($_POST['instructions'] ?? ''));
     $questionIds = array_values(array_unique(array_map('intval', (array) ($_POST['question_ids'] ?? []))));
     $redirectPath = 'exams.php';
 
@@ -45,6 +62,12 @@ function handle_exam_request(int $userId): void
     }
 
     $metadata = exam_collect_metadata($_POST);
+    $sections = exam_merge_sections(exam_default_sections(), $_POST);
+    $orderingMode = (string) ($metadata['ordering_mode'] ?? 'automatic_numbering');
+
+    if ($orderingMode === 'shuffle_questions' && count($questionIds) > 1) {
+        shuffle($questionIds);
+    }
 
     db()->beginTransaction();
 
@@ -61,7 +84,7 @@ function handle_exam_request(int $userId): void
                 'id' => $examId,
                 'user_id' => $userId,
                 'title' => $title,
-                'instructions' => exam_build_stored_instructions($instructions, $metadata),
+                'instructions' => exam_build_stored_content($metadata, $sections),
             ]);
 
             $deleteQuestions = db()->prepare('DELETE FROM exam_questions WHERE exam_id = :exam_id');
@@ -75,7 +98,7 @@ function handle_exam_request(int $userId): void
             $insertExam->execute([
                 'user_id' => $userId,
                 'title' => $title,
-                'instructions' => exam_build_stored_instructions($instructions, $metadata),
+                'instructions' => exam_build_stored_content($metadata, $sections),
             ]);
 
             $examId = (int) db()->lastInsertId();

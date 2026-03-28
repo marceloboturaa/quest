@@ -127,7 +127,7 @@ render_header(
                     <small>Buscar e usar questões já prontas</small>
                 </span>
             </a>
-            <a class="simple-action-card" href="exam-create.php">
+            <a class="simple-action-card" href="exam-library.php">
                 <span class="simple-action-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span>
                 <span>
                     <strong>Montar prova</strong>

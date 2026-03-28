@@ -1,13 +1,13 @@
 # 📁 quest - Project Structure
 
-*Generated on: 28/03/2026, 00:33:19*
+*Generated on: 28/03/2026, 16:15:42*
 
 ## 📋 Quick Overview
 
 | Metric | Value |
 |--------|-------|
 | 📄 Total Files | 59 |
-| 📁 Total Folders | 8 |
+| 📁 Total Folders | 9 |
 | 🌳 Max Depth | 2 levels |
 | 🛠️ Tech Stack | CSS |
 
@@ -20,40 +20,40 @@
 
 ### By File Type
 
-- 📄 **.php** (Other files): 38 files (64.4%)
+- 📄 **.php** (Other files): 39 files (66.1%)
 - 📄 **.sql** (Other files): 3 files (5.1%)
 - 📄 **.txt** (Text files): 3 files (5.1%)
 - 📄 **.** (Other files): 2 files (3.4%)
-- 🌐 **.html** (HTML files): 2 files (3.4%)
 - 📖 **.md** (Markdown files): 2 files (3.4%)
 - 🚫 **.gitignore** (Git ignore): 1 files (1.7%)
 - 🎨 **.css** (Stylesheets): 1 files (1.7%)
+- 🔤 **.ttf** (TrueType fonts): 1 files (1.7%)
 - 🎨 **.svg** (SVG images): 1 files (1.7%)
 - 📜 **.js** (JavaScript files): 1 files (1.7%)
 - ⚙️ **.json** (JSON files): 1 files (1.7%)
 - 📄 **.lock** (Other files): 1 files (1.7%)
+- 🌐 **.html** (HTML files): 1 files (1.7%)
 - 📄 **.zip** (Other files): 1 files (1.7%)
 - 📄 **.ps1** (Other files): 1 files (1.7%)
-- 📕 **.pdf** (PDF files): 1 files (1.7%)
 
 ### By Category
 
-- **Other**: 46 files (78.0%)
-- **Docs**: 6 files (10.2%)
-- **Web**: 2 files (3.4%)
+- **Other**: 47 files (79.7%)
+- **Docs**: 5 files (8.5%)
+- **Assets**: 2 files (3.4%)
 - **DevOps**: 1 files (1.7%)
 - **Styles**: 1 files (1.7%)
-- **Assets**: 1 files (1.7%)
 - **JavaScript**: 1 files (1.7%)
 - **Config**: 1 files (1.7%)
+- **Web**: 1 files (1.7%)
 
 ### 📁 Largest Directories
 
 - **root**: 59 files
-- **includes**: 15 files
-- **storage**: 4 files
-- **assets**: 3 files
+- **includes**: 16 files
+- **assets**: 4 files
 - **scripts**: 3 files
+- **storage**: 2 files
 
 ## 🌳 Directory Structure
 
@@ -64,6 +64,8 @@ quest/
 ├── 📦 assets/
 │   ├── 🎨 css/
 │   │   └── 🎨 app.css
+│   ├── 📂 fonts/
+│   │   └── 🔤 Poppins-Black.ttf
 │   ├── 🖼️ images/
 │   │   └── 🎨 cecmtancredoneves.svg
 │   └── 📂 js/
@@ -91,6 +93,7 @@ quest/
 │   ├── 📄 exam_actions.php
 │   ├── 📄 exam_browser_pdf.php
 │   ├── 📄 exam_document_renderer.php
+│   ├── 📄 exam_examples.php
 │   ├── 📄 exam_metadata.php
 │   ├── 📄 exam_repository.php
 │   ├── 📄 layout.php
@@ -120,10 +123,8 @@ quest/
 ├── 📄 seed_100_questoes_marcelo_botura.sql
 ├── 📂 storage/
 │   ├── 📄 .gitkeep
-│   ├── 📂 pre-import-backups/
+│   └── 📂 pre-import-backups/
 │   │   └── 📄 quest_before_import_20260327_232930.sql
-│   ├── 🌐 test_exam_pdf.html
-│   └── 📕 test_exam_pdf.pdf
 ├── 📄 users.php
 └── 📄 xerox.php
 ```
@@ -134,13 +135,13 @@ quest/
 - 📄 Other: Other files
 - 🚫 DevOps: Git ignore
 - 🎨 Styles: Stylesheets
+- 🔤 Assets: TrueType fonts
 - 🎨 Assets: SVG images
 - 📜 JavaScript: JavaScript files
 - ⚙️ Config: JSON files
 - 📄 Docs: Text files
 - 🌐 Web: HTML files
 - 📖 Docs: Markdown files
-- 📕 Docs: PDF files
 
 ### Importance Levels
 - 🔴 Critical: Essential project files

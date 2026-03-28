@@ -16,9 +16,10 @@ $editingExam = $examId > 0 ? exam_find($examId, $userId) : null;
 $parsedExamData = $editingExam ? exam_parse_stored_instructions($editingExam['instructions'] ?? null) : [
     'metadata' => exam_default_metadata(),
     'instructions' => '',
+    'sections' => exam_default_sections(),
 ];
 $draftTitle = trim((string) ($_GET['draft_title'] ?? ($editingExam['title'] ?? '')));
-$draftInstructions = trim((string) ($_GET['draft_instructions'] ?? $parsedExamData['instructions']));
+$draftSections = exam_merge_sections($parsedExamData['sections'] ?? exam_default_sections(), $_GET, 'draft_');
 $draftMetadata = array_replace($parsedExamData['metadata'], exam_collect_metadata($_GET));
 $preselectedQuestionIds = array_values(array_unique(array_map('intval', array_merge(
     $editingExam ? exam_question_ids($examId, $userId) : [],
@@ -44,6 +45,21 @@ $selectedPreviewQuestions = array_values(array_filter(
     $availableQuestions,
     static fn(array $question): bool => in_array((int) $question['id'], $preselectedQuestionIds, true)
 ));
+$editExamQuery = array_filter(array_merge([
+    'edit' => $editingExam ? $examId : null,
+    'draft_title' => $draftTitle,
+], $draftMetadata, [
+    'draft_header_content' => $draftSections['header'],
+    'draft_body_content' => $draftSections['body'],
+    'draft_footer_content' => $draftSections['footer'],
+    'question_ids' => $preselectedQuestionIds,
+]), static fn(mixed $value): bool => $value !== null && $value !== '');
+$cancelHref = $editingExam ? 'exam-preview.php?id=' . $examId : 'dashboard.php';
+$structureSummary = implode(' | ', array_filter([
+    $draftSections['header'] !== '' ? 'Cabeçalho' : null,
+    $draftSections['body'] !== '' ? 'Corpo' : null,
+    $draftSections['footer'] !== '' ? 'Rodapé' : null,
+])) ?: 'Somente estrutura padrão';
 
 $questionExcerpt = static function (?string $text, int $limit = 170): string {
     $plain = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) $text), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?? '');
@@ -66,36 +82,47 @@ render_header(
 ?>
 
 <section class="simple-stack">
-    <article class="simple-card">
+    <article class="simple-card exam-builder-action-card">
         <div class="simple-card-head">
             <div>
                 <h2><?= h($draftTitle !== '' ? $draftTitle : 'Nova prova') ?></h2>
-                <p class="helper-text">Confira os dados e marque apenas as questões que deseja usar.</p>
+                <p class="helper-text">Escolha questões, edite só a parte necessária e finalize sem sair da montagem.</p>
             </div>
             <div class="simple-action-row">
-                <a class="ghost-button" href="exam-create.php?<?= h(http_build_query(array_filter([
-                    'edit' => $editingExam ? $examId : null,
-                    'draft_title' => $draftTitle,
-                    'draft_instructions' => $draftInstructions,
-                    ...$draftMetadata,
-                    'question_ids' => $preselectedQuestionIds,
-                ], static fn(mixed $value): bool => $value !== null && $value !== ''))) ?>">Editar dados</a>
+                <button class="button" type="submit" form="exam-builder-form"><?= $editingExam ? 'Salvar prova' : 'Salvar prova' ?></button>
+                <a class="button-secondary" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>">Voltar</a>
+                <a class="ghost-button" href="<?= h($cancelHref) ?>">Cancelar</a>
+                <a class="ghost-button" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>#dados-basicos">Editar dados</a>
+                <a class="ghost-button" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>#header-section">Cabeçalho</a>
+                <a class="ghost-button" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>#body-section">Corpo</a>
+                <a class="ghost-button" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>#footer-section">Rodapé</a>
+                <?php if ($editingExam): ?>
+                    <a class="button-secondary" href="exam-preview.php?id=<?= h((string) $examId) ?>">Preview</a>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="simple-inline-list">
-            <span class="badge"><?= h((string) count($preselectedQuestionIds)) ?> selecionadas</span>
+                <span class="badge badge-selected"><?= h((string) count($preselectedQuestionIds)) ?> selecionadas</span>
             <?php foreach (array_slice($metadataSummary, 0, 4) as $item): ?>
                 <span class="badge"><?= h($item['label'] . ': ' . $item['value']) ?></span>
             <?php endforeach; ?>
         </div>
 
-        <?php if ($draftInstructions !== ''): ?>
+        <section class="simple-panel-grid exam-builder-top-grid">
             <div class="simple-note">
-                <strong>Instruções</strong>
-                <p><?= nl2br(h($draftInstructions)) ?></p>
+                <strong>Estrutura editável</strong>
+                <p><?= h($structureSummary) ?></p>
             </div>
-        <?php endif; ?>
+            <div class="simple-note">
+                <strong>Forma escolhida</strong>
+                <p>
+                    <?= h(exam_style_label((string) ($draftMetadata['exam_style'] ?? 'double_column'))) ?><br>
+                    <?= h(exam_response_mode_label((string) ($draftMetadata['response_mode'] ?? 'separate_answer_sheet'))) ?><br>
+                    <?= h(exam_composition_mode_label((string) ($draftMetadata['composition_mode'] ?? 'mixed'))) ?>
+                </p>
+            </div>
+        </section>
     </article>
 
     <article class="simple-card">
@@ -108,7 +135,9 @@ render_header(
                 <input type="hidden" name="exam_id" value="<?= h((string) $examId) ?>">
             <?php endif; ?>
             <input type="hidden" name="draft_title" value="<?= h($draftTitle) ?>">
-            <input type="hidden" name="draft_instructions" value="<?= h($draftInstructions) ?>">
+            <input type="hidden" name="draft_header_content" value="<?= h($draftSections['header']) ?>">
+            <input type="hidden" name="draft_body_content" value="<?= h($draftSections['body']) ?>">
+            <input type="hidden" name="draft_footer_content" value="<?= h($draftSections['footer']) ?>">
             <?php foreach ($draftMetadata as $metaKey => $metaValue): ?>
                 <input type="hidden" name="<?= h($metaKey) ?>" value="<?= h($metaValue) ?>">
             <?php endforeach; ?>
@@ -148,20 +177,24 @@ render_header(
                 <a class="ghost-button" href="exams.php?<?= h(http_build_query(array_filter(array_merge([
                     'exam_id' => $editingExam ? $examId : null,
                     'draft_title' => $draftTitle,
-                    'draft_instructions' => $draftInstructions,
+                    'draft_header_content' => $draftSections['header'],
+                    'draft_body_content' => $draftSections['body'],
+                    'draft_footer_content' => $draftSections['footer'],
                 ], $draftMetadata), static fn(mixed $value): bool => $value !== ''))) ?>">Limpar</a>
             </div>
         </form>
     </article>
 
-    <form method="post" class="simple-stack" data-exam-builder-form>
+    <form method="post" class="simple-stack" data-exam-builder-form id="exam-builder-form">
         <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
         <input type="hidden" name="action" value="<?= $editingExam ? 'update_exam' : 'create_exam' ?>">
         <?php if ($editingExam): ?>
             <input type="hidden" name="exam_id" value="<?= h((string) $examId) ?>">
         <?php endif; ?>
         <input type="hidden" name="title" value="<?= h($draftTitle !== '' ? $draftTitle : 'Nova prova') ?>">
-        <input type="hidden" name="instructions" value="<?= h($draftInstructions) ?>">
+        <input type="hidden" name="header_content" value="<?= h($draftSections['header']) ?>">
+        <input type="hidden" name="body_content" value="<?= h($draftSections['body']) ?>">
+        <input type="hidden" name="footer_content" value="<?= h($draftSections['footer']) ?>">
         <?php foreach ($draftMetadata as $metaKey => $metaValue): ?>
             <input type="hidden" name="<?= h($metaKey) ?>" value="<?= h($metaValue) ?>">
         <?php endforeach; ?>
@@ -169,7 +202,7 @@ render_header(
         <article class="simple-card">
             <div class="simple-card-head">
                 <h2>Questões selecionadas</h2>
-                <span class="badge" data-selected-count><?= h((string) count($preselectedQuestionIds)) ?> selecionadas</span>
+                <span class="badge badge-selected" data-selected-count><?= h((string) count($preselectedQuestionIds)) ?> selecionadas</span>
             </div>
 
             <div class="simple-list" data-selected-list>
@@ -205,8 +238,14 @@ render_header(
             <?php else: ?>
                 <div class="simple-list">
                     <?php foreach ($availableQuestions as $question): ?>
-                        <?php $isPreselected = in_array((int) $question['id'], $preselectedQuestionIds, true); ?>
-                        <label class="simple-question-picker">
+                        <?php
+                        $isPreselected = in_array((int) $question['id'], $preselectedQuestionIds, true);
+                        $visibility = (string) $question['visibility'];
+                        $pickerClass = 'simple-question-picker ' . ($visibility === 'public' ? 'is-public' : 'is-private');
+                        $visibilityBadgeClass = $visibility === 'public' ? 'badge badge-public' : 'badge badge-private';
+                        $visibilityIconClass = $visibility === 'public' ? 'fa-solid fa-earth-americas' : 'fa-solid fa-lock';
+                        ?>
+                        <label class="<?= h($pickerClass) ?>">
                             <input
                                 type="checkbox"
                                 name="question_ids[]"
@@ -221,7 +260,10 @@ render_header(
                                     <span class="simple-inline-list">
                                         <span class="badge"><?= h(question_type_label((string) $question['question_type'])) ?></span>
                                         <span class="badge"><?= h($question['discipline_name'] ?? 'Sem disciplina') ?></span>
-                                        <span class="badge"><?= h(visibility_label((string) $question['visibility'])) ?></span>
+                                        <span class="<?= h($visibilityBadgeClass) ?>">
+                                            <i class="<?= h($visibilityIconClass) ?>" aria-hidden="true"></i>
+                                            <?= h(visibility_label($visibility)) ?>
+                                        </span>
                                     </span>
                                 </span>
                                 <strong><?= h($question['title']) ?></strong>
@@ -241,9 +283,19 @@ render_header(
 
         <div class="simple-action-row">
             <button class="button" type="submit" data-submit-exam-builder><?= $editingExam ? 'Atualizar prova' : 'Salvar prova' ?></button>
-            <a class="button-secondary" href="exam-create.php<?= $editingExam ? '?edit=' . h((string) $examId) : '' ?>">Voltar</a>
+            <a class="button-secondary" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>">Voltar para edição</a>
+            <a class="ghost-button" href="<?= h($cancelHref) ?>">Cancelar</a>
         </div>
     </form>
+
+    <?php if ($editingExam): ?>
+        <form method="post" class="simple-action-row">
+            <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="delete_exam">
+            <input type="hidden" name="exam_id" value="<?= h((string) $examId) ?>">
+            <button class="button-danger" type="submit" onclick="return confirm('Excluir esta prova?');">Excluir prova</button>
+        </form>
+    <?php endif; ?>
 </section>
 
 <?php render_footer(); ?>

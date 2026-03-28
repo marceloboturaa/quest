@@ -10,6 +10,7 @@ if (current_user() !== null) {
 render_header(
     'Quest',
     '',
+    false,
     false
 );
 ?>
@@ -44,6 +45,14 @@ render_header(
         <p class="home-minimal-status">
             Ajustando <span data-construction-word>detalhes</span><span class="home-minimal-dots" data-construction-dots>...</span>
         </p>
+        <div class="home-minimal-progress" aria-hidden="true">
+            <span class="home-minimal-progress-bar"></span>
+        </div>
+        <div class="home-minimal-signal" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
         <div class="home-actions form-actions">
             <a class="button" href="login.php">Entrar</a>
             <a class="ghost-button" href="register.php">Criar conta</a>

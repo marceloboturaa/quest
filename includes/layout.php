@@ -15,10 +15,19 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48x48.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+    <meta name="theme-color" content="#1e293b">
     <title><?= h($title . ' | Quest') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Inter:wght@500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?= h(asset_url('assets/css/app.css')) ?>">
 </head>
@@ -52,7 +61,7 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
                         <div class="topbar-nav-group">
                             <a class="<?= $isActive(['dashboard.php']) ? 'is-active' : '' ?>" href="dashboard.php"><i class="fa-solid fa-house nav-link-icon" aria-hidden="true"></i><span>Início</span></a>
                             <a class="<?= $isActive(['questions.php', 'enem.php']) ? 'is-active' : '' ?>" href="questions.php"><i class="fa-solid fa-lightbulb nav-link-icon" aria-hidden="true"></i><span>Questões</span></a>
-                            <a class="<?= $isActive(['exam-create.php', 'exams.php', 'exam-preview.php', 'exam-pdf.php']) ? 'is-active' : '' ?>" href="exam-create.php"><i class="fa-solid fa-file-circle-plus nav-link-icon" aria-hidden="true"></i><span>Provas</span></a>
+                            <a class="<?= $isActive(['exam-library.php', 'exam-create.php', 'exams.php', 'exam-preview.php', 'exam-pdf.php']) ? 'is-active' : '' ?>" href="exam-library.php"><i class="fa-solid fa-file-circle-plus nav-link-icon" aria-hidden="true"></i><span>Provas</span></a>
                             <a class="<?= $isActive(['xerox.php']) ? 'is-active' : '' ?>" href="xerox.php"><i class="fa-solid fa-print nav-link-icon" aria-hidden="true"></i><span>Xerox</span></a>
                             <?php if (can_manage_backups()): ?>
                                 <a class="<?= $isActive(['backup.php']) ? 'is-active' : '' ?>" href="backup.php"><i class="fa-solid fa-cloud-arrow-up nav-link-icon" aria-hidden="true"></i><span>Backup</span></a>

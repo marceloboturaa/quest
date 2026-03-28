@@ -26,7 +26,7 @@ render_header(
         </div>
         <div class="simple-action-row">
             <a class="button" href="question-editor.php?new=1">Nova questão</a>
-            <a class="button-secondary" href="exam-create.php">Nova prova</a>
+            <a class="button-secondary" href="exam-library.php">Provas</a>
             <a class="ghost-button" href="question-bank.php">Banco de questões</a>
             <a class="ghost-button" href="xerox.php">Xerox</a>
         </div>
@@ -71,7 +71,7 @@ render_header(
         <article class="simple-card">
             <div class="simple-card-head">
                 <h2>Provas recentes</h2>
-                <a class="ghost-button" href="exam-create.php">Nova prova</a>
+                <a class="ghost-button" href="exam-library.php">Central de provas</a>
             </div>
             <?php if ($recentExams === []): ?>
                 <div class="empty-state">

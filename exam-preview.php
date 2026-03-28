@@ -55,6 +55,16 @@ if (is_post()) {
         flash('success', 'Prova reenviada para o setor Xerox.');
         redirect('exam-preview.php?id=' . $examId);
     }
+
+    if ($action === 'delete_exam') {
+        if (!exam_delete($examId, (int) $user['id'])) {
+            flash('error', 'Nao foi possivel excluir essa prova.');
+            redirect('exam-preview.php?id=' . $examId);
+        }
+
+        flash('success', 'Prova excluida com sucesso.');
+        redirect('dashboard.php');
+    }
 }
 
 $exam = $examId > 0 ? exam_find_accessible($examId, $user) : null;
@@ -66,7 +76,10 @@ if (!$exam) {
 
 [$questions, $questionOptions] = exam_questions_for_view($examId);
 $document = exam_document_view_data($exam, $questions, $questionOptions);
-$metadataSummary = $document['metadata_summary'];
+$metadataSummary = array_values(array_filter(
+    $document['metadata_summary'],
+    static fn(array $item): bool => in_array((string) ($item['label'] ?? ''), ['Tipo', 'Professor', 'Turma', 'Data', 'Versão'], true)
+));
 $xeroxStatus = (string) ($exam['xerox_status'] ?? 'not_sent');
 $isExamOwner = (int) $exam['user_id'] === (int) $user['id'];
 $xeroxButtonLabel = $xeroxStatus === 'sent'
@@ -75,7 +88,7 @@ $xeroxButtonLabel = $xeroxStatus === 'sent'
 
 render_header(
     'Visualizacao da prova',
-    'Confira o cabecalho, a ordem das questoes e o formato de impressao antes de exportar.'
+    'Confira cabecalho, corpo, rodape e a ordem das questoes antes de exportar.'
 );
 ?>
 
@@ -91,7 +104,11 @@ render_header(
         </div>
         <div class="form-actions">
             <?php if ($isExamOwner): ?>
-                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>">Editar prova</a>
+                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#dados-basicos">Editar dados</a>
+                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#header-section">Cabeçalho</a>
+                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#body-section">Corpo</a>
+                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#footer-section">Rodapé</a>
+                <a class="ghost-button" href="exams.php?exam_id=<?= h((string) $exam['id']) ?>">Questões</a>
             <?php endif; ?>
             <a class="ghost-button" href="<?= $isExamOwner ? 'exams.php' : 'xerox.php' ?>">Voltar</a>
             <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Abrir PDF</a>
@@ -119,6 +136,14 @@ render_header(
                 <?php else: ?>
                     <span class="badge <?= h(xerox_status_badge_class($xeroxStatus)) ?>"><?= h($xeroxButtonLabel) ?></span>
                 <?php endif; ?>
+
+                <?php if ($xeroxStatus !== 'in_progress'): ?>
+                    <form method="post" class="inline-actions">
+                        <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="delete_exam">
+                        <button class="button-danger" type="submit" onclick="return confirm('Excluir esta prova?');">Excluir</button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
@@ -142,6 +167,14 @@ render_header(
             <p class="helper-text">Se precisar de nova impressao, use o botao Reenviar Xerox.</p>
         <?php endif; ?>
     </div>
+
+    <?php if ($metadataSummary !== []): ?>
+        <div class="simple-inline-list exam-preview-meta-badges">
+            <?php foreach (array_slice($metadataSummary, 0, 8) as $item): ?>
+                <span class="badge"><?= h($item['label'] . ': ' . $item['value']) ?></span>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 
     <?= exam_document_render_sheet($document) ?>
 </section>

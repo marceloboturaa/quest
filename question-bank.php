@@ -177,6 +177,11 @@ render_header(
     <?php else: ?>
         <section class="simple-list">
             <?php foreach ($questions as $question): ?>
+                <?php
+                $visibility = (string) $question['visibility'];
+                $visibilityBadgeClass = $visibility === 'public' ? 'badge badge-public' : 'badge badge-private';
+                $visibilityIconClass = $visibility === 'public' ? 'fa-solid fa-earth-americas' : 'fa-solid fa-lock';
+                ?>
                 <article class="simple-list-card">
                     <div class="simple-list-card-top">
                         <label class="question-select-toggle">
@@ -184,7 +189,10 @@ render_header(
                             <span>Selecionar</span>
                         </label>
                         <div class="simple-inline-list">
-                            <span class="badge"><?= h(visibility_label((string) $question['visibility'])) ?></span>
+                            <span class="<?= h($visibilityBadgeClass) ?>">
+                                <i class="<?= h($visibilityIconClass) ?>" aria-hidden="true"></i>
+                                <?= h(visibility_label($visibility)) ?>
+                            </span>
                             <span class="badge"><?= h(question_type_label((string) $question['question_type'])) ?></span>
                             <?php if (!empty($question['discipline_name'])): ?>
                                 <span class="badge"><?= h((string) $question['discipline_name']) ?></span>

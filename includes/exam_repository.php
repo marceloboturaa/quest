@@ -127,3 +127,47 @@ function exam_question_ids(int $examId, int $userId): array
 
     return array_map(static fn(array $row): int => (int) $row['question_id'], $statement->fetchAll());
 }
+
+function exam_delete(int $examId, int $userId): bool
+{
+    $exam = exam_find($examId, $userId);
+
+    if ($exam === null) {
+        return false;
+    }
+
+    if (in_array((string) ($exam['xerox_status'] ?? 'not_sent'), ['in_progress'], true)) {
+        return false;
+    }
+
+    $questionIds = exam_question_ids($examId, $userId);
+    db()->beginTransaction();
+
+    try {
+        $deleteQuestions = db()->prepare('DELETE FROM exam_questions WHERE exam_id = :exam_id');
+        $deleteQuestions->execute(['exam_id' => $examId]);
+
+        $deleteExam = db()->prepare('DELETE FROM exams WHERE id = :id AND user_id = :user_id');
+        $deleteExam->execute([
+            'id' => $examId,
+            'user_id' => $userId,
+        ]);
+
+        if ($deleteExam->rowCount() !== 1) {
+            db()->rollBack();
+            return false;
+        }
+
+        if ($questionIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($questionIds), '?'));
+            $decreaseUsage = db()->prepare("UPDATE questions SET usage_count = GREATEST(usage_count - 1, 0) WHERE id IN ($placeholders)");
+            $decreaseUsage->execute($questionIds);
+        }
+
+        db()->commit();
+        return true;
+    } catch (Throwable $throwable) {
+        db()->rollBack();
+        return false;
+    }
+}

@@ -59,6 +59,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (examMetaForm) {
+        const examCreateNavLinks = examMetaForm.ownerDocument.querySelectorAll('.exam-create-nav-link');
+
+        function openDisclosureFromHash(hash) {
+            if (!hash || hash.charAt(0) !== '#') {
+                return;
+            }
+
+            const target = examMetaForm.ownerDocument.querySelector(hash);
+
+            if (target && target.tagName === 'DETAILS') {
+                target.open = true;
+            }
+        }
+
         const summaryFields = examMetaForm.ownerDocument.querySelectorAll('[data-summary-field]');
 
         function formatDate(value) {
@@ -77,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function resolvedSummaryValue(name) {
             const values = {
+                draft_title: fieldValue('draft_title') || 'Não informado',
                 exam_label: fieldValue('exam_label') || 'AVALIAÇÃO',
                 school_name: fieldValue('school_name') || 'COLÉGIO / ESCOLA',
                 teacher_name: fieldValue('teacher_name') || 'Professor não informado',
@@ -84,10 +99,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 year_reference: fieldValue('year_reference') || 'Não informado',
                 class_name: fieldValue('class_name') || 'Não informado',
                 application_date: formatDate(fieldValue('application_date')),
-                discipline: fieldValue('discipline') || 'Não informada'
+                discipline: fieldValue('discipline') || 'Não informada',
+                exam_style_label: (examMetaForm.querySelector('[name="exam_style"] option:checked')?.textContent || 'Não informada').trim()
             };
 
             return values[name] || '';
+        }
+
+        function syncSummaryVisibility() {
+            const toggles = examMetaForm.querySelectorAll('[data-summary-visibility-toggle]');
+
+            toggles.forEach(function (toggle) {
+                const target = toggle.getAttribute('data-summary-visibility-toggle') || '';
+                const summaryItem = examMetaForm.ownerDocument.querySelector('[data-summary-item="' + target + '"]');
+
+                if (!summaryItem) {
+                    return;
+                }
+
+                summaryItem.hidden = !toggle.checked;
+            });
         }
 
         function syncExamHeaderSummary() {
@@ -95,11 +126,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 const key = field.dataset.summaryField || '';
                 field.textContent = resolvedSummaryValue(key);
             });
+
+            syncSummaryVisibility();
         }
 
         examMetaForm.addEventListener('input', syncExamHeaderSummary);
         examMetaForm.addEventListener('change', syncExamHeaderSummary);
         syncExamHeaderSummary();
+
+        examCreateNavLinks.forEach(function (link) {
+            link.addEventListener('click', function () {
+                openDisclosureFromHash(link.getAttribute('href') || '');
+            });
+        });
+
+        openDisclosureFromHash(window.location.hash);
     }
 
     if (xeroxSwitcher) {
