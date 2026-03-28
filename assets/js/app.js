@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuPanel = document.querySelector('[data-menu-panel]');
     const topbar = document.querySelector('.topbar');
     const examMetaForm = document.querySelector('[data-exam-meta-form]');
+    const xeroxSwitcher = document.querySelector('[data-xerox-switcher]');
 
     if (menuToggle && menuPanel && topbar) {
         menuToggle.addEventListener('click', function () {
@@ -101,6 +102,34 @@ document.addEventListener('DOMContentLoaded', function () {
         syncExamHeaderSummary();
     }
 
+    if (xeroxSwitcher) {
+        const switchButtons = Array.from(xeroxSwitcher.querySelectorAll('[data-xerox-switch]'));
+        const panels = Array.from(document.querySelectorAll('[data-xerox-panel]'));
+        const defaultPanel = xeroxSwitcher.dataset.defaultPanel || (switchButtons[0]?.dataset.xeroxSwitch ?? '');
+
+        function activateXeroxPanel(panelName) {
+            switchButtons.forEach(function (button) {
+                const isActive = button.dataset.xeroxSwitch === panelName;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+
+            panels.forEach(function (panel) {
+                panel.toggleAttribute('hidden', panel.dataset.xeroxPanel !== panelName);
+            });
+        }
+
+        switchButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                activateXeroxPanel(button.dataset.xeroxSwitch || '');
+            });
+        });
+
+        if (defaultPanel !== '') {
+            activateXeroxPanel(defaultPanel);
+        }
+    }
+
     function setQuestionModalState(isOpen) {
         if (!questionModal) {
             return;
@@ -152,32 +181,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         allItems.forEach(function (item) {
-            const stateLabel = item.parentElement?.querySelector('.exam-question-picker-check');
+            const stateLabel = item.parentElement?.querySelector('.exam-question-picker-check, .simple-question-picker-state');
 
             if (stateLabel) {
                 stateLabel.textContent = item.checked ? 'Selecionada' : 'Selecionar';
             }
         });
 
-        selectedCount.textContent = checkedItems.length + ' questoes selecionadas';
+        selectedCount.textContent = checkedItems.length + ' selecionadas';
         selectedList.innerHTML = '';
 
         if (checkedItems.length === 0) {
-            selectedList.innerHTML = '<div class="workspace-quick-item" data-selected-empty><strong>Nenhuma questao selecionada</strong><p>Marque itens no banco ao lado para montar a prova.</p></div>';
+            selectedList.innerHTML = '<div class="empty-state" data-selected-empty><h2>Nenhuma questão selecionada</h2><p>Marque as questões abaixo para montar a prova.</p></div>';
             return;
         }
 
         checkedItems.forEach(function (item, index) {
             const title = item.dataset.questionTitle || ('Questao ' + (index + 1));
-            const wrapper = document.createElement('div');
+            const wrapper = document.createElement('article');
             const heading = document.createElement('strong');
             const text = document.createElement('p');
 
-            wrapper.className = 'workspace-quick-item';
+            wrapper.className = 'simple-list-item';
             heading.textContent = (index + 1) + '. ' + title;
-            text.textContent = 'Item pronto para entrar na prova atual.';
-            wrapper.appendChild(heading);
-            wrapper.appendChild(text);
+            text.textContent = 'Pronta para entrar na prova.';
+            const copy = document.createElement('div');
+            copy.appendChild(heading);
+            copy.appendChild(text);
+            wrapper.appendChild(copy);
             selectedList.appendChild(wrapper);
         });
     }
@@ -202,6 +233,341 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return label;
+    }
+
+    function normalizeEditorText(text, singleLine = false) {
+        let normalized = String(text || '')
+            .replace(/\r\n?/g, '\n')
+            .replace(/\u00a0|\u2007|\u202f/g, ' ')
+            .replace(/[\u200b-\u200d\ufeff]/g, '')
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n');
+
+        normalized = normalized.replace(
+            /(^|[^\d])(\d)\s*(\d)\s*\\(?:d)?frac\s*\{\s*\2\s*\}\s*\{\s*\3\s*\}\s*\3\s*\2(?!\d)/g,
+            function (match, prefix, numerator, denominator) {
+                return prefix + '\\frac{' + numerator + '}{' + denominator + '}';
+            }
+        ).trim();
+
+        if (singleLine) {
+            normalized = normalized.replace(/\s+/g, ' ').trim();
+        }
+
+        return normalized;
+    }
+
+    function convertScriptText(text, mode) {
+        const maps = {
+            sup: {
+                '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+                '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', 'n': 'ⁿ', 'i': 'ⁱ'
+            },
+            sub: {
+                '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+                '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎', 'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ',
+                'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ',
+                'v': 'ᵥ', 'x': 'ₓ'
+            }
+        };
+        const map = maps[mode] || {};
+        let converted = '';
+
+        for (const char of String(text || '')) {
+            if (!Object.prototype.hasOwnProperty.call(map, char)) {
+                return mode === 'sup' ? '^(' + text + ')' : '_(' + text + ')';
+            }
+
+            converted += map[char];
+        }
+
+        return converted;
+    }
+
+    function scriptModeFromElement(node) {
+        if (!(node instanceof HTMLElement)) {
+            return '';
+        }
+
+        const verticalAlign = (node.style?.verticalAlign || '').toLowerCase();
+        const className = (node.className || '').toString().toLowerCase();
+
+        if (verticalAlign === 'super' || className.includes('superscript')) {
+            return 'sup';
+        }
+
+        if (verticalAlign === 'sub' || className.includes('subscript')) {
+            return 'sub';
+        }
+
+        return '';
+    }
+
+    function listItemPrefix(node) {
+        const parent = node.parentElement;
+
+        if (!parent || parent.tagName.toLowerCase() !== 'ol') {
+            return '- ';
+        }
+
+        const items = Array.from(parent.children).filter(function (child) {
+            return child.tagName && child.tagName.toLowerCase() === 'li';
+        });
+        const index = items.indexOf(node);
+        const start = Number.parseInt(parent.getAttribute('start') || '1', 10);
+        const resolvedStart = Number.isNaN(start) ? 1 : start;
+
+        return String(resolvedStart + Math.max(index, 0)) + '. ';
+    }
+
+    function hiddenRichNode(node) {
+        if (!(node instanceof HTMLElement)) {
+            return false;
+        }
+
+        const className = (node.className || '').toString().toLowerCase();
+
+        return node.hidden
+            || node.getAttribute('aria-hidden') === 'true'
+            || className.includes('katex-html')
+            || className.includes('mjx-assistive-mml')
+            || className.includes('mathjax-preview')
+            || className.includes('sr-only')
+            || className.includes('screen-reader')
+            || className.includes('visually-hidden');
+    }
+
+    function extractMathText(node) {
+        if (!(node instanceof Element)) {
+            return '';
+        }
+
+        const tag = node.tagName.toLowerCase();
+        const className = (node.className || '').toString().toLowerCase();
+        const annotation = node.matches('annotation')
+            ? node
+            : node.querySelector('annotation[encoding*="tex"]');
+
+        if (annotation && annotation.textContent) {
+            return normalizeEditorText(annotation.textContent, true);
+        }
+
+        if (tag === 'math') {
+            return normalizeEditorText(node.textContent || '', true);
+        }
+
+        if (className.includes('katex') || className.includes('mathjax') || tag === 'mjx-container') {
+            const ariaLabel = node.getAttribute('aria-label') || '';
+
+            if (ariaLabel.trim() !== '') {
+                return normalizeEditorText(ariaLabel, true);
+            }
+
+            const assistiveMath = node.querySelector('math');
+
+            if (assistiveMath && assistiveMath.textContent) {
+                return normalizeEditorText(assistiveMath.textContent, true);
+            }
+        }
+
+        return '';
+    }
+
+    function serializeRichNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent || '';
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return '';
+        }
+
+        const tag = node.tagName.toLowerCase();
+        const className = (node.className || '').toString().toLowerCase();
+
+        if (hiddenRichNode(node)) {
+            return '';
+        }
+
+        const extractedMath = extractMathText(node);
+
+        if (extractedMath !== '') {
+            if (className.includes('katex-display') || className.includes('math-display')) {
+                return '\n' + extractedMath + '\n';
+            }
+
+            return extractedMath;
+        }
+
+        if (tag === 'br') {
+            return '\n';
+        }
+
+        if (tag === 'sup') {
+            return convertScriptText(serializeRichChildren(node), 'sup');
+        }
+
+        if (tag === 'sub') {
+            return convertScriptText(serializeRichChildren(node), 'sub');
+        }
+
+        const inferredScriptMode = scriptModeFromElement(node);
+
+        if (inferredScriptMode !== '') {
+            return convertScriptText(serializeRichChildren(node), inferredScriptMode);
+        }
+
+        if (tag === 'li') {
+            return listItemPrefix(node) + normalizeEditorText(serializeRichChildren(node)) + '\n';
+        }
+
+        if (tag === 'ul' || tag === 'ol') {
+            return '\n' + Array.from(node.childNodes).map(serializeRichNode).join('') + '\n';
+        }
+
+        if (tag === 'tr') {
+            const cells = Array.from(node.children).map(function (cell) {
+                return normalizeEditorText(serializeRichChildren(cell));
+            }).filter(Boolean);
+
+            return cells.join(' | ') + '\n';
+        }
+
+        if (tag === 'table') {
+            return '\n' + Array.from(node.childNodes).map(serializeRichNode).join('') + '\n';
+        }
+
+        if (tag === 'pre' || tag === 'code') {
+            return '\n' + (node.textContent || '') + '\n';
+        }
+
+        const blockTags = ['p', 'div', 'section', 'article', 'header', 'footer', 'aside', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+        const content = serializeRichChildren(node);
+
+        if (blockTags.includes(tag)) {
+            return '\n' + content + '\n';
+        }
+
+        return content;
+    }
+
+    function serializeRichChildren(node) {
+        return Array.from(node.childNodes).map(serializeRichNode).join('');
+    }
+
+    function htmlToStructuredText(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        return normalizeEditorText(serializeRichChildren(doc.body));
+    }
+
+    function escapeHtml(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderMathFragmentsHtml(text) {
+        return escapeHtml(text).replace(
+            /\\(?:d)?frac\s*\{\s*([^{}]+?)\s*\}\s*\{\s*([^{}]+?)\s*\}/g,
+            function (_, numerator, denominator) {
+                return '<span class="math-fraction" aria-label="' + escapeHtml(numerator.trim()) + ' sobre ' + escapeHtml(denominator.trim()) + '">'
+                    + '<span class="math-fraction-top">' + escapeHtml(numerator.trim()) + '</span>'
+                    + '<span class="math-fraction-bottom">' + escapeHtml(denominator.trim()) + '</span>'
+                    + '</span>';
+            }
+        );
+    }
+
+    function isMathExpressionLine(line) {
+        const value = String(line || '').trim();
+
+        if (!value) {
+            return false;
+        }
+
+        if (!/(=|\\(?:d)?frac|\^|[+\-*/]=?|\b[a-z]\([^)]*\))/i.test(value) && !/^[a-z]$/i.test(value)) {
+            return false;
+        }
+
+        if (/[!?;]/.test(value)) {
+            return false;
+        }
+
+        const words = value.match(/[A-Za-zÀ-ÿ]+/g) || [];
+        return words.length <= 6;
+    }
+
+    function renderFormattedPreviewHtml(text) {
+        const normalized = normalizeEditorText(text);
+
+        if (!normalized) {
+            return 'A previa do enunciado aparece aqui.';
+        }
+
+        return normalized.split('\n').map(function (line) {
+            const rendered = renderMathFragmentsHtml(line);
+            return isMathExpressionLine(line)
+                ? '<span class="math-expression-block">' + rendered + '</span>'
+                : rendered;
+        }).join('<br>');
+    }
+
+    function insertTextAtCursor(field, text) {
+        const start = field.selectionStart ?? field.value.length;
+        const end = field.selectionEnd ?? field.value.length;
+        const before = field.value.slice(0, start);
+        const after = field.value.slice(end);
+        field.value = before + text + after;
+        const caret = start + text.length;
+        field.setSelectionRange(caret, caret);
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function autoResizeTextarea(field) {
+        if (!(field instanceof HTMLTextAreaElement)) {
+            return;
+        }
+
+        field.style.height = 'auto';
+        field.style.height = Math.min(field.scrollHeight, 520) + 'px';
+    }
+
+    function bindRichPasteField(field) {
+        if (!field || field.dataset.richPasteBound === '1') {
+            return;
+        }
+
+        field.dataset.richPasteBound = '1';
+
+        if (field instanceof HTMLTextAreaElement) {
+            autoResizeTextarea(field);
+            field.addEventListener('input', function () {
+                autoResizeTextarea(field);
+            });
+        }
+
+        field.addEventListener('paste', function (event) {
+            const clipboard = event.clipboardData;
+
+            if (!clipboard) {
+                return;
+            }
+
+            const html = clipboard.getData('text/html');
+            const plainText = clipboard.getData('text/plain');
+            const normalized = html ? htmlToStructuredText(html) : normalizeEditorText(plainText);
+
+            if (!normalized) {
+                return;
+            }
+
+            event.preventDefault();
+            insertTextAtCursor(field, normalized);
+        });
     }
 
     function syncSubjectSelect(sourceSelect) {
@@ -249,6 +615,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const drawingCustomField = questionForm.querySelector('[data-drawing-custom-field]');
     const optionsContainer = questionForm.querySelector('[data-options-container]');
     const addOptionButton = questionForm.querySelector('[data-add-option]');
+    const promptField = questionForm.querySelector('[data-question-preview-source]');
+    const titleField = questionForm.querySelector('[data-question-preview-title-source]');
+    const previewOutput = questionForm.querySelector('[data-question-preview-output]');
+    const previewTitle = questionForm.querySelector('[data-question-preview-title]');
+    const previewType = questionForm.querySelector('[data-question-preview-type]');
+    const previewVisibility = questionForm.querySelector('[data-question-preview-visibility]');
+    const previewDiscipline = questionForm.querySelector('[data-question-preview-discipline]');
+    const previewSubject = questionForm.querySelector('[data-question-preview-subject]');
+    const visibilityField = questionForm.querySelector('[data-question-summary-visibility]');
+    const disciplineField = questionForm.querySelector('[data-question-summary-discipline]');
+    const subjectField = questionForm.querySelector('[data-question-summary-subject]');
     const template = document.getElementById('question-option-template');
     let nextOptionIndex = Number.parseInt(questionForm.dataset.nextOptionIndex || '0', 10);
 
@@ -281,12 +658,54 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function updateQuestionPreview() {
+        if (promptField && previewOutput) {
+            previewOutput.innerHTML = renderFormattedPreviewHtml(promptField.value);
+        }
+
+        if (titleField && previewTitle) {
+            const normalizedTitle = normalizeEditorText(titleField.value, true);
+            previewTitle.textContent = normalizedTitle || 'Titulo da questao';
+        }
+
+        if (typeField && previewType) {
+            previewType.textContent = typeField.options[typeField.selectedIndex]?.text || 'Sem tipo';
+        }
+
+        if (visibilityField && previewVisibility) {
+            previewVisibility.textContent = visibilityField.options[visibilityField.selectedIndex]?.text || 'Sem visibilidade';
+        }
+
+        if (disciplineField && previewDiscipline) {
+            previewDiscipline.textContent = disciplineField.options[disciplineField.selectedIndex]?.text || 'Sem disciplina';
+        }
+
+        if (subjectField && previewSubject) {
+            previewSubject.textContent = subjectField.options[subjectField.selectedIndex]?.text || 'Sem assunto';
+        }
+    }
+
+    function bindPreviewSync(field) {
+        if (!field) {
+            return;
+        }
+
+        field.addEventListener('input', updateQuestionPreview);
+        field.addEventListener('change', updateQuestionPreview);
+    }
+
     function addOptionRow() {
         const markup = template.innerHTML
             .replace(/__INDEX__/g, String(nextOptionIndex))
             .replace(/__LABEL__/g, optionLabel(optionsContainer.children.length));
 
         optionsContainer.insertAdjacentHTML('beforeend', markup);
+        const lastField = optionsContainer.lastElementChild?.querySelector('[data-rich-paste]');
+
+        if (lastField) {
+            bindRichPasteField(lastField);
+        }
+
         nextOptionIndex += 1;
         refreshOptionLabels();
     }
@@ -318,6 +737,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (drawingSizeSelect) {
         drawingSizeSelect.addEventListener('change', toggleDrawingCustomField);
     }
+    questionForm.querySelectorAll('[data-rich-paste]').forEach(function (field) {
+        bindRichPasteField(field);
+    });
+    bindPreviewSync(promptField);
+    bindPreviewSync(titleField);
+    bindPreviewSync(typeField);
+    bindPreviewSync(visibilityField);
+    bindPreviewSync(disciplineField);
+    bindPreviewSync(subjectField);
+    updateQuestionPreview();
     toggleQuestionSections();
     refreshOptionLabels();
 });

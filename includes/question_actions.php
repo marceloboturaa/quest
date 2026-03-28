@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 function question_redirect(?int $editId = null): never
 {
-    redirect('questions.php' . ($editId ? '?edit=' . $editId : ''));
+    redirect('question-bank.php' . ($editId ? '?edit=' . $editId : ''));
 }
 
 function question_redirect_query(string $query = ''): never
 {
     $query = ltrim(trim($query), '?');
-    redirect('questions.php' . ($query !== '' ? '?' . $query : ''));
+    redirect('question-bank.php' . ($query !== '' ? '?' . $query : ''));
 }
 
 function handle_question_request(int $userId): void
@@ -299,11 +299,11 @@ function question_save(int $userId, bool $isUpdate): never
 
     if ($isUpdate && !$editing) {
         flash('error', 'Questao nao encontrada.');
-        question_redirect();
+        redirect('question-bank.php');
     }
 
-    $title = trim((string) ($_POST['title'] ?? ''));
-    $prompt = trim((string) ($_POST['prompt'] ?? ''));
+    $title = question_normalize_editor_text((string) ($_POST['title'] ?? ''), true);
+    $prompt = question_normalize_editor_text((string) ($_POST['prompt'] ?? ''));
     $promptImageUrl = trim((string) ($_POST['prompt_image_url'] ?? ''));
     $type = (string) ($_POST['question_type'] ?? '');
     $visibility = (string) ($_POST['visibility'] ?? 'private');
@@ -312,7 +312,7 @@ function question_save(int $userId, bool $isUpdate): never
     $level = (string) ($_POST['education_level'] ?? 'medio');
     $difficulty = (string) ($_POST['difficulty'] ?? 'medio');
     $allowMulti = !empty($_POST['allow_multiple_correct']) ? 1 : 0;
-    $discursiveAnswer = trim((string) ($_POST['discursive_answer'] ?? ''));
+    $discursiveAnswer = question_normalize_editor_text((string) ($_POST['discursive_answer'] ?? ''));
     $responseLines = (int) ($_POST['response_lines'] ?? 5);
     $drawingSize = (string) ($_POST['drawing_size'] ?? 'medium');
     $drawingHeightPx = (int) ($_POST['drawing_height_px'] ?? 0);
@@ -320,7 +320,7 @@ function question_save(int $userId, bool $isUpdate): never
         ? (int) $_POST['true_false_answer']
         : null;
     $officialSourceKey = trim((string) ($_POST['official_source_key'] ?? ''));
-    $sourceReference = trim((string) ($_POST['source_reference'] ?? ''));
+    $sourceReference = question_normalize_editor_text((string) ($_POST['source_reference'] ?? ''), true);
     $options = parsed_options((array) ($_POST['options'] ?? []));
     $officialSources = function_exists('official_question_sources') ? official_question_sources() : [];
     $sourceName = null;
@@ -422,7 +422,7 @@ function question_save(int $userId, bool $isUpdate): never
 
     if ($errors !== []) {
         flash('error', implode(' ', $errors));
-        question_redirect($editing ? (int) $editing['id'] : null);
+        redirect('question-editor.php' . ($editing ? '?edit=' . (int) $editing['id'] : '?new=1'));
     }
 
     db()->beginTransaction();
@@ -578,7 +578,7 @@ function question_import_enem(int $userId): never
         ];
         $disciplineId = question_find_or_create_discipline($disciplineName, $disciplineAliases, $userId);
         $subjectId = question_find_or_create_subject($disciplineId, 'ENEM', $userId);
-        $prompt = enem_api_join_prompt($question);
+        $prompt = question_normalize_editor_text(enem_api_join_prompt($question));
         $promptImageUrl = null;
         $questionFiles = array_values(array_filter((array) ($question['files'] ?? []), static fn(mixed $file): bool => is_string($file) && trim($file) !== ''));
 
@@ -589,7 +589,7 @@ function question_import_enem(int $userId): never
         $alternatives = [];
 
         foreach ((array) ($question['alternatives'] ?? []) as $alternative) {
-            $text = enem_api_to_text($alternative['text'] ?? null);
+            $text = question_normalize_editor_text(enem_api_to_text($alternative['text'] ?? null));
             $file = trim((string) ($alternative['file'] ?? ''));
 
             if ($file !== '') {

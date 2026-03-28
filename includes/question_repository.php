@@ -44,7 +44,7 @@ function question_edit_payload(int $userId, ?int $editId): array
 
     if (!$edit) {
         flash('error', 'Voce so pode editar questoes da sua autoria.');
-        redirect('questions.php');
+        redirect('question-bank.php');
     }
 
     $statement = db()->prepare(

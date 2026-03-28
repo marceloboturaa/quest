@@ -1,42 +1,55 @@
 Project: Quest
 Institution: CNI
 Status: Em desenvolvimento
-Type: PHP/MySQL educational platform MVP
+Type: PHP/MySQL educational platform
 
 Summary:
-Quest is a personal project by Marcelo Botura with idea support from CNI.
-The repository now contains an MVP for authentication, role-based access control, password reset, collaborative question banking, exam building, PDF export, and a redesigned landing page.
+Quest is a PHP application for teachers and school staff to manage questions, assemble exams, export them as PDF, and control a Xerox workflow for printing. The repository now also includes the first backup infrastructure for local/manual backups and Google Drive integration points.
 
-Files:
-- index.php: entry page for the PHP application.
-- dashboard.php: role-aware application dashboard.
-- users.php: master admin page to promote users to local admin.
-- questions.php: collaborative question bank with filters, favorites, cloning, and author editing.
-- exams.php: initial exam builder using visible questions.
-- exam-pdf.php: PDF export for generated exams.
-- database_geral_atualizado.sql: complete MySQL schema for the current application state.
-- seed_100_questoes_marcelo_botura.sql: idempotent SQL seed with 100 public questions linked to Marcelo Botura.
-- scripts/generate_marcel_100_questions.php: generator for the Marcelo 100-question seed.
-- config.php: application and database configuration.
-- README.md: human-readable project overview and local run instructions.
-- history.txt: short change log and project history.
+Primary areas:
+- `dashboard.php`: simplified home dashboard with quick access to questions, exams, and Xerox.
+- `questions.php`: decision hub for the questions area.
+- `question-bank.php`: searchable bank of existing questions.
+- `question-editor.php`: dedicated editor for creating and revising questions.
+- `exam-create.php`: first step for exam metadata and setup.
+- `exams.php`: exam assembly and saved exam management.
+- `exam-preview.php`: print preview and Xerox submission entrypoint.
+- `exam-pdf.php`: PDF export route with browser-first rendering and safe fallback handling.
+- `xerox.php`: Xerox panel for teachers, operators, and admins.
+- `users.php`: role management for `master_admin`.
+- `backup.php`: backup management page.
 
 Current behavior:
-- Supports user registration, login, logout, and password reset.
-- Uses three roles: master_admin, local_admin, and user.
-- Allows master_admin to manage user roles.
-- Allows authenticated users to create private and public questions.
+- Supports authentication, logout, and password reset flow.
+- Uses four roles: `master_admin`, `local_admin`, `user`, and `xerox`.
+- Allows admins to authorize Xerox operators.
+- Allows teachers to send exams to Xerox, cancel a pending send, and resend after completion.
+- Allows Xerox operators to accept, move to in-progress, and finalize printing jobs.
+- Supports public and private questions with filters, favorites, cloning, and usage tracking.
 - Supports multiple choice, discursive, drawing, and true/false question types.
-- Supports disciplines, subjects, filters, favorites, and question cloning.
-- Supports exam creation, PDF export, and increments question usage counts.
-- Shows real question totals on the home page.
-- Includes a ready-to-import seed with varied questions for Marcelo Botura.
-- Stores data in MySQL through PDO.
+- Preserves richer pasted content for question authoring, including improved handling for mathematics formatting cases.
+- Builds exams from selected questions and exports them to PDF.
+- Uses an A4-oriented exam renderer with official school header, logo support, and embedded `Poppins Black` for the school name.
+- Splits long exam content into multiple rendered pages to reduce clipping in generated PDFs.
+- Includes base backup services and scripts for local/manual and future Drive-based backups.
+
+Important files:
+- `includes/exam_document_renderer.php`: exam HTML/PDF renderer, A4 layout, header, pagination, and print styling.
+- `includes/xerox_repository.php`: Xerox workflow repository functions and status transitions.
+- `includes/backup_repository.php`: backup generation and logging helpers.
+- `includes/question_helpers.php`: question content normalization and formatting helpers.
+- `database_geral_atualizado.sql`: full schema/reference SQL with current seed users.
+- `history.txt`: dated project change log.
+
+Defaults and assumptions:
+- The default school header is `COLÉGIO ESTADUAL CÍVICO-MILITAR TANCREDO DE ALMEIDA NEVES`.
+- The default school subtitle is `ENSINO FUNDAMENTAL, MÉDIO E PROFISSIONALIZANTE`.
+- The default exam label is `AVALIAÇÃO TRIMESTRAL`.
+- The official exam logo is searched first at `assets/images/cecmtancredoneves.svg`.
+- The embedded font asset for the school name is `assets/fonts/Poppins-Black.ttf`.
 
 Notes for LLMs:
-- The project status is development.
-- The institution associated with the project is CNI.
-- Marcelo Botura is the personal project owner.
-- Prefer preserving the role and permission model already implemented.
-- Prefer `database_geral_atualizado.sql` as the full schema reference.
-- Prefer `seed_100_questoes_marcelo_botura.sql` when populating the bank with sample public questions.
+- Prefer preserving the current role model and Xerox permissions.
+- Prefer `database_geral_atualizado.sql` as the SQL reference.
+- Prefer the dedicated pages (`question-bank.php`, `question-editor.php`) instead of reintroducing modal-based question creation.
+- Prefer maintaining preview/PDF visual parity for exam rendering work.

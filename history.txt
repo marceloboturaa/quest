@@ -23,3 +23,20 @@ Instituicao: CNI
 - Reorganizacao da home em `index.php` com visual mais minimalista.
 - Inclusao de animacoes suaves e nova hierarquia visual em `assets/css/app.css`.
 - Exibicao da quantidade real de questoes cadastradas e publicas na pagina inicial.
+
+2026-03-27
+- Importacao da base principal com usuarios, questoes, provas e relacionamentos.
+- Inclusao do fluxo Xerox com papel dedicado, envio pelo preview, aceite, andamento e finalizacao.
+- Criacao da central `xerox.php` com visao para professor, operador e administradores.
+- Simplificacao da navegacao e padronizacao visual das telas principais.
+- Reestruturacao da area de questoes em `questions.php`, `question-bank.php` e `question-editor.php`.
+- Evolucao da montagem de provas para um fluxo mais guiado entre `exam-create.php` e `exams.php`.
+- Criacao da base de backup com `backup.php`, `includes/backup_repository.php` e scripts de automacao.
+
+2026-03-28
+- Restauracao manual do usuario `Celo` (`cellusmat@gmail.com`) com perfil `xerox`.
+- Restauracao do usuario `Jéssica Fernandes` (`jessifernandes0@gmail.com`) na base ativa e no SQL de referencia.
+- Melhoria da colagem e renderizacao de conteudo matematico no banco de questoes.
+- Correcao do fluxo de geracao de PDF com fallback seguro e sem fatal error.
+- Redesenho do cabeçalho da prova com logo oficial, padrao A4 e fonte `Poppins Black`.
+- Ajuste da paginacao das questoes para reduzir corte de conteudo no PDF e aproximar preview e impressao.

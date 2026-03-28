@@ -3,18 +3,20 @@ declare(strict_types=1);
 
 const EXAM_META_START = '[quest_exam_meta]';
 const EXAM_META_END = '[/quest_exam_meta]';
+const EXAM_DEFAULT_SCHOOL_NAME = 'COLÉGIO ESTADUAL CÍVICO-MILITAR TANCREDO DE ALMEIDA NEVES';
+const EXAM_DEFAULT_SCHOOL_SUBTITLE = 'ENSINO FUNDAMENTAL, MÉDIO E PROFISSIONALIZANTE';
 
 function exam_default_metadata(): array
 {
     return [
         'exam_template' => 'version_1',
         'exam_style' => 'double_column',
-        'exam_label' => 'AVALIACAO',
+        'exam_label' => 'AVALIAÇÃO TRIMESTRAL',
         'discipline' => '',
         'component_name' => '',
         'year_reference' => '',
         'teacher_name' => '',
-        'school_name' => '',
+        'school_name' => EXAM_DEFAULT_SCHOOL_NAME,
         'class_name' => '',
         'application_date' => '',
     ];

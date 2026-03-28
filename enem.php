@@ -20,7 +20,7 @@ if (is_post()) {
         try {
             $import = enem_import_question($userId, $year, $index, $language !== '' ? $language : null);
             flash($import['created'] ? 'success' : 'info', $import['created'] ? 'Questao importada da API ENEM.' : 'Essa questao ja estava no seu banco.');
-            redirect('questions.php?edit=' . (int) $import['id']);
+            redirect('question-editor.php?edit=' . (int) $import['id']);
         } catch (Throwable $throwable) {
             flash('error', 'Falha ao importar a questao do ENEM: ' . $throwable->getMessage());
             redirect('enem.php?' . http_build_query(array_filter([

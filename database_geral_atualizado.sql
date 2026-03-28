@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `name` VARCHAR(120) NOT NULL,
     `email` VARCHAR(180) NOT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
-    `role` ENUM('master_admin', 'local_admin', 'user') NOT NULL DEFAULT 'user',
+    `role` ENUM('master_admin', 'local_admin', 'xerox', 'user') NOT NULL DEFAULT 'user',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -131,12 +131,21 @@ CREATE TABLE IF NOT EXISTS `exams` (
     `user_id` INT UNSIGNED NOT NULL,
     `title` VARCHAR(180) NOT NULL,
     `instructions` TEXT NULL,
+    `xerox_status` ENUM('not_sent', 'sent', 'in_progress', 'finished') NOT NULL DEFAULT 'not_sent',
+    `xerox_target_user_id` INT UNSIGNED NULL DEFAULT NULL,
+    `xerox_requested_at` TIMESTAMP NULL DEFAULT NULL,
+    `xerox_started_at` TIMESTAMP NULL DEFAULT NULL,
+    `xerox_finished_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `exams_user_id_index` (`user_id`),
+    KEY `exams_xerox_status_index` (`xerox_status`),
+    KEY `exams_xerox_target_user_id_index` (`xerox_target_user_id`),
     CONSTRAINT `exams_user_id_foreign`
-        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `exams_xerox_target_user_id_foreign`
+        FOREIGN KEY (`xerox_target_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `exam_questions` (
@@ -154,10 +163,61 @@ CREATE TABLE IF NOT EXISTS `exam_questions` (
         FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `backup_runs` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `trigger_type` ENUM('manual', 'scheduled') NOT NULL DEFAULT 'manual',
+    `status` ENUM('running', 'success', 'failed') NOT NULL DEFAULT 'running',
+    `triggered_by_user_id` INT UNSIGNED NULL DEFAULT NULL,
+    `file_name` VARCHAR(255) NULL DEFAULT NULL,
+    `local_path` VARCHAR(500) NULL DEFAULT NULL,
+    `drive_file_id` VARCHAR(255) NULL DEFAULT NULL,
+    `drive_file_link` VARCHAR(500) NULL DEFAULT NULL,
+    `size_bytes` BIGINT UNSIGNED NULL DEFAULT NULL,
+    `error_message` TEXT NULL,
+    `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `finished_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `backup_runs_status_index` (`status`),
+    KEY `backup_runs_started_at_index` (`started_at`),
+    KEY `backup_runs_triggered_by_user_id_index` (`triggered_by_user_id`),
+    CONSTRAINT `backup_runs_triggered_by_user_id_foreign`
+        FOREIGN KEY (`triggered_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`)
 SELECT 'Master Quest', 'master@quest.local', '$2y$10$4uy5xP2kTuuxNHQRA9j2g.K6rFnszj5gHt8rJBcjgOP3ZjV.qsVHC', 'master_admin'
 WHERE NOT EXISTS (
     SELECT 1 FROM `users` WHERE `email` = 'master@quest.local'
+);
+
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`)
+SELECT 'Marcelo Botura', 'mbsfoz@gmail.com', '$2y$10$TxothqCQg0yqPG.0ZcgU7e6M6CO6F528.pcTBNrMKZiukXJ1sJ4sa', 'user', '2026-03-25 04:15:29', '2026-03-25 04:15:29'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `users` WHERE `email` = 'mbsfoz@gmail.com'
+);
+
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`)
+SELECT 'Camila de Oliveira', 'bueno.camila@escola.pr.gov.br', '$2y$10$mtEefQsaGBU2MYCNfZcqSuF0IfTctSd4Fj/6NqiGSyuwm/2Q4BD7.', 'user', '2026-03-27 15:39:35', '2026-03-27 15:39:35'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `users` WHERE `email` = 'bueno.camila@escola.pr.gov.br'
+);
+
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`)
+SELECT 'Marta Aparecida Ferreira', 'mart_ferreira@hotmail.com', '$2y$10$M0i2cZPVkoX55obzwc9fo.4f5B59FgmY1klVHm7wzakj1o8WnyI/q', 'user', '2026-03-27 16:04:03', '2026-03-27 16:04:03'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `users` WHERE `email` = 'mart_ferreira@hotmail.com'
+);
+
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`)
+SELECT 'Darci Marques', 'marques12342008@hotmail.com', '$2y$10$sPxm/J1FTDqvNxgFvxL1jeWpLYo/Q4C6Ixvoqc3QVyXvu9b9Ij6la', 'user', '2026-03-27 19:04:59', '2026-03-27 19:04:59'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `users` WHERE `email` = 'marques12342008@hotmail.com'
+);
+
+INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`)
+SELECT 'Jéssica Fernandes', 'jessifernandes0@gmail.com', '$2y$10$evnt6lJlNv722/2oa/J2kuJ1stswR1DkPc/oUkr7DyWoiJxtkmsum', 'user', '2026-03-28 00:45:15', '2026-03-28 00:45:15'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `users` WHERE `email` = 'jessifernandes0@gmail.com'
 );
 
 INSERT INTO `disciplines` (`name`, `created_by`)

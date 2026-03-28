@@ -62,7 +62,73 @@ function db(): PDO
         throw new RuntimeException('Nao foi possivel conectar ao banco de dados: ' . $exception->getMessage());
     }
 
+    ensure_runtime_schema($pdo);
+
     return $pdo;
+}
+
+function ensure_runtime_schema(PDO $pdo): void
+{
+    static $ensured = false;
+
+    if ($ensured) {
+        return;
+    }
+
+    $ensured = true;
+
+    $userRoleColumn = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'role'")->fetch();
+
+    if ($userRoleColumn && !str_contains((string) $userRoleColumn['Type'], "'xerox'")) {
+        $pdo->exec(
+            "ALTER TABLE `users`
+             MODIFY `role` ENUM('master_admin', 'local_admin', 'xerox', 'user') NOT NULL DEFAULT 'user'"
+        );
+    }
+
+    $examColumnStatements = [
+        'xerox_status' => "ALTER TABLE `exams`
+            ADD COLUMN `xerox_status` ENUM('not_sent', 'sent', 'in_progress', 'finished') NOT NULL DEFAULT 'not_sent' AFTER `instructions`",
+        'xerox_target_user_id' => "ALTER TABLE `exams`
+            ADD COLUMN `xerox_target_user_id` INT UNSIGNED NULL DEFAULT NULL AFTER `xerox_status`",
+        'xerox_requested_at' => "ALTER TABLE `exams`
+            ADD COLUMN `xerox_requested_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_target_user_id`",
+        'xerox_started_at' => "ALTER TABLE `exams`
+            ADD COLUMN `xerox_started_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_requested_at`",
+        'xerox_finished_at' => "ALTER TABLE `exams`
+            ADD COLUMN `xerox_finished_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_started_at`",
+    ];
+
+    foreach ($examColumnStatements as $column => $statement) {
+        $columnExists = $pdo->query("SHOW COLUMNS FROM `exams` LIKE " . $pdo->quote($column))->fetch();
+
+        if (!$columnExists) {
+            $pdo->exec($statement);
+        }
+    }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS `backup_runs` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `trigger_type` ENUM('manual', 'scheduled') NOT NULL DEFAULT 'manual',
+            `status` ENUM('running', 'success', 'failed') NOT NULL DEFAULT 'running',
+            `triggered_by_user_id` INT UNSIGNED NULL DEFAULT NULL,
+            `file_name` VARCHAR(255) NULL DEFAULT NULL,
+            `local_path` VARCHAR(500) NULL DEFAULT NULL,
+            `drive_file_id` VARCHAR(255) NULL DEFAULT NULL,
+            `drive_file_link` VARCHAR(500) NULL DEFAULT NULL,
+            `size_bytes` BIGINT UNSIGNED NULL DEFAULT NULL,
+            `error_message` TEXT NULL,
+            `started_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `finished_at` TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `backup_runs_status_index` (`status`),
+            KEY `backup_runs_started_at_index` (`started_at`),
+            KEY `backup_runs_triggered_by_user_id_index` (`triggered_by_user_id`),
+            CONSTRAINT `backup_runs_triggered_by_user_id_foreign`
+                FOREIGN KEY (`triggered_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
 }
 
 function h(?string $value): string
@@ -93,6 +159,17 @@ function storage_path(string $path = ''): string
     $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
 
     return $normalized === '' ? $base : $base . DIRECTORY_SEPARATOR . ltrim($normalized, DIRECTORY_SEPARATOR);
+}
+
+function bool_config(string $key, bool $default = false): bool
+{
+    $value = config($key, $default ? '1' : '0');
+
+    if (is_bool($value)) {
+        return $value;
+    }
+
+    return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
 }
 
 function redirect(string $path): never
@@ -266,6 +343,8 @@ function role_label(string $role): string
             return 'Master Admin';
         case 'local_admin':
             return 'Admin Local';
+        case 'xerox':
+            return 'Xerox';
         default:
             return 'Usuario';
     }
@@ -344,12 +423,32 @@ function can_manage_users(): bool
     return has_role('master_admin');
 }
 
+function can_authorize_xerox_users(): bool
+{
+    return has_role(['master_admin', 'local_admin']);
+}
+
+function can_view_xerox_queue(): bool
+{
+    return has_role(['master_admin', 'local_admin', 'xerox']);
+}
+
+function is_xerox_user(): bool
+{
+    return has_role('xerox');
+}
+
 function can_manage_all_questions(): bool
 {
     return has_role(['master_admin', 'local_admin']);
 }
 
 function can_manage_catalogs(): bool
+{
+    return has_role(['master_admin', 'local_admin']);
+}
+
+function can_manage_backups(): bool
 {
     return has_role(['master_admin', 'local_admin']);
 }
@@ -447,4 +546,46 @@ function dashboard_metrics(array $user): array
         'exams' => (int) $examStatement->fetchColumn(),
         'local_admins' => 0,
     ];
+}
+
+function datetime_label(?string $value, string $fallback = 'Nao informado'): string
+{
+    if ($value === null || trim($value) === '') {
+        return $fallback;
+    }
+
+    $timestamp = strtotime($value);
+
+    if ($timestamp === false) {
+        return $fallback;
+    }
+
+    return date('d/m/Y H:i', $timestamp);
+}
+
+function xerox_status_label(string $status): string
+{
+    switch ($status) {
+        case 'sent':
+            return 'Encaminhado';
+        case 'in_progress':
+            return 'Em andamento';
+        case 'finished':
+            return 'Finalizado';
+        default:
+            return 'Nao encaminhado';
+    }
+}
+
+function xerox_status_badge_class(string $status): string
+{
+    switch ($status) {
+        case 'finished':
+            return 'badge-success';
+        case 'sent':
+        case 'in_progress':
+            return 'badge-accent';
+        default:
+            return '';
+    }
 }

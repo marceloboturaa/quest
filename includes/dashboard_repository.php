@@ -40,11 +40,12 @@ function dashboard_recent_exams(int $userId, bool $canSeeAll, int $limit = 5): a
 
     if ($canSeeAll) {
         $statement = db()->prepare(
-            'SELECT exams.*, users.name AS owner_name, COUNT(exam_questions.id) AS total_questions
+            'SELECT exams.*, users.name AS owner_name, xerox_user.name AS xerox_owner_name, COUNT(exam_questions.id) AS total_questions
              FROM exams
              INNER JOIN users ON users.id = exams.user_id
+             LEFT JOIN users AS xerox_user ON xerox_user.id = exams.xerox_target_user_id
              LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-             GROUP BY exams.id, users.name
+             GROUP BY exams.id, users.name, xerox_user.name
              ORDER BY exams.created_at DESC
              LIMIT ' . $limit
         );
@@ -53,12 +54,13 @@ function dashboard_recent_exams(int $userId, bool $canSeeAll, int $limit = 5): a
     }
 
     $statement = db()->prepare(
-        'SELECT exams.*, users.name AS owner_name, COUNT(exam_questions.id) AS total_questions
+        'SELECT exams.*, users.name AS owner_name, xerox_user.name AS xerox_owner_name, COUNT(exam_questions.id) AS total_questions
          FROM exams
          INNER JOIN users ON users.id = exams.user_id
+         LEFT JOIN users AS xerox_user ON xerox_user.id = exams.xerox_target_user_id
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
          WHERE exams.user_id = :user_id
-         GROUP BY exams.id, users.name
+         GROUP BY exams.id, users.name, xerox_user.name
          ORDER BY exams.created_at DESC
          LIMIT ' . $limit
     );
