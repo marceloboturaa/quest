@@ -25,7 +25,7 @@ function dashboard_recent_questions(int $userId, bool $canSeeAll, int $limit = 5
          FROM questions
          INNER JOIN users ON users.id = questions.author_id
          LEFT JOIN disciplines ON disciplines.id = questions.discipline_id
-         WHERE questions.author_id = :author_id
+         WHERE questions.author_id = :author_id OR questions.visibility = "public"
          ORDER BY questions.created_at DESC
          LIMIT ' . $limit
     );

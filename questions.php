@@ -71,23 +71,12 @@ try {
 
 foreach (dashboard_recent_questions($userId, false, 3) as $item) {
     $recentActivities[] = [
-        'type' => 'question',
         'title' => (string) ($item['title'] ?? 'Questao sem titulo'),
-        'meta' => trim((string) (($item['discipline_name'] ?? '') !== '' ? $item['discipline_name'] . ' · ' : '') . question_type_label((string) ($item['question_type'] ?? 'multiple_choice'))),
+        'meta' => trim((string) (($item['discipline_name'] ?? '') !== '' ? $item['discipline_name'] . ' · ' : '') . question_type_label((string) ($item['question_type'] ?? 'multiple_choice')) . (($item['author_name'] ?? '') !== '' ? ' · ' . (string) $item['author_name'] : '')),
         'date' => datetime_label($item['created_at'] ?? null),
         'timestamp' => strtotime((string) ($item['created_at'] ?? '')) ?: 0,
         'link' => (int) ($item['id'] ?? 0) > 0 ? 'question-editor.php?edit=' . (int) $item['id'] : 'question-bank.php',
-    ];
-}
-
-foreach (dashboard_recent_exams($userId, false, 3) as $item) {
-    $recentActivities[] = [
-        'type' => 'exam',
-        'title' => (string) ($item['title'] ?? 'Prova sem titulo'),
-        'meta' => ((int) ($item['total_questions'] ?? 0)) . ' questoes',
-        'date' => datetime_label($item['created_at'] ?? null),
-        'timestamp' => strtotime((string) ($item['created_at'] ?? '')) ?: 0,
-        'link' => (int) ($item['id'] ?? 0) > 0 ? 'exam-preview.php?id=' . (int) $item['id'] : 'exam-create.php',
+        'visibility' => (string) ($item['visibility'] ?? 'private'),
     ];
 }
 
@@ -165,11 +154,11 @@ render_header(
 
     <article class="simple-card">
         <div class="simple-card-head">
-            <h2>Atividades recentes</h2>
+            <h2>Questões recentes</h2>
         </div>
         <?php if ($recentActivities === []): ?>
             <div class="empty-state">
-                <h2>Nenhuma atividade recente</h2>
+                <h2>Nenhuma questão recente</h2>
                 <p>Comece criando uma questão ou montando uma prova.</p>
             </div>
         <?php else: ?>
@@ -181,7 +170,7 @@ render_header(
                             <p><?= h($activity['meta']) ?></p>
                         </div>
                         <div class="simple-list-actions">
-                            <span class="badge"><?= h($activity['type'] === 'exam' ? 'Prova' : 'Questão') ?></span>
+                            <span class="badge"><?= h($activity['visibility'] === 'public' ? 'Pública' : 'Privada') ?></span>
                             <span class="badge"><?= h($activity['date']) ?></span>
                         </div>
                     </a>

@@ -3,8 +3,8 @@
   "short_name": "QUEST",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e293b",
-  "theme_color": "#1e293b",
+  "background_color": "#4f2ec9",
+  "theme_color": "#4f2ec9",
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",

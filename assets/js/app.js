@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const body = document.body;
     const questionForm = document.querySelector('[data-question-form]');
     const disciplineSelects = document.querySelectorAll('[data-discipline-select]');
     const questionModal = document.querySelector('[data-question-modal]');
@@ -7,11 +8,68 @@ document.addEventListener('DOMContentLoaded', function () {
     const examBuilderForm = document.querySelector('[data-exam-builder-form]');
     const selectedCount = document.querySelector('[data-selected-count]');
     const selectedList = document.querySelector('[data-selected-list]');
+    const selectedDrawer = document.querySelector('[data-selected-drawer]');
+    const selectedToggle = document.querySelector('[data-selected-toggle]');
+    const bankList = document.querySelector('[data-bank-list]');
+    const bankLoadMore = document.querySelector('[data-bank-load-more]');
     const menuToggle = document.querySelector('[data-menu-toggle]');
     const menuPanel = document.querySelector('[data-menu-panel]');
     const topbar = document.querySelector('.topbar');
     const examMetaForm = document.querySelector('[data-exam-meta-form]');
     const xeroxSwitcher = document.querySelector('[data-xerox-switcher]');
+    const messageToast = document.querySelector('[data-message-toast]');
+    const passwordToggleButtons = document.querySelectorAll('[data-password-toggle]');
+
+    if (messageToast && body) {
+        messageToast.addEventListener('click', function () {
+            const messageId = messageToast.dataset.messageId || '';
+            const csrfToken = body.dataset.csrfToken || '';
+            const formData = new FormData();
+
+            formData.append('_token', csrfToken);
+            formData.append('message_id', messageId);
+
+            messageToast.classList.add('is-dismissing');
+
+            window.setTimeout(function () {
+                messageToast.hidden = true;
+            }, 260);
+
+            window.fetch('message-dismiss.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            }).catch(function () {
+                // ignore dismiss failures
+            });
+        });
+    }
+
+    passwordToggleButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            const wrapper = button.closest('.password-input-wrap');
+            const input = wrapper ? wrapper.querySelector('[data-password-input]') : null;
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+
+            if (!input) {
+                return;
+            }
+
+            const showPassword = input.type === 'password';
+            input.type = showPassword ? 'text' : 'password';
+            button.setAttribute('aria-pressed', showPassword ? 'true' : 'false');
+            button.setAttribute('aria-label', showPassword ? 'Ocultar senha' : 'Mostrar senha');
+
+            if (icon) {
+                icon.className = showPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+            }
+
+            if (text) {
+                text.textContent = showPassword ? 'Ocultar' : 'Mostrar';
+            }
+        });
+    });
 
     if (menuToggle && menuPanel && topbar) {
         menuToggle.addEventListener('click', function () {
@@ -60,6 +118,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (examMetaForm) {
         const examCreateNavLinks = examMetaForm.ownerDocument.querySelectorAll('.exam-create-nav-link');
+        const headerPreviewShell = examMetaForm.ownerDocument.querySelector('[data-header-preview-shell]');
+        const headerPreviewTitle = examMetaForm.ownerDocument.querySelector('[data-header-preview-title]');
+        const headerPreviewSubtitle = examMetaForm.ownerDocument.querySelector('[data-header-preview-subtitle]');
+        const headerPreviewLeftLogo = examMetaForm.ownerDocument.querySelector('[data-header-preview-logo-left]');
+        const headerPreviewRightLogo = examMetaForm.ownerDocument.querySelector('[data-header-preview-logo-right]');
+        const headerPreviewCode = examMetaForm.ownerDocument.querySelector('[data-header-preview-code]');
+        const headerPreviewExamLabel = examMetaForm.ownerDocument.querySelector('[data-header-preview-exam-label]');
+        const headerPreviewTeacher = examMetaForm.ownerDocument.querySelector('[data-header-preview-teacher]');
+        const headerPreviewComponent = examMetaForm.ownerDocument.querySelector('[data-header-preview-component]');
 
         function openDisclosureFromHash(hash) {
             if (!hash || hash.charAt(0) !== '#') {
@@ -130,9 +197,89 @@ document.addEventListener('DOMContentLoaded', function () {
             syncSummaryVisibility();
         }
 
+        function syncHeaderPreview() {
+            if (!headerPreviewShell || !headerPreviewTitle || !headerPreviewSubtitle) {
+                return;
+            }
+
+            const schoolName = fieldValue('school_name') || 'COLÉGIO / ESCOLA';
+            const schoolSubtitle = fieldValue('school_subtitle') || 'Ensino Fundamental, Médio e Profissionalizante';
+            const bgColor = fieldValue('header_background_color') || '#ffffff';
+            const titleColor = fieldValue('header_title_color') || '#334155';
+            const subtitleColor = fieldValue('header_subtitle_color') || '#64748b';
+            const titleSize = fieldValue('header_title_size') || '20';
+            const subtitleSize = fieldValue('header_subtitle_size') || '16';
+            const logoSize = fieldValue('header_logo_size') || '80';
+            const leftLogo = fieldValue('header_logo_left');
+            const rightLogo = fieldValue('header_logo_right');
+            const examLabel = fieldValue('exam_label') || 'AVALIAÇÃO';
+            const teacherName = fieldValue('teacher_name') || 'Professor';
+            const componentName = fieldValue('component_name') || fieldValue('discipline') || 'Componente não informado';
+            const className = (fieldValue('class_name') || 'GER').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4) || 'GER';
+            const componentCode = componentName
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Za-z0-9 ]/g, ' ')
+                .trim()
+                .split(/\s+/)
+                .map(function (part) { return part.slice(0, 2).toUpperCase(); })
+                .join('')
+                .slice(0, 4) || 'COMP';
+            const dateToken = (fieldValue('application_date') || new Date().toISOString().slice(0, 10)).replace(/-/g, '');
+            const previewCode = 'PRV-' + dateToken + '-' + className + '-' + componentCode;
+
+            headerPreviewShell.style.backgroundColor = bgColor;
+            headerPreviewShell.style.minHeight = (parseInt(fieldValue('header_min_height') || '120', 10) || 120) + 'px';
+            headerPreviewShell.style.setProperty('--header-preview-logo-size', (parseInt(logoSize, 10) || 80) + 'px');
+            headerPreviewTitle.textContent = schoolName;
+            headerPreviewSubtitle.textContent = schoolSubtitle;
+            headerPreviewTitle.style.color = titleColor;
+            headerPreviewSubtitle.style.color = subtitleColor;
+            headerPreviewTitle.style.fontSize = (parseInt(titleSize, 10) || 20) + 'px';
+            headerPreviewSubtitle.style.fontSize = (parseInt(subtitleSize, 10) || 16) + 'px';
+
+            if (headerPreviewLeftLogo) {
+                headerPreviewLeftLogo.innerHTML = '';
+                const leftImage = document.createElement('img');
+                leftImage.src = leftLogo || 'https://cdn.worldvectorlogo.com/logos/colegio-estadual-c-vico-militar-tancredo-de-almeida-neves.svg';
+                leftImage.alt = 'Logo esquerda';
+                headerPreviewLeftLogo.appendChild(leftImage);
+            }
+
+            if (headerPreviewRightLogo) {
+                headerPreviewRightLogo.innerHTML = '';
+
+                if (rightLogo !== '') {
+                    const rightImage = document.createElement('img');
+                    rightImage.src = rightLogo;
+                    rightImage.alt = 'Logo direita';
+                    headerPreviewRightLogo.appendChild(rightImage);
+                }
+            }
+
+            if (headerPreviewCode) {
+                headerPreviewCode.textContent = previewCode;
+            }
+
+            if (headerPreviewExamLabel) {
+                headerPreviewExamLabel.textContent = examLabel;
+            }
+
+            if (headerPreviewTeacher) {
+                headerPreviewTeacher.textContent = teacherName;
+            }
+
+            if (headerPreviewComponent) {
+                headerPreviewComponent.textContent = componentName;
+            }
+        }
+
         examMetaForm.addEventListener('input', syncExamHeaderSummary);
         examMetaForm.addEventListener('change', syncExamHeaderSummary);
         syncExamHeaderSummary();
+        examMetaForm.addEventListener('input', syncHeaderPreview);
+        examMetaForm.addEventListener('change', syncHeaderPreview);
+        syncHeaderPreview();
 
         examCreateNavLinks.forEach(function (link) {
             link.addEventListener('click', function () {
@@ -229,26 +376,48 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        selectedCount.textContent = checkedItems.length + ' selecionadas';
+        const countText = String(checkedItems.length);
+        examBuilderForm.querySelectorAll('[data-selected-count]').forEach(function (node) {
+            node.textContent = countText;
+        });
         selectedList.innerHTML = '';
 
         if (checkedItems.length === 0) {
+            if (selectedDrawer) {
+                selectedDrawer.hidden = true;
+                selectedDrawer.classList.remove('is-open');
+            }
+            if (selectedToggle) {
+                selectedToggle.setAttribute('aria-expanded', 'false');
+            }
             selectedList.innerHTML = '<div class="empty-state" data-selected-empty><h2>Nenhuma questão selecionada</h2><p>Marque as questões abaixo para montar a prova.</p></div>';
             return;
+        }
+
+        if (selectedDrawer) {
+            selectedDrawer.hidden = false;
+            selectedDrawer.classList.add('is-open');
+        }
+        if (selectedToggle) {
+            selectedToggle.setAttribute('aria-expanded', 'true');
         }
 
         checkedItems.forEach(function (item, index) {
             const title = item.dataset.questionTitle || ('Questao ' + (index + 1));
             const wrapper = document.createElement('article');
             const heading = document.createElement('strong');
-            const text = document.createElement('p');
 
             wrapper.className = 'simple-list-item';
-            heading.textContent = (index + 1) + '. ' + title;
-            text.textContent = 'Pronta para entrar na prova.';
+            wrapper.setAttribute('data-selected-item', '');
+            heading.textContent = title;
+            const badge = document.createElement('div');
             const copy = document.createElement('div');
+
+            badge.className = 'exam-selected-item-index';
+            badge.textContent = String(index + 1);
+            copy.className = 'exam-selected-item-copy';
             copy.appendChild(heading);
-            copy.appendChild(text);
+            wrapper.appendChild(badge);
             wrapper.appendChild(copy);
             selectedList.appendChild(wrapper);
         });
@@ -260,6 +429,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 syncExamBuilderSelection();
             }
         });
+
+        if (selectedToggle && selectedDrawer) {
+            selectedToggle.addEventListener('click', function () {
+                const shouldOpen = selectedDrawer.hidden || !selectedDrawer.classList.contains('is-open');
+                selectedDrawer.hidden = !shouldOpen;
+                selectedDrawer.classList.toggle('is-open', shouldOpen);
+                selectedToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            });
+        }
+
+        if (bankLoadMore && bankList) {
+            bankLoadMore.addEventListener('click', function () {
+                const currentVisible = parseInt(bankList.dataset.bankVisibleCount || '10', 10);
+                const nextVisible = currentVisible + 10;
+                const items = Array.from(bankList.querySelectorAll('[data-bank-item]'));
+
+                items.forEach(function (item, index) {
+                    item.classList.toggle('is-hidden-bank-item', index >= nextVisible);
+                });
+
+                bankList.dataset.bankVisibleCount = String(nextVisible);
+                const remaining = Math.max(items.length - nextVisible, 0);
+                bankLoadMore.hidden = remaining <= 0;
+                bankLoadMore.textContent = 'Ver mais ' + Math.min(10, remaining) + ' questões';
+            });
+
+            const bankItems = Array.from(bankList.querySelectorAll('[data-bank-item]'));
+            const initialRemaining = Math.max(bankItems.length - 10, 0);
+            bankLoadMore.hidden = initialRemaining <= 0;
+            bankLoadMore.textContent = 'Ver mais ' + Math.min(10, initialRemaining) + ' questões';
+        }
+
         syncExamBuilderSelection();
     }
 

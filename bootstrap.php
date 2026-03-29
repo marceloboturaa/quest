@@ -86,6 +86,37 @@ function ensure_runtime_schema(PDO $pdo): void
         );
     }
 
+    $userColumnStatements = [
+        'preferred_teacher_name' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_teacher_name` VARCHAR(120) NULL DEFAULT NULL AFTER `role`",
+        'preferred_discipline' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_discipline` VARCHAR(120) NULL DEFAULT NULL AFTER `preferred_teacher_name`",
+        'preferred_component_name' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_component_name` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_discipline`",
+        'preferred_class_name' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_class_name` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_component_name`",
+        'preferred_year_reference' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_year_reference` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_class_name`",
+        'preferred_exam_label' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_exam_label` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_year_reference`",
+        'preferred_school_name' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_school_name` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_exam_label`",
+        'preferred_school_subtitle' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_school_subtitle` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_school_name`",
+        'preferred_header_logo_left' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_header_logo_left` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_school_subtitle`",
+        'preferred_header_logo_right' => "ALTER TABLE `users`
+            ADD COLUMN `preferred_header_logo_right` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_header_logo_left`",
+    ];
+
+    foreach ($userColumnStatements as $column => $statement) {
+        $columnExists = $pdo->query("SHOW COLUMNS FROM `users` LIKE " . $pdo->quote($column))->fetch();
+
+        if (!$columnExists) {
+            $pdo->exec($statement);
+        }
+    }
+
     $examColumnStatements = [
         'xerox_status' => "ALTER TABLE `exams`
             ADD COLUMN `xerox_status` ENUM('not_sent', 'sent', 'in_progress', 'finished') NOT NULL DEFAULT 'not_sent' AFTER `instructions`",
@@ -127,6 +158,33 @@ function ensure_runtime_schema(PDO $pdo): void
             KEY `backup_runs_triggered_by_user_id_index` (`triggered_by_user_id`),
             CONSTRAINT `backup_runs_triggered_by_user_id_foreign`
                 FOREIGN KEY (`triggered_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS `user_messages` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `sender_user_id` INT UNSIGNED NULL DEFAULT NULL,
+            `recipient_user_id` INT UNSIGNED NOT NULL,
+            `kind` ENUM('suggestion', 'reply', 'broadcast', 'direct') NOT NULL DEFAULT 'direct',
+            `subject` VARCHAR(180) NOT NULL DEFAULT '',
+            `body` TEXT NOT NULL,
+            `status` ENUM('unread', 'read', 'replied', 'archived') NOT NULL DEFAULT 'unread',
+            `reply_to_id` INT UNSIGNED NULL DEFAULT NULL,
+            `delivery_group` VARCHAR(40) NULL DEFAULT NULL,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `user_messages_recipient_status_index` (`recipient_user_id`, `status`),
+            KEY `user_messages_sender_index` (`sender_user_id`),
+            KEY `user_messages_kind_index` (`kind`),
+            KEY `user_messages_delivery_group_index` (`delivery_group`),
+            CONSTRAINT `user_messages_sender_user_id_foreign`
+                FOREIGN KEY (`sender_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+            CONSTRAINT `user_messages_recipient_user_id_foreign`
+                FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+            CONSTRAINT `user_messages_reply_to_id_foreign`
+                FOREIGN KEY (`reply_to_id`) REFERENCES `user_messages` (`id`) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 }
@@ -589,3 +647,5 @@ function xerox_status_badge_class(string $status): string
             return '';
     }
 }
+
+require_once __DIR__ . '/includes/messages_repository.php';

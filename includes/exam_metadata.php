@@ -7,6 +7,7 @@ const EXAM_SECTIONS_START = '[quest_exam_sections]';
 const EXAM_SECTIONS_END = '[/quest_exam_sections]';
 const EXAM_DEFAULT_SCHOOL_NAME = 'COLÉGIO ESTADUAL CÍVICO-MILITAR TANCREDO DE ALMEIDA NEVES';
 const EXAM_DEFAULT_SCHOOL_SUBTITLE = 'ENSINO FUNDAMENTAL, MÉDIO E PROFISSIONALIZANTE';
+const EXAM_DEFAULT_LOGO_URL = 'https://cdn.worldvectorlogo.com/logos/colegio-estadual-c-vico-militar-tancredo-de-almeida-neves.svg';
 
 function exam_default_metadata(): array
 {
@@ -24,8 +25,37 @@ function exam_default_metadata(): array
         'year_reference' => '',
         'teacher_name' => '',
         'school_name' => EXAM_DEFAULT_SCHOOL_NAME,
+        'school_subtitle' => EXAM_DEFAULT_SCHOOL_SUBTITLE,
         'class_name' => '',
         'application_date' => '',
+        'header_logo_left' => EXAM_DEFAULT_LOGO_URL,
+        'header_logo_right' => '',
+        'header_background_color' => '#ffffff',
+        'header_title_color' => '#334155',
+        'header_subtitle_color' => '#64748b',
+        'header_title_size' => '20',
+        'header_subtitle_size' => '16',
+        'header_logo_size' => '80',
+        'header_min_height' => '120',
+        'content_font_size' => '11',
+    ];
+}
+
+function exam_user_profile_defaults(?array $user): array
+{
+    $user = $user ?? [];
+
+    return [
+        'exam_label' => trim((string) ($user['preferred_exam_label'] ?? '')),
+        'discipline' => trim((string) ($user['preferred_discipline'] ?? '')),
+        'component_name' => trim((string) ($user['preferred_component_name'] ?? '')),
+        'year_reference' => trim((string) ($user['preferred_year_reference'] ?? '')),
+        'teacher_name' => trim((string) (($user['preferred_teacher_name'] ?? '') !== '' ? $user['preferred_teacher_name'] : ($user['name'] ?? ''))),
+        'school_name' => trim((string) (($user['preferred_school_name'] ?? '') !== '' ? $user['preferred_school_name'] : EXAM_DEFAULT_SCHOOL_NAME)),
+        'school_subtitle' => trim((string) (($user['preferred_school_subtitle'] ?? '') !== '' ? $user['preferred_school_subtitle'] : EXAM_DEFAULT_SCHOOL_SUBTITLE)),
+        'class_name' => trim((string) ($user['preferred_class_name'] ?? '')),
+        'header_logo_left' => trim((string) (($user['preferred_header_logo_left'] ?? '') !== '' ? $user['preferred_header_logo_left'] : EXAM_DEFAULT_LOGO_URL)),
+        'header_logo_right' => trim((string) ($user['preferred_header_logo_right'] ?? '')),
     ];
 }
 
@@ -246,8 +276,26 @@ function exam_metadata_labels(): array
         'year_reference' => 'Ano',
         'teacher_name' => 'Professor',
         'school_name' => 'Escola',
+        'school_subtitle' => 'Subtítulo',
         'class_name' => 'Turma',
         'application_date' => 'Data',
+    ];
+}
+
+function exam_metadata_hidden_keys(): array
+{
+    return [
+        'header_logo_left',
+        'header_logo_right',
+        'header_background_color',
+        'header_title_color',
+        'header_subtitle_color',
+        'header_title_size',
+        'header_subtitle_size',
+        'header_logo_size',
+        'header_min_height',
+        'content_font_size',
+        'school_subtitle',
     ];
 }
 
@@ -255,9 +303,14 @@ function exam_metadata_summary(array $metadata): array
 {
     $labels = exam_metadata_labels();
     $summary = [];
+    $hiddenKeys = exam_metadata_hidden_keys();
 
     foreach (array_replace(exam_default_metadata(), $metadata) as $key => $value) {
         if ($value === '') {
+            continue;
+        }
+
+        if (in_array($key, $hiddenKeys, true)) {
             continue;
         }
 
@@ -290,10 +343,22 @@ function exam_format_date(string $value): string
 function exam_style_options(): array
 {
     return [
-        'double_column' => 'Coluna dupla (padrão ENEM)',
-        'single_column' => 'Coluna simples',
-        'economic' => 'Estilo econômico (mais compacto)',
-        'accessibility' => 'Modo acessibilidade (fonte grande e espaçamento maior)',
+        'double_column' => 'Duas colunas (padrão ENEM)',
+        'triple_column' => 'Três colunas',
+        'single_column' => 'Sem coluna (lista contínua)',
+        'economic' => 'Compacta / econômica',
+        'accessibility' => 'Acessível (fonte maior)',
+    ];
+}
+
+function exam_paper_size_options(): array
+{
+    return [
+        'A4' => 'A4',
+        'A3' => 'A3',
+        'A5' => 'A5',
+        'Letter' => 'Carta',
+        'Legal' => 'Ofício',
     ];
 }
 

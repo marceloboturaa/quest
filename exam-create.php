@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/includes/question_repository.php';
-require_once __DIR__ . '/includes/exam_examples.php';
 require_once __DIR__ . '/includes/exam_repository.php';
 require_once __DIR__ . '/includes/exam_metadata.php';
 
@@ -18,6 +17,23 @@ $parsedExamData = $editingExam ? exam_parse_stored_instructions($editingExam['in
     'instructions' => '',
     'sections' => exam_default_sections(),
 ];
+$baseExamDefaults = exam_default_metadata();
+$userExamDefaults = exam_user_profile_defaults($user);
+$resolveProfileAwareValue = static function (string $key, string $fallback = '') use ($parsedExamData, $baseExamDefaults, $userExamDefaults): string {
+    $metadataValue = trim((string) ($parsedExamData['metadata'][$key] ?? ''));
+    $baseValue = trim((string) ($baseExamDefaults[$key] ?? ''));
+    $profileValue = trim((string) ($userExamDefaults[$key] ?? $fallback));
+
+    if ($metadataValue !== '' && $metadataValue !== $baseValue) {
+        return $metadataValue;
+    }
+
+    if ($profileValue !== '') {
+        return $profileValue;
+    }
+
+    return $metadataValue !== '' ? $metadataValue : $fallback;
+};
 $draftSections = exam_merge_sections($parsedExamData['sections'] ?? exam_default_sections(), $_GET, 'draft_');
 $loadedExamQuestionIds = $editingExam ? exam_question_ids($editExamId, $userId) : [];
 $formData = [
@@ -29,29 +45,36 @@ $formData = [
     'ordering_mode' => (string) ($_GET['ordering_mode'] ?? $parsedExamData['metadata']['ordering_mode']),
     'identification_mode' => (string) ($_GET['identification_mode'] ?? $parsedExamData['metadata']['identification_mode']),
     'variant_label' => (string) ($_GET['variant_label'] ?? $parsedExamData['metadata']['variant_label']),
-    'exam_label' => (string) ($_GET['exam_label'] ?? $parsedExamData['metadata']['exam_label']),
-    'discipline' => (string) ($_GET['discipline'] ?? $parsedExamData['metadata']['discipline']),
-    'component_name' => (string) ($_GET['component_name'] ?? $parsedExamData['metadata']['component_name']),
-    'teacher_name' => (string) ($_GET['teacher_name'] ?? ($parsedExamData['metadata']['teacher_name'] !== '' ? $parsedExamData['metadata']['teacher_name'] : ($user['name'] ?? ''))),
-    'school_name' => (string) ($_GET['school_name'] ?? $parsedExamData['metadata']['school_name']),
-    'year_reference' => (string) ($_GET['year_reference'] ?? $parsedExamData['metadata']['year_reference']),
-    'class_name' => (string) ($_GET['class_name'] ?? $parsedExamData['metadata']['class_name']),
+    'exam_label' => (string) ($_GET['exam_label'] ?? $resolveProfileAwareValue('exam_label')),
+    'discipline' => (string) ($_GET['discipline'] ?? $resolveProfileAwareValue('discipline')),
+    'component_name' => (string) ($_GET['component_name'] ?? $resolveProfileAwareValue('component_name')),
+    'teacher_name' => (string) ($_GET['teacher_name'] ?? $resolveProfileAwareValue('teacher_name', (string) ($user['name'] ?? ''))),
+    'school_name' => (string) ($_GET['school_name'] ?? $resolveProfileAwareValue('school_name', EXAM_DEFAULT_SCHOOL_NAME)),
+    'school_subtitle' => (string) ($_GET['school_subtitle'] ?? $resolveProfileAwareValue('school_subtitle', EXAM_DEFAULT_SCHOOL_SUBTITLE)),
+    'year_reference' => (string) ($_GET['year_reference'] ?? $resolveProfileAwareValue('year_reference')),
+    'class_name' => (string) ($_GET['class_name'] ?? $resolveProfileAwareValue('class_name')),
     'application_date' => (string) ($_GET['application_date'] ?? $parsedExamData['metadata']['application_date']),
+    'header_logo_left' => (string) ($_GET['header_logo_left'] ?? $resolveProfileAwareValue('header_logo_left', EXAM_DEFAULT_LOGO_URL)),
+    'header_logo_right' => (string) ($_GET['header_logo_right'] ?? $resolveProfileAwareValue('header_logo_right')),
+    'header_background_color' => (string) ($_GET['header_background_color'] ?? ($parsedExamData['metadata']['header_background_color'] !== '' ? $parsedExamData['metadata']['header_background_color'] : '#ffffff')),
+    'header_title_color' => (string) ($_GET['header_title_color'] ?? ($parsedExamData['metadata']['header_title_color'] !== '' ? $parsedExamData['metadata']['header_title_color'] : '#334155')),
+    'header_subtitle_color' => (string) ($_GET['header_subtitle_color'] ?? ($parsedExamData['metadata']['header_subtitle_color'] !== '' ? $parsedExamData['metadata']['header_subtitle_color'] : '#64748b')),
+    'header_title_size' => (string) ($_GET['header_title_size'] ?? ($parsedExamData['metadata']['header_title_size'] !== '' ? $parsedExamData['metadata']['header_title_size'] : '20')),
+    'header_subtitle_size' => (string) ($_GET['header_subtitle_size'] ?? ($parsedExamData['metadata']['header_subtitle_size'] !== '' ? $parsedExamData['metadata']['header_subtitle_size'] : '16')),
+    'header_logo_size' => (string) ($_GET['header_logo_size'] ?? ($parsedExamData['metadata']['header_logo_size'] !== '' ? $parsedExamData['metadata']['header_logo_size'] : '80')),
+    'header_min_height' => (string) ($_GET['header_min_height'] ?? ($parsedExamData['metadata']['header_min_height'] !== '' ? $parsedExamData['metadata']['header_min_height'] : '120')),
+    'content_font_size' => (string) ($_GET['content_font_size'] ?? ($parsedExamData['metadata']['content_font_size'] !== '' ? $parsedExamData['metadata']['content_font_size'] : '11')),
     'header_content' => $draftSections['header'],
     'body_content' => $draftSections['body'],
     'footer_content' => $draftSections['footer'],
 ];
 $backHref = $editingExam ? 'exam-preview.php?id=' . $editExamId : 'dashboard.php';
-$structureSummary = implode(' | ', array_filter([
-    $formData['header_content'] !== '' ? 'Cabeçalho' : null,
-    $formData['body_content'] !== '' ? 'Corpo' : null,
-    $formData['footer_content'] !== '' ? 'Rodapé' : null,
-])) ?: 'Somente estrutura padrão';
 $selectedIds = array_values(array_unique(array_map('intval', array_merge(
     $loadedExamQuestionIds,
     (array) ($_GET['question_ids'] ?? [])
 ))));
 $selectedPreview = [];
+$selectedCount = count($selectedIds);
 
 if ($selectedIds !== []) {
     [$selectedQuestions] = question_list([
@@ -84,52 +107,62 @@ render_header(
         <input type="hidden" name="question_ids[]" value="<?= h((string) $questionId) ?>">
     <?php endforeach; ?>
 
-    <section class="exam-create-shell">
+    <section class="exam-create-shell exam-create-shell--streamlined">
         <aside class="simple-card exam-create-sidebar">
             <div class="exam-create-sidebar-top">
-                <span class="exam-create-kicker"><?= $editingExam ? 'Edição' : 'Nova prova' ?></span>
-                <h2>Etapas da montagem</h2>
-                <p class="helper-text">Navegue pelos blocos principais e finalize quando tudo estiver consistente.</p>
+                <span class="exam-create-kicker"><?= $editingExam ? 'Edição' : 'Montagem' ?></span>
+                <h2><?= $editingExam ? 'Editar prova' : 'Nova prova' ?></h2>
+                <p class="helper-text">A página ficou dividida em quatro blocos principais para evitar excesso de informação.</p>
             </div>
 
             <nav class="exam-create-nav" aria-label="Seções da montagem">
-                <a class="exam-create-nav-link" href="#resumo-geral"><span class="exam-create-nav-index">01</span><span>Resumo</span></a>
-                <a class="exam-create-nav-link" href="#dados-basicos"><span class="exam-create-nav-index">02</span><span>Dados básicos</span></a>
-                <a class="exam-create-nav-link" href="#forma-prova"><span class="exam-create-nav-index">03</span><span>Forma da prova</span></a>
-                <a class="exam-create-nav-link" href="#header-section"><span class="exam-create-nav-index">04</span><span>Cabeçalho</span></a>
-                <a class="exam-create-nav-link" href="#body-section"><span class="exam-create-nav-index">05</span><span>Corpo</span></a>
-                <a class="exam-create-nav-link" href="#footer-section"><span class="exam-create-nav-index">06</span><span>Rodapé</span></a>
-                <a class="exam-create-nav-link" href="exam-library.php"><span class="exam-create-nav-index"><i class="fa-solid fa-grid-2" aria-hidden="true"></i></span><span>Central de provas</span></a>
+                <a class="exam-create-nav-link" href="#dados-principais"><span class="exam-create-nav-index">01</span><span>Dados principais</span></a>
+                <a class="exam-create-nav-link" href="#formato-prova"><span class="exam-create-nav-index">02</span><span>Formato</span></a>
+                <a class="exam-create-nav-link" href="#cabecalho-visual"><span class="exam-create-nav-index">03</span><span>Cabeçalho</span></a>
+                <a class="exam-create-nav-link" href="#textos-prova"><span class="exam-create-nav-index">04</span><span>Textos</span></a>
+                <a class="exam-create-nav-link" href="#atalhos-prova"><span class="exam-create-nav-index">05</span><span>Modelos e atalhos</span></a>
             </nav>
 
             <div class="exam-create-sidebar-status">
                 <div class="exam-create-status-item">
-                    <strong>Estrutura</strong>
-                    <span><?= h($structureSummary) ?></span>
+                    <strong>Questões marcadas</strong>
+                    <span><?= h((string) $selectedCount) ?> pronta(s) para a próxima etapa</span>
                 </div>
                 <div class="exam-create-status-item">
-                    <strong>Questões</strong>
-                    <span><?= h((string) count($selectedIds)) ?> marcadas</span>
-                </div>
-                <div class="exam-create-status-item">
-                    <strong>Layout</strong>
+                    <strong>Forma atual</strong>
                     <span data-summary-field="exam_style_label"><?= h(exam_style_label($formData['exam_style'])) ?></span>
                 </div>
             </div>
+
+            <?php if ($selectedPreview !== []): ?>
+                <div class="exam-create-sidebar-note">
+                    <strong>Pré-seleção</strong>
+                    <div class="exam-create-selected-mini-list">
+                        <?php foreach (array_slice($selectedPreview, 0, 3) as $index => $question): ?>
+                            <div class="exam-create-selected-mini-item">
+                                <span><?= h((string) ($index + 1)) ?></span>
+                                <p><?= h((string) $question['title']) ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </aside>
 
         <section class="simple-stack">
             <article class="simple-card exam-create-command-bar">
                 <div class="exam-create-command-copy">
-                    <span class="exam-create-kicker">Montagem</span>
-                    <h2><?= h($formData['draft_title'] !== '' ? $formData['draft_title'] : 'Nova prova') ?></h2>
-                    <p class="helper-text">Defina a estrutura, revise o resumo e siga para a seleção de questões.</p>
+                    <span class="exam-create-kicker">Fluxo curto</span>
+                    <h2 data-summary-field="draft_title"><?= h($formData['draft_title'] !== '' ? $formData['draft_title'] : 'Não informado') ?></h2>
+                    <p class="helper-text">Preencha o essencial, ajuste o cabeçalho e siga para a seleção de questões.</p>
                 </div>
 
-                <div class="exam-create-command-meta">
-                    <span class="badge"><?= h((string) count($selectedIds)) ?> questões</span>
-                    <span class="badge"><?= h($structureSummary) ?></span>
+                <div class="exam-create-quickfacts">
+                    <span class="badge"><?= h((string) $selectedCount) ?> questões marcadas</span>
                     <span class="badge" data-summary-field="exam_style_label"><?= h(exam_style_label($formData['exam_style'])) ?></span>
+                    <?php if ($formData['class_name'] !== ''): ?>
+                        <span class="badge"><?= h($formData['class_name']) ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="exam-create-command-actions">
@@ -137,86 +170,16 @@ render_header(
                     <?php if ($editingExam): ?>
                         <a class="button-secondary" href="exam-preview.php?id=<?= h((string) $editExamId) ?>">Preview</a>
                     <?php endif; ?>
+                    <a class="ghost-button" href="exam-models.php">Modelos</a>
                     <a class="ghost-button" href="<?= h($backHref) ?>">Voltar</a>
                     <a class="ghost-button" href="exam-create.php">Cancelar</a>
                 </div>
             </article>
 
-            <details class="simple-disclosure exam-create-disclosure" id="resumo-geral" open>
-                <summary><span>Resumo editável</span><small>Controle o que aparece no painel de acompanhamento.</small></summary>
+            <details class="simple-disclosure exam-create-disclosure" id="dados-principais" open>
+                <summary><span>Dados principais</span><small>Título, professor, turma, disciplina e identificação da prova.</small></summary>
                 <div class="simple-disclosure-body">
-                    <p class="helper-text">Escolha o que aparece no resumo enquanto monta a prova.</p>
-
-                    <div class="exam-create-summary-grid">
-                    <div class="exam-create-summary-panel">
-                        <div class="exam-create-summary-preview">
-                            <div class="exam-create-summary-row" data-summary-item="draft_title">
-                                <strong>Nome da prova</strong>
-                                <span data-summary-field="draft_title"><?= h($formData['draft_title'] !== '' ? $formData['draft_title'] : 'Não informado') ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="exam_label">
-                                <strong>Tipo</strong>
-                                <span data-summary-field="exam_label"><?= h($formData['exam_label'] !== '' ? $formData['exam_label'] : 'AVALIAÇÃO') ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="school_name">
-                                <strong>Escola</strong>
-                                <span data-summary-field="school_name"><?= h($formData['school_name'] !== '' ? $formData['school_name'] : EXAM_DEFAULT_SCHOOL_NAME) ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="teacher_name">
-                                <strong>Professor</strong>
-                                <span data-summary-field="teacher_name"><?= h($formData['teacher_name'] !== '' ? $formData['teacher_name'] : 'Professor não informado') ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="component_name">
-                                <strong>Componente</strong>
-                                <span data-summary-field="component_name"><?= h($formData['component_name'] !== '' ? $formData['component_name'] : ($formData['discipline'] !== '' ? $formData['discipline'] : 'Não informado')) ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="class_name">
-                                <strong>Turma</strong>
-                                <span data-summary-field="class_name"><?= h($formData['class_name'] !== '' ? $formData['class_name'] : 'Não informado') ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="application_date">
-                                <strong>Data</strong>
-                                <span data-summary-field="application_date"><?= h($formData['application_date'] !== '' ? exam_format_date($formData['application_date']) : 'Não informada') ?></span>
-                            </div>
-                            <div class="exam-create-summary-row" data-summary-item="exam_style_label">
-                                <strong>Forma</strong>
-                                <span data-summary-field="exam_style_label"><?= h(exam_style_label($formData['exam_style'])) ?></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="exam-create-summary-controls">
-                        <strong>Mostrar no resumo</strong>
-                        <div class="exam-create-summary-toggles">
-                            <?php foreach ([
-                                'draft_title' => 'Nome da prova',
-                                'exam_label' => 'Tipo',
-                                'school_name' => 'Escola',
-                                'teacher_name' => 'Professor',
-                                'component_name' => 'Componente',
-                                'class_name' => 'Turma',
-                                'application_date' => 'Data',
-                                'exam_style_label' => 'Forma',
-                            ] as $fieldName => $fieldLabel): ?>
-                                <label class="exam-create-toggle">
-                                    <input type="checkbox" data-summary-visibility-toggle="<?= h($fieldName) ?>" checked>
-                                    <span><?= h($fieldLabel) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <div class="simple-note exam-create-summary-note">
-                            <strong>Selecionadas para a próxima etapa</strong>
-                            <p><?= h((string) count($selectedIds)) ?> questão(ões) já estão ligadas a esta montagem.</p>
-                        </div>
-                    </div>
-                </div>
-                </div>
-            </details>
-            <details class="simple-disclosure exam-create-disclosure" id="dados-basicos" open>
-                <summary><span>Dados básicos</span><small>Título, professor, turma, disciplina e data.</small></summary>
-                <div class="simple-disclosure-body">
-                    <p class="helper-text">Informações centrais da prova.</p>
+                    <p class="helper-text">Preencha os dados que precisam aparecer no cabeçalho e na identificação da prova.</p>
 
                     <div class="simple-filter-grid exam-builder-form-grid">
                     <label>Nome da prova
@@ -249,6 +212,9 @@ render_header(
                     <label>Escola
                         <input type="text" name="school_name" placeholder="Nome da escola" value="<?= h($formData['school_name']) ?>">
                     </label>
+                    <label>Subtítulo da escola
+                        <input type="text" name="school_subtitle" placeholder="Ex.: Ensino Fundamental, Médio e Profissionalizante" value="<?= h($formData['school_subtitle']) ?>">
+                    </label>
                     <label>Ano / Série
                         <input type="text" name="year_reference" placeholder="Ex.: 6º ano" value="<?= h($formData['year_reference']) ?>">
                     </label>
@@ -256,10 +222,10 @@ render_header(
                 </div>
             </details>
 
-            <details class="simple-disclosure exam-create-disclosure" id="forma-prova">
-                <summary><span>Forma da prova</span><small>Layout, resposta, organização e identificação.</small></summary>
+            <details class="simple-disclosure exam-create-disclosure" id="formato-prova" open>
+                <summary><span>Formato da prova</span><small>Colunas, resposta, organização e versão.</small></summary>
                 <div class="simple-disclosure-body">
-                    <p class="helper-text">Escolha layout, modo de resposta, organização e identificação.</p>
+                    <p class="helper-text">Escolha como a prova será organizada antes de seguir para as questões.</p>
 
                     <div class="simple-filter-grid exam-builder-form-grid">
                     <label>Modelo visual
@@ -269,7 +235,7 @@ render_header(
                             <?php endforeach; ?>
                         </select>
                     </label>
-                    <label>Layout
+                    <label>Corpo / colunas
                         <select name="exam_style">
                             <?php foreach (exam_style_options() as $styleValue => $styleLabel): ?>
                                 <option value="<?= h($styleValue) ?>" <?= $formData['exam_style'] === $styleValue ? 'selected' : '' ?>><?= h($styleLabel) ?></option>
@@ -314,58 +280,133 @@ render_header(
                 </div>
 
                 <div class="simple-note">
-                    <strong>Suporte imediato no render</strong>
-                    <p>Layouts, folha separada, gabarito lateral, leitura por bolinhas, embaralhamento e versão já alteram a saída. Blocos, modular, anexos e banco dinâmico ficam registrados na configuração desta montagem.</p>
+                    <strong>O que muda na saída</strong>
+                    <p>Layout, modo de resposta, folha separada, gabarito lateral, versão e embaralhamento já alteram o preview e o PDF.</p>
                 </div>
                 </div>
             </details>
 
-            <details class="simple-disclosure exam-create-disclosure" id="header-section">
-                <summary><span>Cabeçalho</span><small>Orientações iniciais e recados visíveis no topo.</small></summary>
+            <details class="simple-disclosure exam-create-disclosure" id="cabecalho-visual" open>
+                <summary><span>Cabeçalho da prova</span><small>Logo, nome da escola e visual do topo.</small></summary>
                 <div class="simple-disclosure-body">
-                    <p class="helper-text">Recados iniciais, observações e instruções antes das questões.</p>
-                <label>Conteúdo do cabeçalho
-                    <textarea name="draft_header_content" placeholder="Recados, orientações iniciais, tempo de prova ou observações que devem aparecer no cabeçalho."><?= h($formData['header_content']) ?></textarea>
-                </label>
+                    <p class="helper-text">Primeiro ajuste o básico. Se precisar, abra as opções avançadas.</p>
+
+                    <div class="simple-note exam-header-builder-preview" data-header-preview>
+                        <div class="exam-header-builder-preview-top" data-header-preview-shell>
+                            <div class="exam-header-builder-preview-logo" data-header-preview-logo-left>
+                                <img src="<?= h($formData['header_logo_left']) ?>" alt="Logo esquerda">
+                            </div>
+                            <div class="exam-header-builder-preview-copy">
+                                <strong data-header-preview-title><?= h($formData['school_name']) ?></strong>
+                                <span data-header-preview-subtitle><?= h($formData['school_subtitle']) ?></span>
+                            </div>
+                            <div class="exam-header-builder-preview-side">
+                                <div class="exam-header-builder-preview-side-logo" data-header-preview-logo-right></div>
+                                <span class="exam-header-builder-preview-code-label">Código da prova</span>
+                                <strong class="exam-header-builder-preview-code-token" data-header-preview-code><?= h('PRV-' . date('Ymd') . '-0001') ?></strong>
+                            </div>
+                        </div>
+                        <div class="exam-header-builder-preview-grid">
+                            <span><small>Avaliação</small><strong data-header-preview-exam-label><?= h($formData['exam_label'] !== '' ? $formData['exam_label'] : 'AVALIAÇÃO') ?></strong></span>
+                            <span><small>Prof.:</small><strong data-header-preview-teacher><?= h($formData['teacher_name'] !== '' ? $formData['teacher_name'] : 'Professor') ?></strong></span>
+                            <span><small>Comp. Curricular:</small><strong data-header-preview-component><?= h($formData['component_name'] !== '' ? $formData['component_name'] : ($formData['discipline'] !== '' ? $formData['discipline'] : 'Componente não informado')) ?></strong></span>
+                        </div>
+                    </div>
+
+                    <div class="exam-header-editor-grid">
+                        <section class="simple-note exam-header-editor-card">
+                            <strong>Ajustes rápidos</strong>
+                            <p>Estes campos resolvem a maior parte das provas sem precisar abrir o bloco avançado.</p>
+                            <div class="exam-header-editor-fields">
+                                <label>Logo principal da escola
+                                    <input type="text" name="header_logo_left" placeholder="URL da logo principal" value="<?= h($formData['header_logo_left']) ?>">
+                                </label>
+                                <label>Logo opcional da direita
+                                    <input type="text" name="header_logo_right" placeholder="Pode deixar em branco" value="<?= h($formData['header_logo_right']) ?>">
+                                </label>
+                                <label>Tamanho da letra da prova
+                                    <input type="number" name="content_font_size" min="10" max="18" step="1" value="<?= h($formData['content_font_size']) ?>">
+                                </label>
+                                <label>Tamanho das logos
+                                    <input type="number" name="header_logo_size" min="48" max="140" step="2" value="<?= h($formData['header_logo_size']) ?>">
+                                </label>
+                                <label>Altura do cabeçalho
+                                    <input type="number" name="header_min_height" min="90" max="220" step="5" value="<?= h($formData['header_min_height']) ?>">
+                                </label>
+                            </div>
+                        </section>
+
+                        <section class="simple-note exam-header-editor-card">
+                            <strong>Tamanho dos textos</strong>
+                            <p>Se o nome da escola estiver grande demais ou pequeno demais, ajuste aqui.</p>
+                            <div class="exam-header-editor-fields">
+                                <label>Tamanho do nome da escola
+                                    <input type="number" name="header_title_size" min="16" max="32" step="1" value="<?= h($formData['header_title_size']) ?>">
+                                </label>
+                                <label>Tamanho do subtítulo
+                                    <input type="number" name="header_subtitle_size" min="12" max="24" step="1" value="<?= h($formData['header_subtitle_size']) ?>">
+                                </label>
+                            </div>
+                        </section>
+                    </div>
+
+                    <details class="exam-header-editor-advanced">
+                        <summary>Ajustes avançados do cabeçalho</summary>
+                        <div class="exam-header-editor-advanced-body">
+                            <p class="helper-text">Abra apenas se quiser trocar as cores do topo da prova.</p>
+                            <div class="exam-header-editor-color-grid">
+                                <label>Cor de fundo
+                                    <input type="color" name="header_background_color" value="<?= h($formData['header_background_color']) ?>">
+                                </label>
+                                <label>Cor do nome da escola
+                                    <input type="color" name="header_title_color" value="<?= h($formData['header_title_color']) ?>">
+                                </label>
+                                <label>Cor do subtítulo
+                                    <input type="color" name="header_subtitle_color" value="<?= h($formData['header_subtitle_color']) ?>">
+                                </label>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="simple-note exam-header-editor-tip">
+                        <strong>Dica prática</strong>
+                        <p>Se estiver em dúvida, deixe as cores como estão e altere apenas logo, altura e tamanho da letra.</p>
+                    </div>
                 </div>
             </details>
 
-            <details class="simple-disclosure exam-create-disclosure" id="body-section">
-                <summary><span>Corpo</span><small>Texto introdutório antes das questões.</small></summary>
+            <details class="simple-disclosure exam-create-disclosure" id="textos-prova" open>
+                <summary><span>Textos da prova</span><small>Orientações do topo, introdução e mensagem final.</small></summary>
                 <div class="simple-disclosure-body">
-                    <p class="helper-text">Texto introdutório ou orientação central antes das questões.</p>
-                <label>Conteúdo do corpo
-                    <textarea name="draft_body_content" placeholder="Texto introdutório antes das questões."><?= h($formData['body_content']) ?></textarea>
-                </label>
+                    <p class="helper-text">Os três campos abaixo aparecem em momentos diferentes da prova e ajudam a evitar improviso depois.</p>
+                    <div class="exam-create-text-grid">
+                        <label>Orientações do topo
+                            <textarea name="draft_header_content" placeholder="Recados, orientações iniciais, tempo de prova ou observações que devem aparecer no topo."><?= h($formData['header_content']) ?></textarea>
+                        </label>
+                        <label>Texto antes das questões
+                            <textarea name="draft_body_content" placeholder="Texto introdutório antes das questões."><?= h($formData['body_content']) ?></textarea>
+                        </label>
+                        <label>Mensagem final
+                            <textarea name="draft_footer_content" placeholder="Avisos finais, critérios ou observações para repetir no rodapé da prova."><?= h($formData['footer_content']) ?></textarea>
+                        </label>
+                    </div>
                 </div>
             </details>
 
-            <details class="simple-disclosure exam-create-disclosure" id="footer-section">
-                <summary><span>Rodapé</span><small>Mensagem final de conferência e entrega.</small></summary>
-                <div class="simple-disclosure-body">
-                    <p class="helper-text">Avisos finais e mensagem de conferência ao entregar a prova.</p>
-                <label>Conteúdo do rodapé
-                    <textarea name="draft_footer_content" placeholder="Avisos finais, critérios ou observações para repetir no rodapé da prova."><?= h($formData['footer_content']) ?></textarea>
-                </label>
-                </div>
-            </details>
-
-            <article class="simple-card exam-create-shortcut-card">
+            <article class="simple-card exam-create-shortcut-card" id="atalhos-prova">
                 <div class="simple-card-head">
                     <div>
-                        <h2>Central de provas</h2>
-                        <p class="helper-text">Abra uma página separada para modelos prontos e histórico recente.</p>
+                        <h2>Modelos e atalhos</h2>
+                        <p class="helper-text">Use a central de provas ou carregue um modelo pronto em uma página separada, sem poluir esta etapa.</p>
                     </div>
-                    <a class="button-secondary" href="exam-library.php">Abrir central</a>
+                    <div class="simple-action-row">
+                        <a class="button-secondary" href="exam-library.php">Abrir central</a>
+                        <a class="ghost-button" href="exam-models.php">Modelos de prova</a>
+                    </div>
                 </div>
-            </article>
-
-            <details class="simple-disclosure exam-create-disclosure">
-                <summary><span>Questões já marcadas</span><small>Pré-seleção que seguirá para a próxima etapa.</small></summary>
-                <div class="simple-disclosure-body">
                 <?php if ($selectedPreview === []): ?>
-                    <div class="empty-state">
-                        <h2>Nenhuma questão pré-selecionada</h2>
+                    <div class="simple-note">
+                        <strong>Nenhuma questão pré-selecionada</strong>
                         <p>Você pode seguir mesmo assim e escolher tudo na próxima etapa.</p>
                     </div>
                 <?php else: ?>
@@ -380,8 +421,20 @@ render_header(
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+            </article>
+
+            <article class="simple-card exam-create-footer-actions">
+                <div class="exam-create-footer-actions-copy">
+                    <strong>Próximo passo</strong>
+                    <p class="helper-text">Quando terminar os ajustes desta etapa, siga para a seleção de questões ou volte sem perder o fluxo.</p>
                 </div>
-            </details>
+                <div class="exam-create-command-actions exam-create-command-actions--bottom">
+                    <button class="button" type="submit"><?= $editingExam ? 'Ir para questões' : 'Ir para seleção de questões' ?></button>
+                    <a class="button-secondary" href="exam-models.php">Modelos</a>
+                    <a class="ghost-button" href="<?= h($backHref) ?>">Voltar</a>
+                    <a class="ghost-button" href="exam-create.php">Cancelar</a>
+                </div>
+            </article>
         </section>
     </section>
 </form>

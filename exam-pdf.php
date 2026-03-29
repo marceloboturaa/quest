@@ -30,6 +30,15 @@ if ($questions === []) {
 }
 
 $document = exam_document_view_data($exam, $questions, $questionOptions);
+$previewStyle = trim((string) ($_GET['preview_style'] ?? $document['style']));
+$previewPaperSize = exam_document_resolve_paper_size((string) ($_GET['preview_paper_size'] ?? $document['paper_size']));
+
+if (array_key_exists($previewStyle, exam_style_options())) {
+    $document['style'] = $previewStyle;
+    $document['metadata']['exam_style'] = $previewStyle;
+}
+
+$document['paper_size'] = $previewPaperSize;
 $html = exam_document_render_html($document);
 $browserPdf = null;
 
@@ -58,7 +67,7 @@ $options->set('defaultFont', 'DejaVu Sans');
 try {
     $dompdf = new Dompdf($options);
     $dompdf->loadHtml($html, 'UTF-8');
-    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->setPaper(exam_document_paper_dimensions($document['paper_size'])['dompdf'], 'portrait');
     $dompdf->render();
 } catch (Throwable $exception) {
     error_log('Quest PDF dompdf render failed for exam ' . $examId . ': ' . $exception->getMessage());

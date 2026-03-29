@@ -1,13 +1,13 @@
 # 📁 quest - Project Structure
 
-*Generated on: 28/03/2026, 16:15:42*
+*Generated on: 29/03/2026, 17:46:34*
 
 ## 📋 Quick Overview
 
 | Metric | Value |
 |--------|-------|
-| 📄 Total Files | 59 |
-| 📁 Total Folders | 9 |
+| 📄 Total Files | 73 |
+| 📁 Total Folders | 10 |
 | 🌳 Max Depth | 2 levels |
 | 🛠️ Tech Stack | CSS |
 
@@ -20,40 +20,43 @@
 
 ### By File Type
 
-- 📄 **.php** (Other files): 39 files (66.1%)
-- 📄 **.sql** (Other files): 3 files (5.1%)
-- 📄 **.txt** (Text files): 3 files (5.1%)
-- 📄 **.** (Other files): 2 files (3.4%)
-- 📖 **.md** (Markdown files): 2 files (3.4%)
-- 🚫 **.gitignore** (Git ignore): 1 files (1.7%)
-- 🎨 **.css** (Stylesheets): 1 files (1.7%)
-- 🔤 **.ttf** (TrueType fonts): 1 files (1.7%)
-- 🎨 **.svg** (SVG images): 1 files (1.7%)
-- 📜 **.js** (JavaScript files): 1 files (1.7%)
-- ⚙️ **.json** (JSON files): 1 files (1.7%)
-- 📄 **.lock** (Other files): 1 files (1.7%)
-- 🌐 **.html** (HTML files): 1 files (1.7%)
-- 📄 **.zip** (Other files): 1 files (1.7%)
-- 📄 **.ps1** (Other files): 1 files (1.7%)
+- 📄 **.php** (Other files): 46 files (63.0%)
+- 🖼️ **.png** (PNG images): 4 files (5.5%)
+- 📄 **.sql** (Other files): 3 files (4.1%)
+- 📄 **.txt** (Text files): 3 files (4.1%)
+- 📄 **.** (Other files): 2 files (2.7%)
+- 🎨 **.svg** (SVG images): 2 files (2.7%)
+- 📖 **.md** (Markdown files): 2 files (2.7%)
+- 🚫 **.gitignore** (Git ignore): 1 files (1.4%)
+- 🎨 **.css** (Stylesheets): 1 files (1.4%)
+- 🔤 **.ttf** (TrueType fonts): 1 files (1.4%)
+- 📜 **.js** (JavaScript files): 1 files (1.4%)
+- ⚙️ **.json** (JSON files): 1 files (1.4%)
+- 📄 **.lock** (Other files): 1 files (1.4%)
+- 🖼️ **.ico** (Icon files): 1 files (1.4%)
+- 📄 **.webmanifest** (Other files): 1 files (1.4%)
+- 🌐 **.html** (HTML files): 1 files (1.4%)
+- 📄 **.zip** (Other files): 1 files (1.4%)
+- 📄 **.ps1** (Other files): 1 files (1.4%)
 
 ### By Category
 
-- **Other**: 47 files (79.7%)
-- **Docs**: 5 files (8.5%)
-- **Assets**: 2 files (3.4%)
-- **DevOps**: 1 files (1.7%)
-- **Styles**: 1 files (1.7%)
-- **JavaScript**: 1 files (1.7%)
-- **Config**: 1 files (1.7%)
-- **Web**: 1 files (1.7%)
+- **Other**: 55 files (75.3%)
+- **Assets**: 8 files (11.0%)
+- **Docs**: 5 files (6.8%)
+- **DevOps**: 1 files (1.4%)
+- **Styles**: 1 files (1.4%)
+- **JavaScript**: 1 files (1.4%)
+- **Config**: 1 files (1.4%)
+- **Web**: 1 files (1.4%)
 
 ### 📁 Largest Directories
 
-- **root**: 59 files
-- **includes**: 16 files
+- **root**: 73 files
+- **includes**: 17 files
+- **favicon**: 7 files
 - **assets**: 4 files
 - **scripts**: 3 files
-- **storage**: 2 files
 
 ## 🌳 Directory Structure
 
@@ -81,9 +84,20 @@ quest/
 ├── 📄 deploy_manifest_20260325.txt
 ├── 📄 enem.php
 ├── 📄 exam-create.php
+├── 📄 exam-library.php
+├── 📄 exam-model-preview.php
+├── 📄 exam-models.php
 ├── 📄 exam-pdf.php
 ├── 📄 exam-preview.php
 ├── 📄 exams.php
+├── 📂 favicon/
+│   ├── 🖼️ android-chrome-192x192.png
+│   ├── 🖼️ android-chrome-512x512.png
+│   ├── 🖼️ apple-touch-icon.png
+│   ├── 🖼️ favicon-96x96.png
+│   ├── 🖼️ favicon.ico
+│   ├── 🎨 favicon.svg
+│   └── 📄 site.webmanifest
 ├── 📄 forgot-password.php
 ├── 📄 history.txt
 ├── 📂 includes/
@@ -97,6 +111,7 @@ quest/
 │   ├── 📄 exam_metadata.php
 │   ├── 📄 exam_repository.php
 │   ├── 📄 layout.php
+│   ├── 📄 messages_repository.php
 │   ├── 📄 pdf_builder.php
 │   ├── 📄 public_sources.php
 │   ├── 📄 question_actions.php
@@ -108,6 +123,9 @@ quest/
 ├── 📄 llms.txt
 ├── 📄 login.php
 ├── 📄 logout.php
+├── 📄 message-dismiss.php
+├── 📄 messages.php
+├── 📄 profile.php
 ├── 📖 project_structure.md
 ├── 📄 quest_deploy_20260325.zip
 ├── 📄 question-bank.php
@@ -140,6 +158,8 @@ quest/
 - 📜 JavaScript: JavaScript files
 - ⚙️ Config: JSON files
 - 📄 Docs: Text files
+- 🖼️ Assets: PNG images
+- 🖼️ Assets: Icon files
 - 🌐 Web: HTML files
 - 📖 Docs: Markdown files
 

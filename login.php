@@ -50,7 +50,13 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
 
             <label>
                 Senha
-                <input type="password" name="password" required>
+                <span class="password-input-wrap">
+                    <input type="password" name="password" required data-password-input>
+                    <button class="password-toggle-button" type="button" data-password-toggle aria-label="Mostrar senha" aria-pressed="false">
+                        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                        <span>Mostrar</span>
+                    </button>
+                </span>
             </label>
 
             <div class="form-actions">

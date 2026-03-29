@@ -101,6 +101,63 @@ function exam_document_logo_data_uri(): ?string
     return null;
 }
 
+function exam_document_color_value(?string $value, string $fallback): string
+{
+    $value = trim((string) $value);
+    return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : $fallback;
+}
+
+function exam_document_int_value(mixed $value, int $fallback, int $min, int $max): int
+{
+    $parsed = (int) $value;
+
+    if ($parsed <= 0) {
+        $parsed = $fallback;
+    }
+
+    return max($min, min($max, $parsed));
+}
+
+function exam_document_image_reference(?string $value): string
+{
+    return trim((string) $value);
+}
+
+function exam_document_header_config(array $document): array
+{
+    $metadata = $document['metadata'] ?? [];
+    $leftLogo = exam_document_image_reference((string) ($metadata['header_logo_left'] ?? EXAM_DEFAULT_LOGO_URL));
+    $rightLogo = exam_document_image_reference((string) ($metadata['header_logo_right'] ?? ''));
+
+    return [
+        'school_subtitle' => trim((string) (($metadata['school_subtitle'] ?? '') !== '' ? $metadata['school_subtitle'] : EXAM_DEFAULT_SCHOOL_SUBTITLE)),
+        'background_color' => exam_document_color_value((string) ($metadata['header_background_color'] ?? ''), '#ffffff'),
+        'title_color' => exam_document_color_value((string) ($metadata['header_title_color'] ?? ''), '#334155'),
+        'subtitle_color' => exam_document_color_value((string) ($metadata['header_subtitle_color'] ?? ''), '#64748b'),
+        'title_size' => exam_document_int_value($metadata['header_title_size'] ?? 20, 20, 16, 32),
+        'subtitle_size' => exam_document_int_value($metadata['header_subtitle_size'] ?? 16, 16, 12, 24),
+        'logo_size' => exam_document_int_value($metadata['header_logo_size'] ?? 80, 80, 48, 140),
+        'min_height' => exam_document_int_value($metadata['header_min_height'] ?? 120, 120, 90, 220),
+        'content_font_size' => exam_document_int_value($metadata['content_font_size'] ?? 11, 11, 10, 18),
+        'left_logo' => $leftLogo !== '' ? $leftLogo : ((string) ($document['logo_data_uri'] ?? '') !== '' ? (string) $document['logo_data_uri'] : EXAM_DEFAULT_LOGO_URL),
+        'right_logo' => $rightLogo,
+    ];
+}
+
+function exam_document_header_style(array $document): string
+{
+    $config = exam_document_header_config($document);
+
+    return '--exam-header-bg:' . exam_document_escape($config['background_color']) . ';'
+        . '--exam-header-title-color:' . exam_document_escape($config['title_color']) . ';'
+        . '--exam-header-subtitle-color:' . exam_document_escape($config['subtitle_color']) . ';'
+        . '--exam-header-title-size:' . exam_document_escape((string) $config['title_size']) . 'px;'
+        . '--exam-header-subtitle-size:' . exam_document_escape((string) $config['subtitle_size']) . 'px;'
+        . '--exam-header-logo-size:' . exam_document_escape((string) $config['logo_size']) . 'px;'
+        . '--exam-header-min-height:' . exam_document_escape((string) $config['min_height']) . 'px;'
+        . '--exam-content-font-size:' . exam_document_escape((string) $config['content_font_size']) . 'px;';
+}
+
 function exam_document_font_data_uri(string $relativePath, string $mimeType): ?string
 {
     static $cache = [];
@@ -157,38 +214,41 @@ function exam_document_strip_formatting(string $text): string
 function exam_document_question_weight(array $question, array $options, string $style): int
 {
     $charsPerLine = match ($style) {
-        'single_column' => 96,
-        'accessibility' => 78,
-        'economic' => 54,
-        default => 50,
+        'triple_column' => 28,
+        'single_column' => 78,
+        'accessibility' => 60,
+        'economic' => 40,
+        default => 36,
     };
 
     $promptText = exam_document_strip_formatting((string) ($question['prompt'] ?? ''));
     $titleText = exam_document_strip_formatting((string) ($question['title'] ?? ''));
-    $weight = 8;
-    $weight += max(1, (int) ceil(mb_strlen($titleText, 'UTF-8') / $charsPerLine));
-    $weight += max(2, (int) ceil(mb_strlen($promptText, 'UTF-8') / $charsPerLine));
-    $weight += max(0, count(preg_split("/\n{2,}/", trim((string) ($question['prompt'] ?? ''))) ?: []) - 1);
+    $sourceText = exam_document_strip_formatting((string) ($question['source_name'] ?? ''));
+    $promptParagraphs = preg_split("/\n{2,}/", trim((string) ($question['prompt'] ?? ''))) ?: [];
+    $weight = 12;
+    $weight += max(2, (int) ceil(mb_strlen($titleText, 'UTF-8') / max(18, $charsPerLine - 10)));
+    $weight += max(4, (int) ceil(mb_strlen($promptText, 'UTF-8') / $charsPerLine));
+    $weight += max(0, count($promptParagraphs) - 1) * 2;
 
     foreach ($options as $option) {
         $optionText = exam_document_strip_formatting((string) ($option['option_text'] ?? ''));
-        $weight += max(1, (int) ceil(mb_strlen($optionText, 'UTF-8') / max(28, $charsPerLine - 8))) + 1;
+        $weight += max(2, (int) ceil(mb_strlen($optionText, 'UTF-8') / max(20, $charsPerLine - 8))) + 1;
     }
 
     if (($question['question_type'] ?? '') === 'discursive') {
-        $weight += max(6, (int) ($question['response_lines'] ?? 6));
+        $weight += max(10, ((int) ($question['response_lines'] ?? 6)) * 2);
     }
 
     if (($question['question_type'] ?? '') === 'drawing') {
-        $weight += 16;
+        $weight += 20;
     }
 
     if (trim((string) ($question['prompt_image_url'] ?? '')) !== '') {
-        $weight += 12;
+        $weight += 16;
     }
 
-    if (trim((string) ($question['source_name'] ?? '')) !== '') {
-        $weight += 2;
+    if ($sourceText !== '') {
+        $weight += max(2, (int) ceil(mb_strlen($sourceText, 'UTF-8') / max(22, $charsPerLine - 6)));
     }
 
     return $weight;
@@ -198,19 +258,48 @@ function exam_document_page_capacity(array $document): int
 {
     $style = (string) ($document['style'] ?? 'double_column');
     $template = (string) ($document['template'] ?? 'version_1');
+    $headerConfig = exam_document_header_config($document);
+    $footerContent = exam_document_footer_message($document);
 
     $capacity = match ($style) {
-        'single_column' => 74,
-        'accessibility' => 58,
-        'economic' => 130,
-        default => 112,
+        'triple_column' => 92,
+        'single_column' => 48,
+        'accessibility' => 38,
+        'economic' => 78,
+        default => 68,
     };
 
     if ($template === 'version_3_1') {
         $capacity -= 10;
     }
 
-    return max(42, $capacity);
+    $capacity -= max(0, (int) ceil(($headerConfig['min_height'] - 120) / 6));
+    $capacity -= 6;
+
+    if ($footerContent !== '') {
+        $capacity -= max(2, (int) ceil(mb_strlen(exam_document_strip_formatting($footerContent), 'UTF-8') / 90));
+    }
+
+    return max(36, $capacity);
+}
+
+function exam_document_paper_dimensions(string $paperSize): array
+{
+    return match ($paperSize) {
+        'A3' => ['width' => '297mm', 'height' => '420mm', 'dompdf' => 'A3'],
+        'A5' => ['width' => '148mm', 'height' => '210mm', 'dompdf' => 'A5'],
+        'Letter' => ['width' => '216mm', 'height' => '279mm', 'dompdf' => 'letter'],
+        'Legal' => ['width' => '216mm', 'height' => '356mm', 'dompdf' => 'legal'],
+        default => ['width' => '210mm', 'height' => '297mm', 'dompdf' => 'A4'],
+    };
+}
+
+function exam_document_resolve_paper_size(?string $paperSize): string
+{
+    $paperSize = trim((string) $paperSize);
+    $options = exam_paper_size_options();
+
+    return array_key_exists($paperSize, $options) ? $paperSize : 'A4';
 }
 
 function exam_document_paginate_questions(array $document): array
@@ -218,7 +307,21 @@ function exam_document_paginate_questions(array $document): array
     $pages = [];
     $currentPage = [];
     $currentWeight = 0;
-    $capacity = exam_document_page_capacity($document);
+    $baseCapacity = exam_document_page_capacity($document);
+    $firstPageCapacity = $baseCapacity - exam_document_inline_answer_capacity_penalty($document);
+    $headerCopy = exam_normalize_section_text((string) ($document['sections']['header'] ?? ''));
+    $bodyCopy = exam_normalize_section_text((string) ($document['sections']['body'] ?? ''));
+
+    if ($headerCopy !== '') {
+        $firstPageCapacity -= max(2, (int) ceil(mb_strlen(exam_document_strip_formatting($headerCopy), 'UTF-8') / 100));
+    }
+
+    if ($bodyCopy !== '') {
+        $firstPageCapacity -= max(3, (int) ceil(mb_strlen(exam_document_strip_formatting($bodyCopy), 'UTF-8') / 110));
+    }
+
+    $laterPageCapacity = $baseCapacity;
+    $capacity = max(36, $firstPageCapacity);
     $style = (string) ($document['style'] ?? 'double_column');
 
     foreach ($document['questions'] as $question) {
@@ -230,6 +333,7 @@ function exam_document_paginate_questions(array $document): array
             $pages[] = $currentPage;
             $currentPage = [];
             $currentWeight = 0;
+            $capacity = max(36, $laterPageCapacity);
         }
 
         $currentPage[] = $question;
@@ -251,7 +355,7 @@ function exam_document_view_data(array $exam, array $questions, array $questionO
     $answerRows = exam_document_answer_sheet_rows($questions, $questionOptions, $numberMap);
 
     $schoolName = trim((string) ($metadata['school_name'] !== '' ? $metadata['school_name'] : EXAM_DEFAULT_SCHOOL_NAME));
-    $courseLabel = EXAM_DEFAULT_SCHOOL_SUBTITLE;
+    $courseLabel = trim((string) (($metadata['school_subtitle'] ?? '') !== '' ? $metadata['school_subtitle'] : EXAM_DEFAULT_SCHOOL_SUBTITLE));
     $headerTitle = trim((string) ($metadata['exam_label'] !== '' ? $metadata['exam_label'] : 'AVALIAÇÃO TRIMESTRAL'));
     $variantLabel = trim((string) ($metadata['variant_label'] ?? ''));
 
@@ -261,6 +365,7 @@ function exam_document_view_data(array $exam, array $questions, array $questionO
 
     $template = (string) ($metadata['exam_template'] !== '' ? $metadata['exam_template'] : 'version_1');
     $style = (string) ($metadata['exam_style'] !== '' ? $metadata['exam_style'] : 'double_column');
+    $paperSize = exam_document_resolve_paper_size((string) ($exam['paper_size'] ?? 'A4'));
 
     return [
         'exam' => $exam,
@@ -274,6 +379,7 @@ function exam_document_view_data(array $exam, array $questions, array $questionO
         'sections' => $parsed['sections'] ?? exam_default_sections(),
         'template' => $template,
         'style' => $style,
+        'paper_size' => $paperSize,
         'school_name' => $schoolName,
         'course_label' => $courseLabel,
         'header_title' => $headerTitle,
@@ -382,7 +488,16 @@ function exam_document_should_render_answer_sheet_page(array $document): bool
         return false;
     }
 
-    return in_array(exam_document_response_mode($document), ['separate_answer_sheet', 'bubble_answer_sheet'], true);
+    return exam_document_response_mode($document) === 'separate_answer_sheet';
+}
+
+function exam_document_should_render_inline_answer_block(array $document): bool
+{
+    if ($document['answer_sheet_rows'] === []) {
+        return false;
+    }
+
+    return exam_document_response_mode($document) === 'bubble_answer_sheet';
 }
 
 function exam_document_should_render_answer_sidebar(array $document): bool
@@ -402,6 +517,15 @@ function exam_document_page_answer_rows(array $document, array $questionsOnPage)
         $document['answer_sheet_rows'],
         static fn(array $row): bool => in_array((int) ($row['question_id'] ?? 0), $questionIds, true)
     ));
+}
+
+function exam_document_inline_answer_capacity_penalty(array $document): int
+{
+    if (!exam_document_should_render_inline_answer_block($document)) {
+        return 0;
+    }
+
+    return min(32, 10 + ((int) ceil(count($document['answer_sheet_rows']) / 4) * 2));
 }
 
 function exam_document_identifier_token(array $document): string
@@ -462,6 +586,29 @@ function exam_document_identifier_fragment(string $value, int $maxLength = 4): s
     }
 
     return substr($value, 0, max(1, $maxLength));
+}
+
+function exam_document_school_abbreviation(string $schoolName): string
+{
+    $words = preg_split('/\s+/u', trim($schoolName)) ?: [];
+    $ignored = ['de', 'da', 'do', 'das', 'dos', 'e'];
+    $parts = [];
+
+    foreach ($words as $word) {
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower($word, 'UTF-8')
+            : strtolower($word);
+
+        if ($normalized === '' || in_array($normalized, $ignored, true)) {
+            continue;
+        }
+
+        $parts[] = function_exists('mb_substr') && function_exists('mb_strtoupper')
+            ? mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8')
+            : strtoupper(substr($word, 0, 1));
+    }
+
+    return implode('', $parts);
 }
 
 function exam_document_render_identifier_panel(array $document): string
@@ -526,53 +673,66 @@ function exam_document_footer_message(array $document): string
     return 'Confira nome, turma e se todas as questões foram respondidas.';
 }
 
-function exam_document_should_use_two_columns(array $document): bool
+function exam_document_column_count(array $document): int
 {
-    if (!in_array((string) ($document['style'] ?? 'double_column'), ['double_column', 'economic'], true)) {
-        return false;
+    $style = (string) ($document['style'] ?? 'double_column');
+
+    if ($style === 'triple_column') {
+        return 3;
     }
 
-    if ((string) ($document['template'] ?? 'version_1') === 'version_3_1') {
-        return false;
+    if (in_array($style, ['double_column', 'economic'], true)) {
+        return 2;
     }
 
-    return !in_array(exam_document_composition_mode($document), ['booklet', 'blocks_content', 'blocks_difficulty', 'modular', 'attachments'], true);
+    return 1;
 }
 
 function exam_document_split_questions_into_columns(array $document, array $questionsOnPage): array
 {
-    if (!exam_document_should_use_two_columns($document) || $questionsOnPage === []) {
+    $columnCount = exam_document_column_count($document);
+
+    if ($questionsOnPage === []) {
         return [$questionsOnPage];
     }
 
-    $leftColumn = [];
-    $rightColumn = [];
-    $leftWeight = 0;
-    $rightWeight = 0;
+    if ((string) ($document['template'] ?? 'version_1') === 'version_3_1') {
+        $columnCount = 1;
+    }
+
+    if (in_array(exam_document_composition_mode($document), ['booklet', 'blocks_content', 'blocks_difficulty', 'modular', 'attachments'], true)) {
+        $columnCount = 1;
+    }
+
+    if ($columnCount <= 1) {
+        return [$questionsOnPage];
+    }
+
+    $columns = array_fill(0, $columnCount, []);
+    $weights = array_fill(0, $columnCount, 0);
 
     foreach ($questionsOnPage as $question) {
         $questionId = (int) ($question['id'] ?? 0);
         $options = $document['question_options'][$questionId] ?? [];
         $weight = exam_document_question_weight($question, $options, (string) ($document['style'] ?? 'double_column'));
 
-        if ($leftWeight <= $rightWeight) {
-            $leftColumn[] = $question;
-            $leftWeight += $weight;
-            continue;
-        }
-
-        $rightColumn[] = $question;
-        $rightWeight += $weight;
+        $targetColumn = array_search(min($weights), $weights, true);
+        $columns[$targetColumn][] = $question;
+        $weights[$targetColumn] += $weight;
     }
 
-    return [$leftColumn, $rightColumn];
+    return $columns;
 }
 
-function exam_document_styles(bool $forPdf = false): string
+function exam_document_styles(bool $forPdf = false, ?array $document = null): string
 {
     $bodyBackground = $forPdf ? '#ffffff' : '#eef2f6';
     $shadow = $forPdf ? 'none' : '0 18px 42px rgba(20, 39, 62, 0.12)';
     $fontFaceCss = exam_document_font_face_css();
+    $paper = exam_document_paper_dimensions(exam_document_resolve_paper_size((string) ($document['paper_size'] ?? 'A4')));
+    $pageWidth = $paper['width'];
+    $pageHeight = $paper['height'];
+    $innerHeight = 'calc(' . $pageHeight . ' - 10mm)';
 
     return <<<CSS
 {$fontFaceCss}body {
@@ -583,7 +743,7 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 @page {
-    size: A4 portrait;
+    size: {$pageWidth} {$pageHeight};
     margin: 5mm;
 }
 
@@ -629,7 +789,7 @@ function exam_document_styles(bool $forPdf = false): string
 .exam-document-stack {
     display: grid;
     gap: 24px;
-    width: 210mm;
+    width: {$pageWidth};
     margin: 0 auto;
 }
 
@@ -641,9 +801,9 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-page {
-    width: 210mm;
-    min-width: 210mm;
-    max-width: 210mm;
+    width: {$pageWidth};
+    min-width: {$pageWidth};
+    max-width: {$pageWidth};
     background: #ffffff;
     border: 1px solid rgba(36, 52, 71, 0.12);
     border-radius: 8px;
@@ -652,51 +812,77 @@ function exam_document_styles(bool $forPdf = false): string
 
 .exam-page-inner {
     width: 100%;
-    min-height: 287mm;
+    min-height: {$innerHeight};
+    height: {$innerHeight};
     padding: 4.5mm;
+    overflow: hidden;
 }
 
 .exam-sheet {
     min-height: 100%;
+    height: 100%;
     border: 1.2px solid #8f8f8f;
     border-radius: 8px;
     padding: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .exam-header {
     display: grid;
     gap: 8px;
-    padding-bottom: 6px;
+    flex: 0 0 auto;
+    min-height: var(--exam-header-min-height, 120px);
+    padding: 8px;
+    margin-bottom: 6px;
+    border: 1px solid #d7dee6;
+    border-radius: 10px;
+    background: var(--exam-header-bg, #ffffff);
 }
 
 .exam-brand {
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr) 110px;
+    grid-template-columns: 96px minmax(0, 1fr);
     gap: 14px;
     align-items: center;
 }
 
+.exam-brand.has-brand-side {
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+}
+
 .exam-brand-mark {
-    width: 88px;
-    height: 88px;
-    border-radius: 50%;
+    width: var(--exam-header-logo-size, 80px);
+    height: var(--exam-header-logo-size, 80px);
+    border-radius: 18px;
     overflow: hidden;
     background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid #d7dee6;
 }
 
 .exam-brand-mark img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    border-radius: 50%;
     display: block;
 }
 
 .exam-brand-copy {
     text-align: center;
+}
+
+.exam-brand-side {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+
+.exam-brand-mark-right {
+    justify-self: end;
 }
 
 .exam-identifier-panel {
@@ -716,13 +902,13 @@ function exam_document_styles(bool $forPdf = false): string
     font-weight: 700;
     color: #63758a;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
 }
 
 .exam-identifier-token {
     font-size: 10px;
     color: #213446;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.03em;
 }
 
 .exam-identifier-qr {
@@ -752,18 +938,19 @@ function exam_document_styles(bool $forPdf = false): string
 
 .exam-school-name {
     font-family: 'Quest Poppins Black', Arial, Helvetica, sans-serif;
-    font-size: 21px;
+    font-size: var(--exam-header-title-size, 20px);
     line-height: 1.05;
     letter-spacing: 0.01em;
-    color: #7f7f7f;
+    color: var(--exam-header-title-color, #334155);
 }
 
 .exam-school-subtitle {
     margin-top: 2px;
     font-family: 'Quest Poppins Black', Arial, Helvetica, sans-serif;
-    font-size: 16px;
+    font-size: var(--exam-header-subtitle-size, 16px);
     line-height: 1.06;
-    color: #7f7f7f;
+    letter-spacing: 0;
+    color: var(--exam-header-subtitle-color, #64748b);
 }
 
 .exam-header-rows {
@@ -819,6 +1006,7 @@ function exam_document_styles(bool $forPdf = false): string
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+    letter-spacing: 0.01em;
 }
 
 .exam-header-value {
@@ -858,7 +1046,7 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-body-copy {
-    margin-top: 8px;
+    margin-top: 6px;
     padding: 8px 10px;
     border: 1px solid #d7dee6;
     border-radius: 8px;
@@ -879,24 +1067,31 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-questions {
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .exam-question-columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 8px;
     align-items: start;
+}
+
+.exam-question-columns.is-three-columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
 }
 
 .exam-question-column {
     display: grid;
-    gap: 10px;
+    gap: 4px;
     align-content: start;
 }
 
 .exam-body-layout {
     display: block;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .exam-body-layout.has-answer-sidebar {
@@ -970,9 +1165,9 @@ function exam_document_styles(bool $forPdf = false): string
 
 .exam-question {
     display: block;
-    margin: 0 0 10px;
-    font-size: 11px;
-    line-height: 1.32;
+    margin: 0 0 4px;
+    font-size: var(--exam-content-font-size, 11px);
+    line-height: 1.28;
     overflow-wrap: anywhere;
     break-inside: auto;
     page-break-inside: auto;
@@ -983,8 +1178,8 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-question-head {
-    margin-bottom: 4px;
-    font-size: 11px;
+    margin-bottom: 2px;
+    font-size: calc(var(--exam-content-font-size, 11px) + 0.2px);
     line-height: 1.28;
     font-weight: 700;
     break-after: avoid;
@@ -997,8 +1192,8 @@ function exam_document_styles(bool $forPdf = false): string
 .exam-question-paragraph,
 .exam-question-heading-block,
 .exam-question-source-block {
-    margin: 0 0 5px;
-    line-height: 1.34;
+    margin: 0 0 3px;
+    line-height: 1.28;
     overflow-wrap: anywhere;
 }
 
@@ -1009,7 +1204,7 @@ function exam_document_styles(bool $forPdf = false): string
 .exam-question-heading-block {
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
 }
 
 .exam-question-source-block,
@@ -1042,8 +1237,8 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-option-list li {
-    margin-bottom: 3px;
-    line-height: 1.28;
+    margin-bottom: 2px;
+    line-height: 1.24;
     overflow-wrap: anywhere;
 }
 
@@ -1072,7 +1267,8 @@ function exam_document_styles(bool $forPdf = false): string
 }
 
 .exam-footer {
-    margin-top: 10px;
+    flex: 0 0 auto;
+    margin-top: auto;
     display: grid;
     gap: 4px;
 }
@@ -1176,13 +1372,110 @@ function exam_document_styles(bool $forPdf = false): string
 
 .exam-answer-page .exam-page-inner {
     min-height: auto;
+    height: auto;
 }
 
 .exam-answer-title {
-    margin: 12px 0 14px;
+    margin: 4px 0 12px;
     text-align: center;
     font-size: 16px;
     font-weight: 700;
+}
+
+.exam-answer-meta {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.exam-answer-meta-row {
+    display: grid;
+    grid-template-columns: 1.8fr 0.5fr 0.8fr;
+    gap: 8px;
+}
+
+.exam-answer-meta-row-secondary {
+    grid-template-columns: 1.6fr 1fr;
+}
+
+.exam-answer-field {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #c8d2dd;
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.exam-answer-field-fill {
+    width: 100%;
+}
+
+.exam-inline-answer-block {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid #d7dee6;
+    border-radius: 8px;
+    background: #fbfcfe;
+}
+
+.exam-inline-answer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 10px;
+}
+
+.exam-inline-answer-head strong {
+    color: #334155;
+}
+
+.exam-inline-answer-head span {
+    color: #64748b;
+}
+
+.exam-inline-answer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 12px;
+}
+
+.exam-inline-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.exam-inline-answer-number {
+    width: 24px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.exam-inline-answer-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.exam-inline-answer-option {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #758292;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #4b5563;
+    background: #ffffff;
 }
 
 .exam-answer-grid {
@@ -1277,8 +1570,8 @@ function exam_document_styles(bool $forPdf = false): string
 
 @media screen and (max-width: 920px) {
     .exam-page {
-        width: 210mm;
-        min-width: 210mm;
+        width: {$pageWidth};
+        min-width: {$pageWidth};
     }
 
     .exam-brand {
@@ -1296,13 +1589,20 @@ function exam_document_styles(bool $forPdf = false): string
         grid-template-columns: 1fr;
     }
 
+    .exam-inline-answer-head {
+        display: grid;
+        justify-items: start;
+    }
+
     .exam-header-row,
     .exam-header-row-primary,
     .exam-header-row-student,
     .exam-header-row-secondary,
+    .exam-answer-meta-row,
     .exam-answer-grid,
     .exam-preview-summary-grid,
-    .exam-question-columns {
+    .exam-question-columns,
+    .exam-inline-answer-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1363,6 +1663,7 @@ function exam_document_render_section_copy(string $content, string $className): 
 function exam_document_render_page_header(array $document): string
 {
     $metadata = $document['metadata'];
+    $headerConfig = exam_document_header_config($document);
     $headerContent = exam_normalize_section_text((string) ($document['sections']['header'] ?? ''));
     $dateLabel = exam_format_date((string) $metadata['application_date']);
     $componentLabel = trim((string) ($metadata['component_name'] !== '' ? $metadata['component_name'] : $metadata['discipline']));
@@ -1373,20 +1674,28 @@ function exam_document_render_page_header(array $document): string
 
     ob_start();
     ?>
-<header class="exam-header">
-    <div class="exam-brand">
+<header class="exam-header" style="<?= exam_document_header_style($document) ?>">
+    <div class="exam-brand<?= $headerConfig['right_logo'] !== '' ? ' has-brand-side' : '' ?>">
         <div class="exam-brand-mark">
-            <?php if (!empty($document['logo_data_uri'])): ?>
-                <img src="<?= exam_document_escape((string) $document['logo_data_uri']) ?>" alt="Logo da escola">
+            <?php if ($headerConfig['left_logo'] !== ''): ?>
+                <img src="<?= exam_document_escape((string) $headerConfig['left_logo']) ?>" alt="Logo esquerda">
             <?php else: ?>
                 ESC
             <?php endif; ?>
         </div>
         <div class="exam-brand-copy">
             <strong class="exam-school-name"><?= exam_document_escape((string) $document['school_name']) ?></strong>
-            <span class="exam-school-subtitle"><?= exam_document_escape((string) $document['course_label']) ?></span>
+            <span class="exam-school-subtitle"><?= exam_document_escape((string) $headerConfig['school_subtitle']) ?></span>
         </div>
-        <?= exam_document_render_identifier_panel($document) ?>
+        <?php if ($headerConfig['right_logo'] !== ''): ?>
+        <div class="exam-brand-side">
+            <?php if ($headerConfig['right_logo'] !== ''): ?>
+                <div class="exam-brand-mark exam-brand-mark-right">
+                    <img src="<?= exam_document_escape((string) $headerConfig['right_logo']) ?>" alt="Logo direita">
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="exam-header-rows">
@@ -1540,6 +1849,38 @@ function exam_document_render_answer_sidebar(array $rows): string
     return (string) ob_get_clean();
 }
 
+function exam_document_render_inline_answer_block(array $document): string
+{
+    if (!exam_document_should_render_inline_answer_block($document)) {
+        return '';
+    }
+
+    ob_start();
+    ?>
+<section class="exam-inline-answer-block">
+    <div class="exam-inline-answer-head">
+        <strong>Gabarito do aluno</strong>
+        <span>Preencha somente uma alternativa por questão.</span>
+    </div>
+
+    <div class="exam-inline-answer-grid">
+        <?php foreach ($document['answer_sheet_rows'] as $row): ?>
+            <div class="exam-inline-answer-row">
+                <span class="exam-inline-answer-number"><?= exam_document_escape((string) $row['number']) ?></span>
+                <div class="exam-inline-answer-options">
+                    <?php foreach ($row['labels'] as $label): ?>
+                        <span class="exam-inline-answer-option"><?= exam_document_escape($label) ?></span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</section>
+    <?php
+
+    return (string) ob_get_clean();
+}
+
 function exam_document_render_page_body(array $document, array $questionsOnPage, bool $includeCustomBody = false): string
 {
     $questionClass = exam_document_question_container_class($document);
@@ -1549,13 +1890,14 @@ function exam_document_render_page_body(array $document, array $questionsOnPage,
         : [];
     $layoutClass = $pageAnswerRows !== [] ? 'exam-body-layout has-answer-sidebar' : 'exam-body-layout';
     $questionColumns = exam_document_split_questions_into_columns($document, $questionsOnPage);
+    $columnClass = count($questionColumns) === 3 ? 'exam-question-columns is-three-columns' : 'exam-question-columns';
 
     ob_start();
     ?>
 <div class="<?= $layoutClass ?>">
     <div class="exam-body-main">
         <?php if ($includeCustomBody): ?>
-            <?= exam_document_composition_banner($document) ?>
+            <?= exam_document_render_inline_answer_block($document) ?>
         <?php endif; ?>
 
         <?php if ($bodyContent !== ''): ?>
@@ -1563,7 +1905,7 @@ function exam_document_render_page_body(array $document, array $questionsOnPage,
         <?php endif; ?>
 
         <?php if (count($questionColumns) > 1): ?>
-            <div class="exam-question-columns">
+            <div class="<?= $columnClass ?>">
                 <?php foreach ($questionColumns as $columnQuestions): ?>
                     <div class="exam-question-column">
                         <?php foreach ($columnQuestions as $question): ?>
@@ -1601,6 +1943,8 @@ function exam_document_render_page_body(array $document, array $questionsOnPage,
 function exam_document_render_page_footer(array $document, string $title, string $pageSuffix = ''): string
 {
     $footerContent = exam_document_footer_message($document);
+    $schoolShort = exam_document_school_abbreviation((string) $document['school_name']);
+    $proofCode = exam_document_identifier_token($document);
     $pageLabel = $pageSuffix !== '' ? ltrim($pageSuffix, ' |') : '';
 
     ob_start();
@@ -1609,7 +1953,9 @@ function exam_document_render_page_footer(array $document, string $title, string
     <?= exam_document_render_section_copy($footerContent, 'exam-footer-copy') ?>
 
     <div class="exam-footer-meta">
-        <span class="exam-footer-meta-piece"><?= exam_document_escape((string) $document['school_name']) ?></span>
+        <span class="exam-footer-meta-piece"><?= exam_document_escape($proofCode) ?></span>
+        <span class="exam-footer-meta-separator">|</span>
+        <span class="exam-footer-meta-piece"><?= exam_document_escape($schoolShort !== '' ? $schoolShort : (string) $document['school_name']) ?></span>
         <span class="exam-footer-meta-separator">|</span>
         <span class="exam-footer-meta-piece"><?= exam_document_escape($title) ?></span>
         <?php if ($pageLabel !== ''): ?>
@@ -1638,7 +1984,9 @@ function exam_document_render_question_page(array $document, array $questionsOnP
 <section class="exam-page">
     <div class="exam-page-inner">
         <div class="<?= $sheetClass ?>">
-            <?= exam_document_render_page_header($document) ?>
+            <?php if ($pageNumber === 1): ?>
+                <?= exam_document_render_page_header($document) ?>
+            <?php endif; ?>
 
             <?= exam_document_render_page_body($document, $questionsOnPage, $pageNumber === 1) ?>
 
@@ -1657,17 +2005,29 @@ function exam_document_render_answer_sheet_page(array $document): string
         return '';
     }
 
-    $responseMode = exam_document_response_mode($document);
-    $answerTitle = $responseMode === 'bubble_answer_sheet' ? 'Folha de respostas' : 'Folha de gabarito';
+    $answerTitle = 'Folha de gabarito';
+    $metadata = $document['metadata'];
+    $dateLabel = exam_format_date((string) ($metadata['application_date'] ?? ''));
+    $classLabel = trim((string) ($metadata['class_name'] ?? ''));
 
     ob_start();
     ?>
 <section class="exam-page exam-answer-page">
     <div class="exam-page-inner">
         <div class="exam-sheet template-<?= exam_document_escape($document['template']) ?> style-<?= exam_document_escape($document['style']) ?> composition-<?= exam_document_escape(exam_document_composition_mode($document)) ?> identification-<?= exam_document_escape(exam_document_identification_mode($document)) ?> response-<?= exam_document_escape(exam_document_response_mode($document)) ?>">
-            <?= exam_document_render_page_header($document) ?>
-
             <div class="exam-answer-title"><?= exam_document_escape($answerTitle) ?></div>
+
+            <div class="exam-answer-meta">
+                <div class="exam-answer-meta-row">
+                    <div class="exam-answer-field exam-answer-field-fill">Aluno(a):</div>
+                    <div class="exam-answer-field">Nº:</div>
+                    <div class="exam-answer-field">Turma: <?= exam_document_escape($classLabel !== '' ? $classLabel : '_____') ?></div>
+                </div>
+                <div class="exam-answer-meta-row exam-answer-meta-row-secondary">
+                    <div class="exam-answer-field exam-answer-field-fill">Assinatura:</div>
+                    <div class="exam-answer-field">Data: <?= exam_document_escape($dateLabel !== '' ? $dateLabel : '____/____/________') ?></div>
+                </div>
+            </div>
 
             <div class="exam-answer-grid">
                 <?php foreach ($document['answer_sheet_rows'] as $row): ?>
@@ -1679,8 +2039,6 @@ function exam_document_render_answer_sheet_page(array $document): string
                     </div>
                 <?php endforeach; ?>
             </div>
-
-            <?= exam_document_render_page_footer($document, $answerTitle) ?>
         </div>
     </div>
 </section>
@@ -1708,6 +2066,13 @@ function exam_document_render_sheet(array $document): string
 function exam_document_render_preview_notes(array $document): string
 {
     $metadata = $document['metadata'];
+    $responseMode = exam_document_response_mode($document);
+    $answerChecklist = match ($responseMode) {
+        'bubble_answer_sheet' => 'Revise o gabarito logo abaixo do cabeçalho e confira se a grade de marcação ficou completa.',
+        'separate_answer_sheet' => 'Revise a folha de gabarito separada antes de exportar.',
+        'lateral_answer_key' => 'Confira o gabarito lateral junto das questões objetivas.',
+        default => 'Confira se a estrutura da prova está completa antes de exportar.',
+    };
     $summaryItems = [
         ['label' => 'Colégio', 'value' => (string) $document['school_name']],
         ['label' => 'Professor', 'value' => (string) $metadata['teacher_name']],
@@ -1735,7 +2100,7 @@ function exam_document_render_preview_notes(array $document): string
         <ul>
             <li>Confira cabeçalho, corpo introdutório e rodapé antes de exportar.</li>
             <li>Valide data, turma, professor e o espaçamento do modelo escolhido.</li>
-            <li>Se houver questões objetivas, revise a folha de gabarito.</li>
+            <li><?= exam_document_escape($answerChecklist) ?></li>
         </ul>
     </article>
 </section>
@@ -1747,7 +2112,7 @@ function exam_document_render_preview_notes(array $document): string
 function exam_document_render_html(array $document): string
 {
     $title = exam_document_escape((string) ($document['exam']['title'] ?? 'Prova'));
-    $styles = exam_document_styles(true);
+    $styles = exam_document_styles(true, $document);
     $sheet = exam_document_render_sheet($document);
 
     return <<<HTML
@@ -1757,17 +2122,15 @@ function exam_document_render_html(array $document): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon/favicon.ico">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48x48.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#4f2ec9">
     <title>{$title}</title>
     <style>
-        @page { size: A4 portrait; margin: 5mm; }
         {$styles}
     </style>
 </head>

@@ -40,3 +40,16 @@ Instituicao: CNI
 - Correcao do fluxo de geracao de PDF com fallback seguro e sem fatal error.
 - Redesenho do cabeçalho da prova com logo oficial, padrao A4 e fonte `Poppins Black`.
 - Ajuste da paginacao das questoes para reduzir corte de conteudo no PDF e aproximar preview e impressao.
+
+2026-03-29
+- Criacao da central de provas em `exam-library.php` e da pagina dedicada de modelos em `exam-models.php`.
+- Inclusao de preview de modelos em `exam-model-preview.php` e reorganizacao do fluxo de montagem.
+- Simplificacao estrutural de `exam-create.php`, com foco em dados principais, formato, cabeçalho e textos.
+- Evolucao do renderizador de provas para reforcar protecao do rodape, codigo da prova no rodape e ajustes de pagina A4.
+- Inclusao do sistema interno de mensagens em `messages.php` com inbox, respostas, envio direto e avisos gerais.
+- Inclusao de exclusao de mensagens da caixa de entrada e toast flutuante para avisos e mensagens novas.
+- Inclusao do painel `profile.php` para dados padrao do usuario usados automaticamente na criacao de provas.
+- Ampliacao do schema em runtime para salvar preferencias recorrentes do usuario no cadastro.
+- Ajuste para usuarios enviarem mensagem ao administrador e ao setor Xerox quando houver operador habilitado.
+- Atualizacao do topo do sistema com atalho para `Meu painel`.
+- Atualizacao do favicon e do manifesto em `/favicon`, com novo tema roxo `#4f2ec9`, `favicon.svg` e `favicon-96x96.png`.

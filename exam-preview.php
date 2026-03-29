@@ -76,6 +76,15 @@ if (!$exam) {
 
 [$questions, $questionOptions] = exam_questions_for_view($examId);
 $document = exam_document_view_data($exam, $questions, $questionOptions);
+$previewStyle = trim((string) ($_GET['preview_style'] ?? $document['style']));
+$previewPaperSize = exam_document_resolve_paper_size((string) ($_GET['preview_paper_size'] ?? $document['paper_size']));
+
+if (array_key_exists($previewStyle, exam_style_options())) {
+    $document['style'] = $previewStyle;
+    $document['metadata']['exam_style'] = $previewStyle;
+}
+
+$document['paper_size'] = $previewPaperSize;
 $metadataSummary = array_values(array_filter(
     $document['metadata_summary'],
     static fn(array $item): bool => in_array((string) ($item['label'] ?? ''), ['Tipo', 'Professor', 'Turma', 'Data', 'Versão'], true)
@@ -93,26 +102,26 @@ render_header(
 ?>
 
 <style>
-<?= exam_document_styles(false) ?>
+<?= exam_document_styles(false, $document) ?>
 </style>
 
-<section class="panel">
-    <div class="workspace-panel-head">
-        <div>
-            <p class="workspace-kicker">Preview</p>
-            <h2><?= h((string) $exam['title']) ?></h2>
-        </div>
-        <div class="form-actions">
-            <?php if ($isExamOwner): ?>
-                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#dados-basicos">Editar dados</a>
-                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#header-section">Cabeçalho</a>
-                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#body-section">Corpo</a>
-                <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#footer-section">Rodapé</a>
-                <a class="ghost-button" href="exams.php?exam_id=<?= h((string) $exam['id']) ?>">Questões</a>
-            <?php endif; ?>
-            <a class="ghost-button" href="<?= $isExamOwner ? 'exams.php' : 'xerox.php' ?>">Voltar</a>
-            <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">Abrir PDF</a>
-            <?php if ($isExamOwner): ?>
+<section class="exam-preview-layout">
+    <section class="panel">
+        <div class="workspace-panel-head">
+            <div>
+                <p class="workspace-kicker">Preview</p>
+                <h2><?= h((string) $exam['title']) ?></h2>
+            </div>
+            <div class="form-actions">
+                <?php if ($isExamOwner): ?>
+                    <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#dados-principais">Editar dados</a>
+                    <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#cabecalho-visual">Cabeçalho</a>
+                    <a class="ghost-button" href="exam-create.php?edit=<?= h((string) $exam['id']) ?>#textos-prova">Textos</a>
+                    <a class="ghost-button" href="exams.php?exam_id=<?= h((string) $exam['id']) ?>">Questões</a>
+                <?php endif; ?>
+                <a class="ghost-button" href="<?= $isExamOwner ? 'exams.php' : 'xerox.php' ?>">Voltar</a>
+                <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>&preview_style=<?= h($document['style']) ?>&preview_paper_size=<?= h($document['paper_size']) ?>">Abrir PDF</a>
+                <?php if ($isExamOwner): ?>
                 <?php if ($xeroxStatus === 'not_sent'): ?>
                     <form method="post" class="inline-actions">
                         <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -144,39 +153,70 @@ render_header(
                         <button class="button-danger" type="submit" onclick="return confirm('Excluir esta prova?');">Excluir</button>
                     </form>
                 <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="workspace-builder-note">
+            <strong>Status Xerox</strong>
+            <p>
+                <?= h(xerox_status_label($xeroxStatus)) ?>
+                <?php if (!empty($exam['xerox_owner_name'])): ?>
+                    | Responsavel: <?= h((string) $exam['xerox_owner_name']) ?>
+                <?php endif; ?>
+                <?php if (!$isExamOwner): ?>
+                    | Professor: <?= h((string) ($exam['owner_name'] ?? 'Nao informado')) ?>
+                <?php endif; ?>
+            </p>
+            <?php if ($isExamOwner && !xerox_is_available()): ?>
+                <p class="helper-text">O envio so fica liberado quando existir pelo menos um usuario autorizado no setor Xerox.</p>
+            <?php elseif ($isExamOwner && $xeroxStatus === 'sent'): ?>
+                <p class="helper-text">Enquanto a prova estiver apenas encaminhada, voce pode cancelar o envio.</p>
+            <?php elseif ($isExamOwner && $xeroxStatus === 'finished'): ?>
+                <p class="helper-text">Se precisar de nova impressao, use o botao Reenviar Xerox.</p>
             <?php endif; ?>
         </div>
-    </div>
 
-    <div class="workspace-builder-note">
-        <strong>Status Xerox</strong>
-        <p>
-            <?= h(xerox_status_label($xeroxStatus)) ?>
-            <?php if (!empty($exam['xerox_owner_name'])): ?>
-                | Responsavel: <?= h((string) $exam['xerox_owner_name']) ?>
-            <?php endif; ?>
-            <?php if (!$isExamOwner): ?>
-                | Professor: <?= h((string) ($exam['owner_name'] ?? 'Nao informado')) ?>
-            <?php endif; ?>
-        </p>
-        <?php if ($isExamOwner && !xerox_is_available()): ?>
-            <p class="helper-text">O envio so fica liberado quando existir pelo menos um usuario autorizado no setor Xerox.</p>
-        <?php elseif ($isExamOwner && $xeroxStatus === 'sent'): ?>
-            <p class="helper-text">Enquanto a prova estiver apenas encaminhada, voce pode cancelar o envio.</p>
-        <?php elseif ($isExamOwner && $xeroxStatus === 'finished'): ?>
-            <p class="helper-text">Se precisar de nova impressao, use o botao Reenviar Xerox.</p>
+        <?php if ($metadataSummary !== []): ?>
+            <div class="simple-inline-list exam-preview-meta-badges">
+                <?php foreach (array_slice($metadataSummary, 0, 8) as $item): ?>
+                    <span class="badge"><?= h($item['label'] . ': ' . $item['value']) ?></span>
+                <?php endforeach; ?>
+                <span class="badge">Layout: <?= h(exam_style_label($document['style'])) ?></span>
+                <span class="badge">Papel: <?= h($document['paper_size']) ?></span>
+            </div>
         <?php endif; ?>
-    </div>
 
-    <?php if ($metadataSummary !== []): ?>
-        <div class="simple-inline-list exam-preview-meta-badges">
-            <?php foreach (array_slice($metadataSummary, 0, 8) as $item): ?>
-                <span class="badge"><?= h($item['label'] . ': ' . $item['value']) ?></span>
-            <?php endforeach; ?>
+        <?= exam_document_render_sheet($document) ?>
+    </section>
+
+    <aside class="simple-card exam-preview-floating-panel">
+        <div class="simple-card-head">
+            <div>
+                <h2>Ajuste rápido</h2>
+                <p class="helper-text">Mude a visualização do corpo e do papel direto no preview.</p>
+            </div>
         </div>
-    <?php endif; ?>
 
-    <?= exam_document_render_sheet($document) ?>
+        <form method="get" class="simple-stack">
+            <input type="hidden" name="id" value="<?= h((string) $exam['id']) ?>">
+            <label>Corpo / colunas
+                <select name="preview_style">
+                    <?php foreach (exam_style_options() as $styleValue => $styleLabel): ?>
+                        <option value="<?= h($styleValue) ?>" <?= $document['style'] === $styleValue ? 'selected' : '' ?>><?= h($styleLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>Tamanho do papel
+                <select name="preview_paper_size">
+                    <?php foreach (exam_paper_size_options() as $paperValue => $paperLabel): ?>
+                        <option value="<?= h($paperValue) ?>" <?= $document['paper_size'] === $paperValue ? 'selected' : '' ?>><?= h($paperLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <button class="button" type="submit">Atualizar preview</button>
+        </form>
+    </aside>
 </section>
 
 <?= exam_document_render_preview_notes($document) ?>

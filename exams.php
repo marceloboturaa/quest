@@ -82,7 +82,7 @@ render_header(
 ?>
 
 <section class="simple-stack">
-    <article class="simple-card exam-builder-action-card">
+    <article class="simple-card exam-builder-action-card exam-workflow-header">
         <div class="simple-card-head">
             <div>
                 <h2><?= h($draftTitle !== '' ? $draftTitle : 'Nova prova') ?></h2>
@@ -125,9 +125,12 @@ render_header(
         </section>
     </article>
 
-    <article class="simple-card">
+    <article class="simple-card exam-workflow-filter-card">
         <div class="simple-card-head">
-            <h2>Filtrar banco</h2>
+            <div>
+                <h2>Filtrar banco</h2>
+                <p class="helper-text">Use filtros rápidos para encontrar as questões certas antes de salvar a prova.</p>
+            </div>
         </div>
 
         <form method="get" class="simple-filter-grid">
@@ -199,92 +202,102 @@ render_header(
             <input type="hidden" name="<?= h($metaKey) ?>" value="<?= h($metaValue) ?>">
         <?php endforeach; ?>
 
-        <article class="simple-card">
-            <div class="simple-card-head">
-                <h2>Questões selecionadas</h2>
-                <span class="badge badge-selected" data-selected-count><?= h((string) count($preselectedQuestionIds)) ?> selecionadas</span>
-            </div>
-
-            <div class="simple-list" data-selected-list>
-                <?php if ($selectedPreviewQuestions === []): ?>
-                    <div class="empty-state" data-selected-empty>
-                        <h2>Nenhuma questão selecionada</h2>
-                        <p>Marque as questões abaixo para montar a prova.</p>
+        <div class="exam-builder-content">
+            <div class="exam-builder-main">
+                <article class="simple-card exam-workflow-bank-card">
+                    <div class="simple-card-head">
+                        <div>
+                            <h2>Banco de questões</h2>
+                            <p class="helper-text">Itens públicos e privados ficam destacados por cor e estado de seleção.</p>
+                        </div>
+                        <span class="badge"><?= h((string) count($availableQuestions)) ?> disponíveis</span>
                     </div>
-                <?php else: ?>
-                    <?php foreach ($selectedPreviewQuestions as $index => $question): ?>
-                        <article class="simple-list-item">
-                            <div>
-                                <strong><?= h((string) ($index + 1)) ?>. <?= h((string) $question['title']) ?></strong>
-                                <p>Pronta para entrar na prova.</p>
-                            </div>
-                        </article>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </article>
 
-        <article class="simple-card">
-            <div class="simple-card-head">
-                <h2>Banco de questões</h2>
-                <span class="badge"><?= h((string) count($availableQuestions)) ?> disponíveis</span>
-            </div>
-
-            <?php if ($availableQuestions === []): ?>
-                <div class="empty-state">
-                    <h2>Nenhuma questão disponível</h2>
-                    <p>Crie questões, torne itens públicos ou limpe os filtros.</p>
-                </div>
-            <?php else: ?>
-                <div class="simple-list">
-                    <?php foreach ($availableQuestions as $question): ?>
-                        <?php
-                        $isPreselected = in_array((int) $question['id'], $preselectedQuestionIds, true);
-                        $visibility = (string) $question['visibility'];
-                        $pickerClass = 'simple-question-picker ' . ($visibility === 'public' ? 'is-public' : 'is-private');
-                        $visibilityBadgeClass = $visibility === 'public' ? 'badge badge-public' : 'badge badge-private';
-                        $visibilityIconClass = $visibility === 'public' ? 'fa-solid fa-earth-americas' : 'fa-solid fa-lock';
-                        ?>
-                        <label class="<?= h($pickerClass) ?>">
-                            <input
-                                type="checkbox"
-                                name="question_ids[]"
-                                value="<?= h((string) $question['id']) ?>"
-                                data-exam-question
-                                data-question-title="<?= h($question['title']) ?>"
-                                <?= $isPreselected ? 'checked' : '' ?>
-                            >
-                            <span class="simple-question-picker-body">
-                                <span class="simple-question-picker-top">
-                                    <span class="simple-question-picker-state"><?= $isPreselected ? 'Selecionada' : 'Selecionar' ?></span>
-                                    <span class="simple-inline-list">
-                                        <span class="badge"><?= h(question_type_label((string) $question['question_type'])) ?></span>
-                                        <span class="badge"><?= h($question['discipline_name'] ?? 'Sem disciplina') ?></span>
-                                        <span class="<?= h($visibilityBadgeClass) ?>">
-                                            <i class="<?= h($visibilityIconClass) ?>" aria-hidden="true"></i>
-                                            <?= h(visibility_label($visibility)) ?>
+                    <?php if ($availableQuestions === []): ?>
+                        <div class="empty-state">
+                            <h2>Nenhuma questão disponível</h2>
+                            <p>Crie questões, torne itens públicos ou limpe os filtros.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="simple-list" data-bank-list data-bank-visible-count="10">
+                            <?php foreach ($availableQuestions as $index => $question): ?>
+                                <?php
+                                $isPreselected = in_array((int) $question['id'], $preselectedQuestionIds, true);
+                                $visibility = (string) $question['visibility'];
+                                $pickerClass = 'simple-question-picker ' . ($visibility === 'public' ? 'is-public' : 'is-private');
+                                $visibilityBadgeClass = $visibility === 'public' ? 'badge badge-public' : 'badge badge-private';
+                                $visibilityIconClass = $visibility === 'public' ? 'fa-solid fa-earth-americas' : 'fa-solid fa-lock';
+                                ?>
+                                <label class="<?= h($pickerClass) ?><?= $index >= 10 ? ' is-hidden-bank-item' : '' ?>" data-bank-item>
+                                    <input
+                                        type="checkbox"
+                                        name="question_ids[]"
+                                        value="<?= h((string) $question['id']) ?>"
+                                        data-exam-question
+                                        data-question-title="<?= h($question['title']) ?>"
+                                        <?= $isPreselected ? 'checked' : '' ?>
+                                    >
+                                    <span class="simple-question-picker-body">
+                                        <span class="simple-question-picker-top">
+                                            <span class="simple-question-picker-state"><?= $isPreselected ? 'Selecionada' : 'Selecionar' ?></span>
+                                            <span class="simple-inline-list">
+                                                <span class="badge"><?= h(question_type_label((string) $question['question_type'])) ?></span>
+                                                <span class="badge"><?= h($question['discipline_name'] ?? 'Sem disciplina') ?></span>
+                                                <span class="<?= h($visibilityBadgeClass) ?>">
+                                                    <i class="<?= h($visibilityIconClass) ?>" aria-hidden="true"></i>
+                                                    <?= h(visibility_label($visibility)) ?>
+                                                </span>
+                                            </span>
+                                        </span>
+                                        <strong><?= h($question['title']) ?></strong>
+                                        <?php if ($questionExcerpt((string) ($question['prompt'] ?? '')) !== ''): ?>
+                                            <small><?= h($questionExcerpt((string) ($question['prompt'] ?? ''))) ?></small>
+                                        <?php endif; ?>
+                                        <span class="simple-question-picker-meta">
+                                            <span><?= !empty($question['source_name']) ? 'Fonte: ' . h((string) $question['source_name']) : 'Autor: ' . h((string) $question['author_name']) ?></span>
+                                            <span>Uso em prova: <?= h((string) $question['usage_count']) ?></span>
                                         </span>
                                     </span>
-                                </span>
-                                <strong><?= h($question['title']) ?></strong>
-                                <?php if ($questionExcerpt((string) ($question['prompt'] ?? '')) !== ''): ?>
-                                    <small><?= h($questionExcerpt((string) ($question['prompt'] ?? ''))) ?></small>
-                                <?php endif; ?>
-                                <span class="simple-question-picker-meta">
-                                    <span><?= !empty($question['source_name']) ? 'Fonte: ' . h((string) $question['source_name']) : 'Autor: ' . h((string) $question['author_name']) ?></span>
-                                    <span>Uso em prova: <?= h((string) $question['usage_count']) ?></span>
-                                </span>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </article>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <button class="ghost-button exam-bank-load-more" type="button" data-bank-load-more <?= count($availableQuestions) > 10 ? '' : 'hidden' ?>>Ver mais 10 questões</button>
+                    <?php endif; ?>
+                </article>
 
-        <div class="simple-action-row">
-            <button class="button" type="submit" data-submit-exam-builder><?= $editingExam ? 'Atualizar prova' : 'Salvar prova' ?></button>
-            <a class="button-secondary" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>">Voltar para edição</a>
-            <a class="ghost-button" href="<?= h($cancelHref) ?>">Cancelar</a>
+                <div class="simple-action-row">
+                    <button class="button" type="submit" data-submit-exam-builder><?= $editingExam ? 'Atualizar prova' : 'Salvar prova' ?></button>
+                    <a class="button-secondary" href="exam-create.php?<?= h(http_build_query($editExamQuery)) ?>">Voltar para edição</a>
+                    <a class="ghost-button" href="<?= h($cancelHref) ?>">Cancelar</a>
+                </div>
+            </div>
+
+            <aside class="exam-builder-floating">
+                <button class="button exam-builder-floating-button" type="button" data-selected-toggle aria-expanded="<?= $selectedPreviewQuestions === [] ? 'false' : 'true' ?>">
+                    <span>Selecionadas</span>
+                    <span class="badge badge-selected" data-selected-count><?= h((string) count($preselectedQuestionIds)) ?></span>
+                </button>
+
+                <article class="simple-card exam-workflow-selected-card<?= $selectedPreviewQuestions === [] ? '' : ' is-open' ?>" data-selected-drawer <?= $selectedPreviewQuestions === [] ? 'hidden' : '' ?>>
+                    <div class="simple-list" data-selected-list>
+                        <?php if ($selectedPreviewQuestions === []): ?>
+                            <div class="empty-state" data-selected-empty>
+                                <h2>Nenhuma questão selecionada</h2>
+                                <p>Marque as questões abaixo para montar a prova.</p>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($selectedPreviewQuestions as $index => $question): ?>
+                                <article class="simple-list-item" data-selected-item>
+                                    <div class="exam-selected-item-index"><?= h((string) ($index + 1)) ?></div>
+                                    <div class="exam-selected-item-copy">
+                                        <strong><?= h((string) $question['title']) ?></strong>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            </aside>
         </div>
     </form>
 
