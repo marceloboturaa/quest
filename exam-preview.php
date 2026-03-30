@@ -18,12 +18,12 @@ if (is_post()) {
 
     if ($action === 'send_to_xerox') {
         if (!xerox_is_available()) {
-            flash('error', 'Nenhum usuario Xerox esta autorizado no momento.');
+            flash('error', 'Nenhum usuário do Xerox está autorizado no momento.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
         if (!xerox_submit_exam($examId, (int) $user['id'])) {
-            flash('error', 'Nao foi possivel encaminhar essa prova para o setor Xerox.');
+            flash('error', 'Não foi possível encaminhar esta prova para o setor Xerox.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
@@ -33,7 +33,7 @@ if (is_post()) {
 
     if ($action === 'cancel_xerox') {
         if (!xerox_cancel_exam($examId, (int) $user['id'])) {
-            flash('error', 'Nao foi possivel cancelar o envio. A prova pode ja estar em andamento.');
+            flash('error', 'Não foi possível cancelar o envio. A prova pode já estar em andamento.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
@@ -43,12 +43,12 @@ if (is_post()) {
 
     if ($action === 'resend_to_xerox') {
         if (!xerox_is_available()) {
-            flash('error', 'Nenhum usuario Xerox esta autorizado no momento.');
+            flash('error', 'Nenhum usuário do Xerox está autorizado no momento.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
         if (!xerox_resend_exam($examId, (int) $user['id'])) {
-            flash('error', 'Nao foi possivel reenviar essa prova para o setor Xerox.');
+            flash('error', 'Não foi possível reenviar esta prova para o setor Xerox.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
@@ -58,11 +58,11 @@ if (is_post()) {
 
     if ($action === 'delete_exam') {
         if (!exam_delete($examId, (int) $user['id'])) {
-            flash('error', 'Nao foi possivel excluir essa prova.');
+            flash('error', 'Não foi possível excluir esta prova.');
             redirect('exam-preview.php?id=' . $examId);
         }
 
-        flash('success', 'Prova excluida com sucesso.');
+        flash('success', 'Prova excluída com sucesso.');
         redirect('dashboard.php');
     }
 }
@@ -70,7 +70,7 @@ if (is_post()) {
 $exam = $examId > 0 ? exam_find_accessible($examId, $user) : null;
 
 if (!$exam) {
-    flash('error', 'Prova nao encontrada.');
+    flash('error', 'Prova não encontrada.');
     redirect(can_view_xerox_queue() ? 'xerox.php' : 'exams.php');
 }
 
@@ -85,10 +85,27 @@ if (array_key_exists($previewStyle, exam_style_options())) {
 }
 
 $document['paper_size'] = $previewPaperSize;
+$metadata = $document['metadata'];
 $metadataSummary = array_values(array_filter(
     $document['metadata_summary'],
     static fn(array $item): bool => in_array((string) ($item['label'] ?? ''), ['Tipo', 'Professor', 'Turma', 'Data', 'Versão'], true)
 ));
+$answerPreviewOrientation = (($metadata['answer_preview_orientation'] ?? 'vertical') === 'horizontal')
+    ? 'Horizontal deitado'
+    : 'Vertical em pé';
+$answerPreviewWidth = (($metadata['answer_preview_width_mode'] ?? 'full') === 'full')
+    ? 'Largura da prova'
+    : trim((string) ($metadata['answer_preview_size_cm'] ?? '18')) . ' cm';
+$previewSettings = [
+    ['label' => 'Gabarito', 'value' => exam_response_mode_label((string) ($metadata['response_mode'] ?? 'separate_answer_sheet'))],
+    ['label' => 'Questões na prévia', 'value' => trim((string) ($metadata['answer_preview_quantity'] ?? count($questions)))],
+    ['label' => 'Orientação', 'value' => $answerPreviewOrientation],
+    ['label' => 'Largura do gabarito', 'value' => $answerPreviewWidth],
+    ['label' => 'Altura do gabarito', 'value' => trim((string) ($metadata['answer_preview_height_cm'] ?? '7')) . ' cm'],
+    ['label' => 'Letra do gabarito', 'value' => trim((string) ($metadata['answer_preview_font_size'] ?? '13')) . ' px'],
+    ['label' => 'Logo', 'value' => trim((string) ($metadata['header_logo_size'] ?? '2.2')) . ' cm'],
+    ['label' => 'Altura do cabeçalho', 'value' => trim((string) ($metadata['header_min_height'] ?? '3.2')) . ' cm'],
+];
 $xeroxStatus = (string) ($exam['xerox_status'] ?? 'not_sent');
 $isExamOwner = (int) $exam['user_id'] === (int) $user['id'];
 $xeroxButtonLabel = $xeroxStatus === 'sent'
@@ -96,8 +113,8 @@ $xeroxButtonLabel = $xeroxStatus === 'sent'
     : ($xeroxStatus === 'in_progress' ? 'Em andamento' : ($xeroxStatus === 'finished' ? 'Finalizado' : 'Xerox'));
 
 render_header(
-    'Visualizacao da prova',
-    'Confira cabecalho, corpo, rodape e a ordem das questoes antes de exportar.'
+    'Visualização da prova',
+    'Confira o cabeçalho, o corpo, o rodapé e a ordem das questões antes de exportar.'
 );
 ?>
 
@@ -162,18 +179,18 @@ render_header(
             <p>
                 <?= h(xerox_status_label($xeroxStatus)) ?>
                 <?php if (!empty($exam['xerox_owner_name'])): ?>
-                    | Responsavel: <?= h((string) $exam['xerox_owner_name']) ?>
+                    | Responsável: <?= h((string) $exam['xerox_owner_name']) ?>
                 <?php endif; ?>
                 <?php if (!$isExamOwner): ?>
-                    | Professor: <?= h((string) ($exam['owner_name'] ?? 'Nao informado')) ?>
+                    | Professor: <?= h((string) ($exam['owner_name'] ?? 'Não informado')) ?>
                 <?php endif; ?>
             </p>
             <?php if ($isExamOwner && !xerox_is_available()): ?>
-                <p class="helper-text">O envio so fica liberado quando existir pelo menos um usuario autorizado no setor Xerox.</p>
+                <p class="helper-text">O envio só fica liberado quando existir pelo menos um usuário autorizado no setor Xerox.</p>
             <?php elseif ($isExamOwner && $xeroxStatus === 'sent'): ?>
-                <p class="helper-text">Enquanto a prova estiver apenas encaminhada, voce pode cancelar o envio.</p>
+                <p class="helper-text">Enquanto a prova estiver apenas encaminhada, você pode cancelar o envio.</p>
             <?php elseif ($isExamOwner && $xeroxStatus === 'finished'): ?>
-                <p class="helper-text">Se precisar de nova impressao, use o botao Reenviar Xerox.</p>
+                <p class="helper-text">Se precisar de nova impressão, use o botão Reenviar Xerox.</p>
             <?php endif; ?>
         </div>
 
@@ -216,6 +233,18 @@ render_header(
             </label>
             <button class="button" type="submit">Atualizar preview</button>
         </form>
+
+        <div class="exam-preview-settings">
+            <strong>Configuração salva</strong>
+            <div class="exam-preview-settings-grid">
+                <?php foreach ($previewSettings as $item): ?>
+                    <div class="exam-preview-settings-item">
+                        <small><?= h($item['label']) ?></small>
+                        <span><?= h($item['value']) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </aside>
 </section>
 

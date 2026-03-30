@@ -76,7 +76,20 @@ function exam_questions_for_view(int $examId): array
          ORDER BY exam_questions.display_order ASC'
     );
     $statement->execute(['exam_id' => $examId]);
-    $questions = $statement->fetchAll();
+    $rows = $statement->fetchAll();
+    $questions = [];
+    $seenQuestionIds = [];
+
+    foreach ($rows as $question) {
+        $questionId = (int) ($question['id'] ?? 0);
+
+        if ($questionId <= 0 || isset($seenQuestionIds[$questionId])) {
+            continue;
+        }
+
+        $seenQuestionIds[$questionId] = true;
+        $questions[] = $question;
+    }
 
     return [$questions, find_question_options(array_map(static fn(array $question): int => (int) $question['id'], $questions))];
 }

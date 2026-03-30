@@ -35,8 +35,18 @@ function exam_default_metadata(): array
         'header_subtitle_color' => '#64748b',
         'header_title_size' => '20',
         'header_subtitle_size' => '16',
-        'header_logo_size' => '80',
-        'header_min_height' => '120',
+        'header_logo_size' => '2.2',
+        'header_min_height' => '3.2',
+        'answer_preview_quantity' => '10',
+        'answer_preview_orientation' => 'vertical',
+        'answer_preview_width_mode' => 'full',
+        'answer_preview_size_cm' => '18',
+        'answer_preview_height_cm' => '7',
+        'answer_preview_font_size' => '13',
+        'answer_preview_card_color' => '#f7f3ff',
+        'answer_preview_surface_color' => '#ffffff',
+        'answer_preview_accent_color' => '#5b34d6',
+        'answer_preview_line_color' => '#cbd5e1',
         'content_font_size' => '11',
     ];
 }
@@ -294,6 +304,16 @@ function exam_metadata_hidden_keys(): array
         'header_subtitle_size',
         'header_logo_size',
         'header_min_height',
+        'answer_preview_width_mode',
+        'answer_preview_quantity',
+        'answer_preview_orientation',
+        'answer_preview_size_cm',
+        'answer_preview_height_cm',
+        'answer_preview_font_size',
+        'answer_preview_card_color',
+        'answer_preview_surface_color',
+        'answer_preview_accent_color',
+        'answer_preview_line_color',
         'content_font_size',
         'school_subtitle',
     ];
@@ -343,11 +363,7 @@ function exam_format_date(string $value): string
 function exam_style_options(): array
 {
     return [
-        'double_column' => 'Duas colunas (padrão ENEM)',
-        'triple_column' => 'Três colunas',
-        'single_column' => 'Sem coluna (lista contínua)',
-        'economic' => 'Compacta / econômica',
-        'accessibility' => 'Acessível (fonte maior)',
+        'double_column' => 'Questões em card em duas colunas',
     ];
 }
 
@@ -416,9 +432,7 @@ function exam_variant_label_options(): array
 function exam_template_options(): array
 {
     return [
-        'version_1' => 'Avaliacao - Versao 1',
-        'version_2' => 'Avaliacao - Versao 2',
-        'version_3_1' => 'Avaliacao - Versao 3.1',
+        'version_1' => 'Modelo padrão',
     ];
 }
 
