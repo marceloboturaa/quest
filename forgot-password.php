@@ -37,16 +37,16 @@ if (is_post()) {
         }
     }
 
-    flash('info', 'Se o e-mail existir no sistema, voce recebera instrucoes para redefinir a senha.');
+    flash('info', 'Se o e-mail existir no sistema, você receberá instruções para redefinir a senha.');
     redirect('login.php');
 }
 
-render_header('Recuperar senha', 'Informe seu e-mail para gerar um link de redefinicao.');
+render_header('Recuperar senha', 'Informe seu e-mail para gerar um link de redefinição.');
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Esqueci minha senha</h2>
-        <p>O sistema tenta enviar o link por e-mail e registra o conteudo em armazenamento privado para teste local.</p>
+        <p>O sistema tenta enviar o link por e-mail e registra o conteúdo em armazenamento privado para teste local.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

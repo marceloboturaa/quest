@@ -18,14 +18,14 @@ $examId = (int) ($_GET['id'] ?? 0);
 $exam = $examId > 0 ? exam_find_accessible($examId, $user) : null;
 
 if (!$exam) {
-    flash('error', 'Prova nao encontrada.');
+    flash('error', 'Prova não encontrada.');
     redirect(can_view_xerox_queue() ? 'xerox.php' : 'exams.php');
 }
 
 [$questions, $questionOptions] = exam_questions_for_view($examId);
 
 if ($questions === []) {
-    flash('error', 'Essa prova ainda nao possui questoes.');
+    flash('error', 'Esta prova ainda não possui questões.');
     redirect(can_view_xerox_queue() ? 'xerox.php' : 'exams.php');
 }
 
@@ -71,7 +71,7 @@ try {
     $dompdf->render();
 } catch (Throwable $exception) {
     error_log('Quest PDF dompdf render failed for exam ' . $examId . ': ' . $exception->getMessage());
-    flash('error', 'Nao foi possivel gerar o PDF desta prova agora. Tente novamente.');
+    flash('error', 'Não foi possível gerar o PDF desta prova agora. Tente novamente.');
     redirect('exam-preview.php?id=' . $examId);
 }
 

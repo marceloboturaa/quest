@@ -85,6 +85,18 @@ if (is_post()) {
         redirect('messages.php');
     }
 
+    if ($action === 'delete_broadcast' && $isMaster) {
+        $deliveryGroup = trim((string) ($_POST['delivery_group'] ?? ''));
+
+        if ($deliveryGroup === '' || !messages_delete_broadcast_group($deliveryGroup, $userId)) {
+            flash('error', 'Não foi possível excluir esse aviso geral.');
+        } else {
+            flash('success', 'Aviso geral excluído com sucesso.');
+        }
+
+        redirect('messages.php');
+    }
+
     if ($action === 'send_direct' && $isMaster) {
         $recipientUserId = (int) ($_POST['recipient_user_id'] ?? 0);
         $subject = trim((string) ($_POST['subject'] ?? ''));
@@ -152,52 +164,43 @@ $recentBroadcasts = $isMaster ? messages_recent_broadcast_groups($userId, 12) : 
 $userDirectory = $isMaster ? messages_user_directory($userId) : [];
 $destinationSummary = $xeroxEnabled ? 'Administrador e Xerox' : 'Administrador';
 $panelLabel = $isMaster ? 'Administrador' : ($isXerox ? 'Xerox' : 'Usuário');
+$unreadCount = messages_unread_count($userId);
 
 render_header(
     'Mensagens',
     $isMaster
         ? 'Receba mensagens dos usuários, responda e envie avisos para todos.'
-        : 'Envie mensagens para o administrador ou para o Xerox e acompanhe os retornos.'
+        : 'Envie mensagens para o administrador ou para o Xerox e acompanhe as respostas.',
+    false
 );
 ?>
 
 <section class="messages-layout">
-    <section class="simple-metric-grid">
-        <article class="simple-metric-card">
-            <small>Não lidas</small>
-            <strong><?= h((string) messages_unread_count($userId)) ?></strong>
-        </article>
-        <article class="simple-metric-card">
-            <small>Caixa de entrada</small>
-            <strong><?= h((string) count($inboxMessages)) ?></strong>
-        </article>
-        <?php if ($isMaster): ?>
-            <article class="simple-metric-card">
-                <small>Avisos enviados</small>
-                <strong><?= h((string) count($recentBroadcasts)) ?></strong>
-            </article>
-            <article class="simple-metric-card">
-                <small>Painel</small>
-                <strong>Administrador</strong>
-            </article>
-        <?php else: ?>
-            <article class="simple-metric-card">
-                <small>Canal</small>
-                <strong><?= h($panelLabel) ?></strong>
-            </article>
-            <article class="simple-metric-card">
-                <small>Destino</small>
-                <strong><?= h($destinationSummary) ?></strong>
-            </article>
-        <?php endif; ?>
-    </section>
+    <article class="simple-card messages-overview-card">
+        <div class="messages-overview-copy">
+            <span class="profile-card-kicker">Comunicação interna</span>
+            <h1><?= $isMaster ? 'Painel do administrador' : ($isXerox ? 'Painel do Xerox' : 'Mensagens') ?></h1>
+            <p class="helper-text"><?= $isMaster ? 'Receba mensagens dos usuários, responda e envie avisos para todos.' : ($isXerox ? 'Receba pedidos enviados ao setor Xerox e responda quando necessário.' : 'Envie mensagens e acompanhe os avisos e as respostas recebidas.') ?></p>
+        </div>
+        <div class="messages-overview-pills">
+            <span class="badge">Não lidas: <?= h((string) $unreadCount) ?></span>
+            <span class="badge">Caixa: <?= h((string) count($inboxMessages)) ?></span>
+            <?php if ($isMaster): ?>
+                <span class="badge">Avisos enviados: <?= h((string) count($recentBroadcasts)) ?></span>
+                <span class="badge">Perfil: Administrador</span>
+            <?php else: ?>
+                <span class="badge">Canal: <?= h($panelLabel) ?></span>
+                <span class="badge">Destino: <?= h($destinationSummary) ?></span>
+            <?php endif; ?>
+        </div>
+    </article>
 
     <section class="messages-grid">
-        <article class="simple-card">
+        <article class="simple-card messages-inbox-card">
             <div class="simple-card-head">
                 <div>
                     <h2><?= $isMaster ? 'Caixa do administrador' : ($isXerox ? 'Caixa do Xerox' : 'Mensagens recebidas') ?></h2>
-                    <p class="helper-text"><?= $isMaster ? 'Mensagens dos usuários, respostas e avisos recebidos neste perfil.' : ($isXerox ? 'Pedidos e recados enviados ao setor Xerox.' : 'Avisos gerais e respostas enviadas para você.') ?></p>
+                    <p class="helper-text"><?= $isMaster ? 'Mensagens dos usuários, respostas e avisos recebidos neste perfil.' : ($isXerox ? 'Pedidos e recados enviados ao setor Xerox.' : 'Avisos gerais e respostas enviadas para este perfil.') ?></p>
                 </div>
             </div>
 
@@ -349,7 +352,15 @@ render_header(
                         <div class="message-broadcast-list">
                             <?php foreach ($recentBroadcasts as $broadcast): ?>
                                 <article class="message-broadcast-item">
-                                    <strong><?= h((string) ($broadcast['subject'] !== '' ? $broadcast['subject'] : 'Aviso geral')) ?></strong>
+                                    <div class="message-card-head">
+                                        <strong><?= h((string) ($broadcast['subject'] !== '' ? $broadcast['subject'] : 'Aviso geral')) ?></strong>
+                                        <form method="post" class="inline-actions">
+                                            <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                                            <input type="hidden" name="action" value="delete_broadcast">
+                                            <input type="hidden" name="delivery_group" value="<?= h((string) ($broadcast['delivery_group'] ?? '')) ?>">
+                                            <button class="button-danger" type="submit">Excluir aviso</button>
+                                        </form>
+                                    </div>
                                     <p><?= h((string) $broadcast['body']) ?></p>
                                     <div class="simple-inline-list">
                                         <span class="badge"><?= h((string) $broadcast['total_recipients']) ?> destinatários</span>

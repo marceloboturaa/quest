@@ -15,7 +15,7 @@ $myQuestionsTotal = dashboard_user_questions_total((int) $user['id']);
 
 render_header(
     'Início',
-    'Escolha uma ação e acompanhe suas provas e questões sem excesso de informação.'
+    'Escolha uma ação e acompanhe suas provas e questões de forma simples.'
 );
 ?>
 
@@ -57,7 +57,7 @@ render_header(
         </div>
         <div class="simple-inline-list">
             <span class="badge"><?= h(role_label($user['role'])) ?></span>
-            <span class="badge"><?= can_view_xerox_queue() ? 'Xerox habilitado' : 'Acompanhamento do Xerox' ?></span>
+                <span class="badge"><?= can_view_xerox_queue() ? 'Xerox habilitado' : 'Acompanhamento no Xerox' ?></span>
             <?php if (can_manage_backups()): ?>
                 <span class="badge">Backup disponível</span>
             <?php endif; ?>

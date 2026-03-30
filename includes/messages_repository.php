@@ -134,6 +134,28 @@ function messages_delete_for_recipient(int $messageId, int $userId): bool
     return $statement->rowCount() > 0;
 }
 
+function messages_delete_broadcast_group(string $deliveryGroup, int $senderUserId): bool
+{
+    $deliveryGroup = trim($deliveryGroup);
+
+    if ($deliveryGroup === '') {
+        return false;
+    }
+
+    $statement = db()->prepare(
+        'DELETE FROM user_messages
+         WHERE sender_user_id = :sender_user_id
+           AND kind = "broadcast"
+           AND delivery_group = :delivery_group'
+    );
+    $statement->execute([
+        'sender_user_id' => $senderUserId,
+        'delivery_group' => $deliveryGroup,
+    ]);
+
+    return $statement->rowCount() > 0;
+}
+
 function messages_unread_count(int $userId): int
 {
     $statement = db()->prepare(

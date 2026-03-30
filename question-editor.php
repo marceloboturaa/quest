@@ -65,7 +65,7 @@ render_header(
 <section class="workspace-results-shell">
     <div class="workspace-results-head">
         <div>
-            <p class="workspace-kicker"><?= $edit ? 'Edicao dedicada' : 'Criacao dedicada' ?></p>
+            <p class="workspace-kicker"><?= $edit ? 'Edição dedicada' : 'Criação dedicada' ?></p>
             <h2><?= $edit ? 'Editar item do banco' : 'Escrever nova questão' ?></h2>
         </div>
         <div class="form-actions">
@@ -84,19 +84,19 @@ render_header(
                 <article class="question-builder-card question-builder-card-primary">
                     <div class="question-builder-card-head">
                         <div>
-                            <h3>Conteudo</h3>
-                            <p>Escreva o titulo, cole o enunciado e revise a previa ao lado.</p>
+                            <h3>Conteúdo</h3>
+                            <p>Escreva o título, cole o enunciado e revise a prévia ao lado.</p>
                         </div>
-                        <span class="badge"><?= h($edit ? 'Modo edicao' : 'Novo rascunho') ?></span>
+                        <span class="badge"><?= h($edit ? 'Modo de edição' : 'Novo rascunho') ?></span>
                     </div>
 
-                    <label>Titulo
+                    <label>Título
                         <input type="text" name="title" required value="<?= h(question_normalize_editor_text((string) ($edit['title'] ?? ''), true)) ?>" data-question-preview-title-source>
                     </label>
                     <label>Enunciado
                         <textarea class="question-rich-textarea" name="prompt" rows="12" required data-rich-paste data-question-preview-source><?= h(question_normalize_editor_text((string) ($edit['prompt'] ?? ''))) ?></textarea>
                     </label>
-                    <p class="helper-text question-format-note">Cole direto do ChatGPT, Claude, Gemini ou DeepSeek. O editor limpa duplicacoes, melhora a colagem e mostra a previa imediatamente.</p>
+                    <p class="helper-text question-format-note">Cole direto do ChatGPT, Claude, Gemini ou DeepSeek. O editor remove duplicações, melhora a colagem e mostra a prévia imediatamente.</p>
                     <label>Imagem do enunciado (URL)
                         <input type="url" name="prompt_image_url" value="<?= h((string) ($edit['prompt_image_url'] ?? '')) ?>" placeholder="https://...">
                     </label>
@@ -105,23 +105,23 @@ render_header(
                 <article class="question-builder-card">
                     <div class="question-builder-card-head">
                         <div>
-                            <h3>Configuracao</h3>
-                            <p>Classifique a questao sem sobrecarregar a escrita.</p>
+                            <h3>Configuração</h3>
+                            <p>Classifique a questão sem sobrecarregar a escrita.</p>
                         </div>
                     </div>
                     <div class="question-builder-grid question-builder-grid-compact">
                         <label>Tipo
                             <select name="question_type" required>
-                                <option value="multiple_choice" <?= $selectedType === 'multiple_choice' ? 'selected' : '' ?>>Multipla escolha</option>
+                                <option value="multiple_choice" <?= $selectedType === 'multiple_choice' ? 'selected' : '' ?>>Múltipla escolha</option>
                                 <option value="discursive" <?= $selectedType === 'discursive' ? 'selected' : '' ?>>Discursiva</option>
-                                <option value="drawing" <?= $selectedType === 'drawing' ? 'selected' : '' ?>>Desenho / espaco livre</option>
+                                <option value="drawing" <?= $selectedType === 'drawing' ? 'selected' : '' ?>>Desenho / espaço livre</option>
                                 <option value="true_false" <?= $selectedType === 'true_false' ? 'selected' : '' ?>>Verdadeiro ou falso</option>
                             </select>
                         </label>
                         <label>Visibilidade
                             <select name="visibility" required data-question-summary-visibility>
                                 <option value="private" <?= $selectedVisibility === 'private' ? 'selected' : '' ?>>Privada</option>
-                                <option value="public" <?= $selectedVisibility === 'public' ? 'selected' : '' ?>>Publica</option>
+                                <option value="public" <?= $selectedVisibility === 'public' ? 'selected' : '' ?>>Pública</option>
                             </select>
                         </label>
                         <label>Disciplina
@@ -140,19 +140,19 @@ render_header(
                                 <?php endforeach; ?>
                             </select>
                         </label>
-                        <label>Nivel
+                        <label>Nível
                             <select name="education_level" required>
                                 <option value="fundamental" <?= $selectedLevel === 'fundamental' ? 'selected' : '' ?>>Ensino Fundamental</option>
-                                <option value="medio" <?= $selectedLevel === 'medio' ? 'selected' : '' ?>>Ensino Medio</option>
-                                <option value="tecnico" <?= $selectedLevel === 'tecnico' ? 'selected' : '' ?>>Tecnico</option>
+                                <option value="medio" <?= $selectedLevel === 'medio' ? 'selected' : '' ?>>Ensino Médio</option>
+                                <option value="tecnico" <?= $selectedLevel === 'tecnico' ? 'selected' : '' ?>>Técnico</option>
                                 <option value="superior" <?= $selectedLevel === 'superior' ? 'selected' : '' ?>>Superior</option>
                             </select>
                         </label>
                         <label>Dificuldade
                             <select name="difficulty" required>
-                                <option value="facil" <?= $selectedDifficulty === 'facil' ? 'selected' : '' ?>>Facil</option>
-                                <option value="medio" <?= $selectedDifficulty === 'medio' ? 'selected' : '' ?>>Medio</option>
-                                <option value="dificil" <?= $selectedDifficulty === 'dificil' ? 'selected' : '' ?>>Dificil</option>
+                                <option value="facil" <?= $selectedDifficulty === 'facil' ? 'selected' : '' ?>>Fácil</option>
+                                <option value="medio" <?= $selectedDifficulty === 'medio' ? 'selected' : '' ?>>Médio</option>
+                                <option value="dificil" <?= $selectedDifficulty === 'dificil' ? 'selected' : '' ?>>Difícil</option>
                             </select>
                         </label>
                     </div>
@@ -160,7 +160,7 @@ render_header(
 
                 <article class="question-builder-card question-builder-card-optional">
                     <details class="question-builder-disclosure">
-                        <summary>Fonte oficial e referencia</summary>
+                        <summary>Fonte oficial e referência</summary>
                         <div class="question-builder-grid question-builder-grid-compact">
                             <label>Origem oficial
                                 <select name="official_source_key">
@@ -172,8 +172,8 @@ render_header(
                                     <?php endforeach; ?>
                                 </select>
                             </label>
-                            <label>Referencia
-                                <input type="text" name="source_reference" value="<?= h(question_normalize_editor_text((string) ($edit['source_reference'] ?? ''), true)) ?>" placeholder="Ex.: Caderno azul, questao 12">
+                            <label>Referência
+                                <input type="text" name="source_reference" value="<?= h(question_normalize_editor_text((string) ($edit['source_reference'] ?? ''), true)) ?>" placeholder="Ex.: Caderno azul, questão 12">
                             </label>
                         </div>
                     </details>
@@ -183,9 +183,9 @@ render_header(
                     <div class="question-builder-card-head">
                         <div>
                             <h3>Alternativas</h3>
-                            <p>Organize as opcoes e marque as corretas.</p>
+                            <p>Organize as opções e marque as corretas.</p>
                         </div>
-                        <label class="checkbox-row"><input type="checkbox" name="allow_multiple_correct" value="1" <?= !empty($edit['allow_multiple_correct']) ? 'checked' : '' ?>> Multiplas corretas</label>
+                        <label class="checkbox-row"><input type="checkbox" name="allow_multiple_correct" value="1" <?= !empty($edit['allow_multiple_correct']) ? 'checked' : '' ?>> Múltiplas corretas</label>
                     </div>
                     <div class="option-list-editor" data-options-container>
                         <?php foreach ($editOptions as $index => $option): ?>
@@ -204,14 +204,14 @@ render_header(
                     <div class="question-builder-card-head">
                         <div>
                             <h3>Resposta discursiva</h3>
-                            <p>Defina o espaco e a resposta de referencia, se precisar.</p>
+                            <p>Defina o espaço e a resposta de referência, se precisar.</p>
                         </div>
                     </div>
                     <div class="question-builder-grid question-builder-grid-compact">
-                        <label>Numero de linhas
+                        <label>Número de linhas
                             <input type="number" min="1" max="30" name="response_lines" value="<?= h((string) ($edit['response_lines'] ?? 5)) ?>">
                         </label>
-                        <label>Resposta de referencia
+                        <label>Resposta de referência
                             <textarea name="discursive_answer" rows="8" data-rich-paste><?= h(question_normalize_editor_text((string) ($edit['discursive_answer'] ?? ''))) ?></textarea>
                         </label>
                     </div>
@@ -220,15 +220,15 @@ render_header(
                 <article class="question-builder-card hidden" data-question-section="drawing">
                     <div class="question-builder-card-head">
                         <div>
-                            <h3>Espaco de resposta</h3>
-                            <p>Escolha a altura da area livre para o aluno responder.</p>
+                            <h3>Espaço de resposta</h3>
+                            <p>Escolha a altura da área livre para o aluno responder.</p>
                         </div>
                     </div>
                     <div class="question-builder-grid question-builder-grid-compact">
-                        <label>Altura do espaco
+                        <label>Altura do espaço
                             <select name="drawing_size" data-drawing-size-select>
                                 <option value="small" <?= $selectedDrawing === 'small' ? 'selected' : '' ?>>Pequeno</option>
-                                <option value="medium" <?= $selectedDrawing === 'medium' ? 'selected' : '' ?>>Medio</option>
+                                <option value="medium" <?= $selectedDrawing === 'medium' ? 'selected' : '' ?>>Médio</option>
                                 <option value="large" <?= $selectedDrawing === 'large' ? 'selected' : '' ?>>Grande</option>
                                 <option value="custom" <?= $selectedDrawing === 'custom' ? 'selected' : '' ?>>Customizado</option>
                             </select>
@@ -244,7 +244,7 @@ render_header(
                     <div class="question-builder-card-head">
                         <div>
                             <h3>Resposta correta</h3>
-                            <p>Escolha a alternativa certa para a questao.</p>
+                            <p>Escolha a alternativa correta para a questão.</p>
                         </div>
                     </div>
                     <label>Resposta correta
@@ -260,8 +260,8 @@ render_header(
                 <article class="question-live-preview">
                     <div class="question-builder-card-head">
                         <div>
-                            <h3>Previa</h3>
-                            <p>Mostra como a questao aparece no banco.</p>
+                            <h3>Prévia</h3>
+                            <p>Mostra como a questão aparece no banco.</p>
                         </div>
                     </div>
                     <div class="question-preview-meta">
@@ -270,7 +270,7 @@ render_header(
                         <span class="badge" data-question-preview-discipline><?= h($selectedDisciplineName !== '' ? $selectedDisciplineName : 'Sem disciplina') ?></span>
                         <span class="badge" data-question-preview-subject><?= h($selectedSubjectName !== '' ? $selectedSubjectName : 'Sem assunto') ?></span>
                     </div>
-                    <h3 class="question-preview-title" data-question-preview-title><?= h(question_normalize_editor_text((string) ($edit['title'] ?? ''), true) !== '' ? question_normalize_editor_text((string) ($edit['title'] ?? ''), true) : 'Titulo da questao') ?></h3>
+                    <h3 class="question-preview-title" data-question-preview-title><?= h(question_normalize_editor_text((string) ($edit['title'] ?? ''), true) !== '' ? question_normalize_editor_text((string) ($edit['title'] ?? ''), true) : 'Título da questão') ?></h3>
                     <div class="question-live-preview-body" data-question-preview-output><?= question_render_formatted_text_html((string) ($edit['prompt'] ?? '')) ?></div>
                 </article>
             </aside>
@@ -278,7 +278,7 @@ render_header(
 
         <div class="question-builder-actions">
             <a class="ghost-button" href="question-bank.php">Cancelar</a>
-            <button class="button" type="submit"><?= $edit ? 'Salvar alteracoes' : 'Salvar questao' ?></button>
+            <button class="button" type="submit"><?= $edit ? 'Salvar alterações' : 'Salvar questão' ?></button>
         </div>
     </form>
 </section>

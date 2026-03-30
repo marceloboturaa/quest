@@ -48,7 +48,7 @@ if (is_post()) {
     );
     $statement->execute($payload + ['id' => $userId]);
 
-    flash('success', 'Painel do usuário atualizado. Os novos padrões já entram na criação das provas.');
+    flash('success', 'Painel do usuário atualizado. Os novos padrões já serão usados na criação das provas.');
     redirect('profile.php');
 }
 
@@ -57,7 +57,7 @@ $examDefaults = exam_user_profile_defaults($user);
 
 render_header(
     'Meu painel',
-    'Preencha seus dados padrão para acelerar a criação das provas.'
+    'Preencha seus dados padrão para agilizar a criação das provas.'
 );
 ?>
 
@@ -90,14 +90,14 @@ render_header(
                 </div>
                 <div class="profile-summary-row">
                     <small>Cabeçalho</small>
-                    <strong><?= h($examDefaults['header_logo_left'] !== '' ? 'Logo principal definida' : 'Sem logo definida') ?></strong>
+                    <strong><?= h($examDefaults['header_logo_left'] !== '' ? 'Logo principal definida' : 'Nenhuma logo definida') ?></strong>
                 </div>
             </div>
         </article>
 
         <article class="simple-card profile-tip-card">
             <span class="profile-card-kicker">Uso rápido</span>
-            <p>Preencha escola, professor e logo principal. Isso já elimina boa parte do retrabalho na montagem das provas.</p>
+            <p>Preencha a escola, o professor e a logo principal. Isso já elimina boa parte do retrabalho na montagem das provas.</p>
         </article>
     </aside>
 
@@ -107,7 +107,7 @@ render_header(
                 <div>
                     <span class="profile-card-kicker">Configuração pessoal</span>
                     <h2>Dados padrão da prova</h2>
-                    <p class="helper-text">Ajuste somente o que costuma se repetir. O restante você altera normalmente dentro da prova.</p>
+                    <p class="helper-text">Preencha somente o que costuma se repetir. O restante pode ser ajustado normalmente dentro da prova.</p>
                 </div>
             </div>
 

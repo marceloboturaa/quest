@@ -8,8 +8,8 @@ require_once __DIR__ . '/includes/exam_document_renderer.php';
 require_login();
 
 $user = current_user();
-$slug = trim((string) ($_GET['model'] ?? 'modelo-coringa'));
-$example = exam_example_find($slug, (string) ($user['name'] ?? '')) ?? exam_example_find('modelo-coringa', (string) ($user['name'] ?? ''));
+$slug = trim((string) ($_GET['model'] ?? 'modelo-padrao'));
+$example = exam_example_find($slug, (string) ($user['name'] ?? '')) ?? exam_example_find('modelo-padrao', (string) ($user['name'] ?? ''));
 
 if ($example === null) {
     flash('error', 'Modelo de prova não encontrado.');
@@ -29,8 +29,8 @@ $query = http_build_query(array_filter(
 ));
 
 render_header(
-    'Preview do modelo',
-    'Veja a prova simulada completa antes de usar o modelo no fluxo normal de construção.'
+    'Preview do modelo padrão',
+    'Veja a prova simulada completa antes de usar o padrão único no fluxo normal de construção.'
 );
 ?>
 

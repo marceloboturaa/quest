@@ -88,7 +88,7 @@ $recentActivities = array_slice($recentActivities, 0, 5);
 
 render_header(
     'Questões',
-    'Escolha o que deseja fazer: criar, buscar no banco ou montar uma prova.'
+    'Escolha o que deseja fazer: criar uma questão, buscar no banco ou montar uma prova.'
 );
 ?>
 
@@ -127,7 +127,7 @@ render_header(
                 <span class="simple-action-icon"><i class="fa-solid fa-download" aria-hidden="true"></i></span>
                 <span>
                     <strong>Importar ENEM</strong>
-                    <small>Trazer questões oficiais para adaptação</small>
+                    <small>Importar questões oficiais para adaptação</small>
                 </span>
             </a>
         </div>
@@ -159,7 +159,7 @@ render_header(
         <?php if ($recentActivities === []): ?>
             <div class="empty-state">
                 <h2>Nenhuma questão recente</h2>
-                <p>Comece criando uma questão ou montando uma prova.</p>
+                <p>Comece criando uma questão ou abrindo o banco.</p>
             </div>
         <?php else: ?>
             <div class="simple-list">

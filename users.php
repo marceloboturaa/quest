@@ -14,14 +14,14 @@ if (is_post()) {
         $allowedRoles = ['user', 'local_admin', 'xerox'];
 
         if (!in_array($newRole, $allowedRoles, true)) {
-            flash('error', 'Perfil invalido.');
+            flash('error', 'Perfil inválido.');
             redirect('users.php');
         }
 
         $current = current_user();
 
         if ($userId === (int) $current['id']) {
-            flash('error', 'O master admin principal nao pode alterar o proprio perfil por aqui.');
+            flash('error', 'O administrador master principal não pode alterar o próprio perfil por aqui.');
             redirect('users.php');
         }
 
@@ -30,12 +30,12 @@ if (is_post()) {
         $target = $statement->fetch();
 
         if (!$target) {
-            flash('error', 'Usuario nao encontrado.');
+            flash('error', 'Usuário não encontrado.');
             redirect('users.php');
         }
 
         if ($target['role'] === 'master_admin') {
-            flash('error', 'Nao altere um master admin por esta tela.');
+            flash('error', 'Não altere um administrador master por esta tela.');
             redirect('users.php');
         }
 
@@ -45,7 +45,7 @@ if (is_post()) {
             'id' => $userId,
         ]);
 
-        flash('success', 'Perfil do usuario atualizado.');
+        flash('success', 'Perfil do usuário atualizado.');
         redirect('users.php');
     }
 }
@@ -116,7 +116,7 @@ render_header(
                                 <input type="hidden" name="user_id" value="<?= h((string) $managedUser['id']) ?>">
                                 <label>Perfil
                                     <select name="role">
-                                        <option value="user" <?= $managedUser['role'] === 'user' ? 'selected' : '' ?>>Usuario</option>
+                                        <option value="user" <?= $managedUser['role'] === 'user' ? 'selected' : '' ?>>Usuário</option>
                                         <option value="local_admin" <?= $managedUser['role'] === 'local_admin' ? 'selected' : '' ?>>Admin local</option>
                                         <option value="xerox" <?= $managedUser['role'] === 'xerox' ? 'selected' : '' ?>>Xerox</option>
                                     </select>

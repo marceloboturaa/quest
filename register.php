@@ -19,7 +19,7 @@ if (is_post()) {
     ]);
 
     if ($name === '' || $email === '' || $password === '' || $passwordConfirmation === '') {
-        flash('error', 'Preencha todos os campos obrigatorios.');
+        flash('error', 'Preencha todos os campos obrigatórios.');
         redirect('register.php');
     }
 
@@ -42,7 +42,7 @@ if (is_post()) {
     $statement->execute(['email' => $email]);
 
     if ($statement->fetch()) {
-        flash('error', 'Ja existe uma conta com esse e-mail.');
+        flash('error', 'Já existe uma conta com esse e-mail.');
         redirect('register.php');
     }
 
@@ -73,7 +73,7 @@ render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inici
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Novo cadastro</h2>
-        <p>Depois do cadastro, a conta entra como usuário comum. O master admin pode promover para admin local quando necessário.</p>
+        <p>Depois do cadastro, a conta entra como usuário comum. O administrador master pode promover o perfil para admin local quando necessário.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

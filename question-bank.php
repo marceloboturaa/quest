@@ -66,7 +66,7 @@ $questionPreview = static function (?string $text, int $limit = 220): string {
 
 render_header(
     'Banco de questões',
-    'Filtre, abra e use questões em prova de forma simples.'
+    'Filtre, abra e use questões na montagem da prova de forma simples.'
 );
 ?>
 
@@ -161,7 +161,7 @@ render_header(
 
     <article class="simple-card">
         <div class="simple-card-head">
-            <h2>Montagem de prova</h2>
+            <h2>Montagem da prova</h2>
             <form id="question-bulk-exam-form" method="get" action="exam-create.php" class="simple-action-row">
                 <button class="button-secondary" type="submit">Usar selecionadas</button>
                 <a class="ghost-button" href="exam-create.php">Nova prova</a>
@@ -234,13 +234,13 @@ render_header(
                                     <button class="ghost-button" type="submit">Clonar</button>
                                 </form>
                             <?php endif; ?>
-                            <?php if ((int) $question['author_id'] === $userId): ?>
+                            <?php if ((int) $question['author_id'] === $userId || can_manage_all_questions()): ?>
                                 <a class="button-secondary" href="question-editor.php?edit=<?= h((string) $question['id']) ?>">Editar</a>
                                 <form method="post">
                                     <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
                                     <input type="hidden" name="action" value="delete_question">
                                     <input type="hidden" name="question_id" value="<?= h((string) $question['id']) ?>">
-                                    <button class="button-danger" type="submit" onclick="return confirm('Excluir esta questao?')">Excluir</button>
+                                    <button class="button-danger" type="submit" onclick="return confirm('Excluir esta questão?')">Excluir</button>
                                 </form>
                             <?php endif; ?>
                         </div>

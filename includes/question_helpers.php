@@ -3,6 +3,12 @@ declare(strict_types=1);
 
 function own_question(int $id, int $userId): ?array
 {
+    if (can_manage_all_questions()) {
+        $statement = db()->prepare('SELECT * FROM questions WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $id]);
+        return $statement->fetch() ?: null;
+    }
+
     $statement = db()->prepare('SELECT * FROM questions WHERE id = :id AND author_id = :author_id LIMIT 1');
     $statement->execute(['id' => $id, 'author_id' => $userId]);
 

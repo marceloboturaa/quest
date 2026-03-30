@@ -124,9 +124,49 @@ document.addEventListener('DOMContentLoaded', function () {
         const headerPreviewLeftLogo = examMetaForm.ownerDocument.querySelector('[data-header-preview-logo-left]');
         const headerPreviewRightLogo = examMetaForm.ownerDocument.querySelector('[data-header-preview-logo-right]');
         const headerPreviewCode = examMetaForm.ownerDocument.querySelector('[data-header-preview-code]');
+        const headerPreviewDraftTitle = examMetaForm.ownerDocument.querySelector('[data-header-preview-draft-title]');
+        const headerPreviewDateMeta = examMetaForm.ownerDocument.querySelector('[data-header-preview-date-meta]');
         const headerPreviewExamLabel = examMetaForm.ownerDocument.querySelector('[data-header-preview-exam-label]');
         const headerPreviewTeacher = examMetaForm.ownerDocument.querySelector('[data-header-preview-teacher]');
         const headerPreviewComponent = examMetaForm.ownerDocument.querySelector('[data-header-preview-component]');
+        const headerPreviewClass = examMetaForm.ownerDocument.querySelector('[data-header-preview-class]');
+        const headerEditor = examMetaForm.ownerDocument.querySelector('#identificacao-prova');
+        const headerEditorTriggers = examMetaForm.ownerDocument.querySelectorAll('[data-open-header-editor]');
+        const responseModeInput = examMetaForm.ownerDocument.querySelector('[data-response-mode-input]');
+        const answerPreviewQuantityInput = examMetaForm.ownerDocument.querySelector('[data-answer-preview-quantity-input]');
+        const answerPreviewOrientationInput = examMetaForm.ownerDocument.querySelector('[data-answer-preview-orientation-input]');
+        const answerPreviewClass = examMetaForm.ownerDocument.querySelector('[data-answer-preview-class]');
+        const answerPreviewDate = examMetaForm.ownerDocument.querySelector('[data-answer-preview-date]');
+        const answerPreviewLabel = examMetaForm.ownerDocument.querySelector('[data-answer-preview-label]');
+        const answerPreviewCountLabels = examMetaForm.ownerDocument.querySelectorAll('[data-answer-preview-count-label]');
+        const answerPreviewModeName = examMetaForm.ownerDocument.querySelector('[data-answer-preview-mode-name]');
+        const answerPreviewModes = examMetaForm.ownerDocument.querySelectorAll('[data-answer-preview-mode]');
+        const answerPatternBadge = examMetaForm.ownerDocument.querySelector('[data-answer-pattern-badge]');
+        const answerPatternCards = examMetaForm.ownerDocument.querySelectorAll('[data-answer-pattern-card]');
+        const answerPatternCountLabels = examMetaForm.ownerDocument.querySelectorAll('[data-answer-pattern-count]');
+        const responseModeButtons = examMetaForm.ownerDocument.querySelectorAll('[data-response-mode-option]');
+        const bodyPreviewShell = examMetaForm.ownerDocument.querySelector('[data-body-preview-shell]');
+        const bodyPreviewIntro = examMetaForm.ownerDocument.querySelector('[data-body-preview-intro]');
+        const alertPreviewText = examMetaForm.ownerDocument.querySelector('[data-alert-preview-text]');
+        const footerPreviewText = examMetaForm.ownerDocument.querySelector('[data-footer-preview-text]');
+        const modelPreviewShell = examMetaForm.ownerDocument.querySelector('[data-model-preview-shell]');
+        const modelPreviewStyleLabel = examMetaForm.ownerDocument.querySelector('[data-model-preview-style-label]');
+        const modelPreviewStyleBadge = examMetaForm.ownerDocument.querySelector('[data-model-preview-style-badge]');
+        const modelPreviewResponseLabel = examMetaForm.ownerDocument.querySelector('[data-model-preview-response-label]');
+        let responseModeLabels = {};
+        let styleLabels = {};
+
+        try {
+            responseModeLabels = JSON.parse(examMetaForm.dataset.responseModeLabels || '{}');
+        } catch (error) {
+            responseModeLabels = {};
+        }
+
+        try {
+            styleLabels = JSON.parse(examMetaForm.dataset.styleLabels || '{}');
+        } catch (error) {
+            styleLabels = {};
+        }
 
         function openDisclosureFromHash(hash) {
             if (!hash || hash.charAt(0) !== '#') {
@@ -137,6 +177,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (target && target.tagName === 'DETAILS') {
                 target.open = true;
+            }
+        }
+
+        function openHeaderEditor() {
+            if (!headerEditor) {
+                return;
+            }
+
+            headerEditor.open = true;
+            headerEditor.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            const firstField = headerEditor.querySelector('input, select, textarea');
+
+            if (firstField) {
+                window.setTimeout(function () {
+                    firstField.focus();
+                }, 120);
             }
         }
 
@@ -156,6 +212,121 @@ document.addEventListener('DOMContentLoaded', function () {
             return input ? input.value.trim() : '';
         }
 
+        function normalizedCmValue(name, fallback) {
+            const parsed = parseFloat((fieldValue(name) || '').replace(',', '.'));
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+        }
+
+        function cmToPx(value) {
+            return Math.round(value * 37.7952755906);
+        }
+
+        function normalizedPreviewQuantity() {
+            const parsed = parseInt(fieldValue('answer_preview_quantity') || '0', 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+        }
+
+        function previewQuantityLabel(quantity) {
+            return quantity + ' questão(ões) na prévia';
+        }
+
+        function previewOrientationValue() {
+            return fieldValue('answer_preview_orientation') === 'horizontal' ? 'horizontal' : 'vertical';
+        }
+
+        function syncAnswerPreviewPalette() {
+            const previewWidth = fieldValue('answer_preview_width_mode') === 'full'
+                ? '100%'
+                : normalizedCmValue('answer_preview_size_cm', 18) + 'cm';
+            const previewFontSize = Math.max(10, Math.min(24, parseInt(fieldValue('answer_preview_font_size') || '13', 10) || 13));
+
+            examMetaForm.style.setProperty('--answer-preview-width', previewWidth);
+            examMetaForm.style.setProperty('--answer-preview-height', normalizedCmValue('answer_preview_height_cm', 7) + 'cm');
+            examMetaForm.style.setProperty('--answer-preview-font-size', previewFontSize + 'px');
+            examMetaForm.style.setProperty('--answer-preview-card-bg', fieldValue('answer_preview_card_color') || '#f7f3ff');
+            examMetaForm.style.setProperty('--answer-preview-surface', fieldValue('answer_preview_surface_color') || '#ffffff');
+            examMetaForm.style.setProperty('--answer-preview-accent', fieldValue('answer_preview_accent_color') || '#5b34d6');
+            examMetaForm.style.setProperty('--answer-preview-line', fieldValue('answer_preview_line_color') || '#cbd5e1');
+        }
+
+        function responseModeLabel(mode) {
+            const selectedOption = examMetaForm.querySelector('[name="response_mode"] option:checked');
+
+            if (selectedOption) {
+                return (selectedOption.textContent || 'Sem resposta').trim();
+            }
+
+            return responseModeLabels[mode] || 'Sem resposta';
+        }
+
+        function styleModeLabel(style) {
+            return styleLabels[style] || 'Questões em card em duas colunas';
+        }
+
+        function previewQuestionNumber(index) {
+            return String(index).padStart(2, '0');
+        }
+
+        function renderAnswerPreviewRows(mode, quantity) {
+            let rows = '';
+
+            for (let index = 1; index <= quantity; index += 1) {
+                const number = previewQuestionNumber(index);
+
+                if (mode === 'lateral_answer_key') {
+                    rows += '<div class="exam-builder-answer-pattern-row exam-builder-answer-pattern-row--inline">'
+                        + '<span class="exam-builder-answer-number">' + number + '</span>'
+                        + '<span class="exam-builder-answer-chip">A</span>'
+                        + '<span class="exam-builder-answer-chip">B</span>'
+                        + '<span class="exam-builder-answer-chip">C</span>'
+                        + '<span class="exam-builder-answer-chip">D</span>'
+                        + '</div>';
+                    continue;
+                }
+
+                if (mode === 'bubble_answer_sheet') {
+                    rows += '<div class="exam-builder-answer-pattern-row">'
+                        + '<span class="exam-builder-answer-number">' + number + '</span>'
+                        + '<span class="exam-builder-answer-bubble-option"><small>A</small><span class="exam-builder-answer-bubble"></span></span>'
+                        + '<span class="exam-builder-answer-bubble-option"><small>B</small><span class="exam-builder-answer-bubble"></span></span>'
+                        + '<span class="exam-builder-answer-bubble-option"><small>C</small><span class="exam-builder-answer-bubble"></span></span>'
+                        + '<span class="exam-builder-answer-bubble-option"><small>D</small><span class="exam-builder-answer-bubble"></span></span>'
+                        + '<span class="exam-builder-answer-bubble-option"><small>E</small><span class="exam-builder-answer-bubble"></span></span>'
+                        + '</div>';
+                    continue;
+                }
+
+                rows += '<div class="exam-builder-answer-pattern-row exam-builder-answer-pattern-row--sheet">'
+                    + '<span class="exam-builder-answer-number">' + number + '</span>'
+                    + '<span class="exam-builder-answer-line"></span>'
+                    + '</div>';
+            }
+
+            return rows;
+        }
+
+        function renderAnswerPreviewLists(responseMode) {
+            const quantity = normalizedPreviewQuantity();
+            const orientation = previewOrientationValue();
+
+            answerPreviewModes.forEach(function (preview) {
+                const mode = preview.getAttribute('data-answer-preview-mode') || '';
+                preview.innerHTML = renderAnswerPreviewRows(mode, quantity);
+                preview.classList.toggle('is-scrollable', quantity > 12);
+                preview.classList.toggle('is-horizontal', orientation === 'horizontal');
+                preview.classList.toggle('is-vertical', orientation !== 'horizontal');
+                preview.hidden = mode !== responseMode;
+            });
+
+            answerPreviewCountLabels.forEach(function (label) {
+                label.textContent = previewQuantityLabel(quantity);
+            });
+
+            answerPatternCountLabels.forEach(function (label) {
+                label.textContent = previewQuantityLabel(quantity);
+            });
+        }
+
         function resolvedSummaryValue(name) {
             const values = {
                 draft_title: fieldValue('draft_title') || 'Não informado',
@@ -167,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 class_name: fieldValue('class_name') || 'Não informado',
                 application_date: formatDate(fieldValue('application_date')),
                 discipline: fieldValue('discipline') || 'Não informada',
-                exam_style_label: (examMetaForm.querySelector('[name="exam_style"] option:checked')?.textContent || 'Não informada').trim()
+                exam_style_label: styleModeLabel(fieldValue('exam_style') || 'double_column')
             };
 
             return values[name] || '';
@@ -209,12 +380,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const subtitleColor = fieldValue('header_subtitle_color') || '#64748b';
             const titleSize = fieldValue('header_title_size') || '20';
             const subtitleSize = fieldValue('header_subtitle_size') || '16';
-            const logoSize = fieldValue('header_logo_size') || '80';
+            const draftTitle = fieldValue('draft_title') || 'Prova sem título';
+            const logoSizeCm = normalizedCmValue('header_logo_size', 2.2);
+            const headerHeightCm = normalizedCmValue('header_min_height', 3.2);
             const leftLogo = fieldValue('header_logo_left');
             const rightLogo = fieldValue('header_logo_right');
             const examLabel = fieldValue('exam_label') || 'AVALIAÇÃO';
             const teacherName = fieldValue('teacher_name') || 'Professor';
             const componentName = fieldValue('component_name') || fieldValue('discipline') || 'Componente não informado';
+            const classNameDisplay = fieldValue('class_name') || 'Não informada';
+            const dateDisplay = fieldValue('application_date') ? formatDate(fieldValue('application_date')) : 'Definir data';
+            const responseMode = fieldValue('response_mode') || 'separate_answer_sheet';
+            const responseLabel = responseModeLabel(responseMode);
             const className = (fieldValue('class_name') || 'GER').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4) || 'GER';
             const componentCode = componentName
                 .normalize('NFD')
@@ -229,14 +406,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const previewCode = 'PRV-' + dateToken + '-' + className + '-' + componentCode;
 
             headerPreviewShell.style.backgroundColor = bgColor;
-            headerPreviewShell.style.minHeight = (parseInt(fieldValue('header_min_height') || '120', 10) || 120) + 'px';
-            headerPreviewShell.style.setProperty('--header-preview-logo-size', (parseInt(logoSize, 10) || 80) + 'px');
+            headerPreviewShell.style.minHeight = cmToPx(headerHeightCm) + 'px';
+            headerPreviewShell.style.setProperty('--header-preview-logo-size', cmToPx(logoSizeCm) + 'px');
             headerPreviewTitle.textContent = schoolName;
             headerPreviewSubtitle.textContent = schoolSubtitle;
             headerPreviewTitle.style.color = titleColor;
             headerPreviewSubtitle.style.color = subtitleColor;
             headerPreviewTitle.style.fontSize = (parseInt(titleSize, 10) || 20) + 'px';
             headerPreviewSubtitle.style.fontSize = (parseInt(subtitleSize, 10) || 16) + 'px';
+            syncAnswerPreviewPalette();
 
             if (headerPreviewLeftLogo) {
                 headerPreviewLeftLogo.innerHTML = '';
@@ -261,6 +439,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 headerPreviewCode.textContent = previewCode;
             }
 
+            if (headerPreviewDraftTitle) {
+                headerPreviewDraftTitle.textContent = draftTitle;
+            }
+
+            if (headerPreviewDateMeta) {
+                headerPreviewDateMeta.textContent = fieldValue('application_date') ? 'Aplicação em ' + formatDate(fieldValue('application_date')) : 'Data da aplicação em definição';
+            }
+
             if (headerPreviewExamLabel) {
                 headerPreviewExamLabel.textContent = examLabel;
             }
@@ -272,6 +458,102 @@ document.addEventListener('DOMContentLoaded', function () {
             if (headerPreviewComponent) {
                 headerPreviewComponent.textContent = componentName;
             }
+
+            if (headerPreviewClass) {
+                headerPreviewClass.textContent = classNameDisplay;
+            }
+
+            if (answerPreviewClass) {
+                answerPreviewClass.textContent = classNameDisplay;
+            }
+
+            if (answerPreviewDate) {
+                answerPreviewDate.textContent = dateDisplay;
+            }
+
+            if (answerPreviewLabel) {
+                answerPreviewLabel.textContent = 'Escolhido: ' + responseLabel;
+            }
+
+            if (answerPreviewModeName) {
+                answerPreviewModeName.textContent = responseLabel;
+            }
+
+            renderAnswerPreviewLists(responseMode);
+
+            if (answerPatternBadge) {
+                answerPatternBadge.textContent = 'Escolhido: ' + responseLabel;
+            }
+
+            answerPatternCards.forEach(function (card) {
+                const isActive = card.getAttribute('data-answer-pattern-card') === responseMode;
+                card.classList.toggle('is-active', isActive);
+                card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function previewColumnClass(styleValue) {
+            if (styleValue === 'double_column') {
+                return 'is-two-columns';
+            }
+
+            if (styleValue === 'triple_column') {
+                return 'is-three-columns';
+            }
+
+            return 'is-one-column';
+        }
+
+        function syncBodyAndFooterPreview() {
+            const styleValue = fieldValue('exam_style') || 'double_column';
+            const styleLabel = styleModeLabel(styleValue);
+            const responseLabel = responseModeLabel(fieldValue('response_mode') || 'separate_answer_sheet');
+            const fontBase = parseInt(fieldValue('content_font_size') || '11', 10) || 11;
+            const previewFont = fontBase;
+            const introText = fieldValue('body_content') || 'Organize o tempo e resolva a prova com calma.';
+            const alertText = fieldValue('header_content') || 'Use caneta azul ou preta e confira o cabeçalho antes de começar.';
+            const footerText = fieldValue('footer_content') || 'Confira nome, turma e se todas as questões foram respondidas.';
+            const styleClass = previewColumnClass(styleValue);
+
+            if (bodyPreviewShell) {
+                bodyPreviewShell.classList.remove('is-one-column', 'is-two-columns', 'is-three-columns');
+                bodyPreviewShell.classList.add(styleClass);
+                bodyPreviewShell.style.setProperty('--exam-preview-font-size', previewFont + 'px');
+            }
+
+            if (modelPreviewShell) {
+                modelPreviewShell.style.setProperty('--exam-preview-font-size', previewFont + 'px');
+                const modelBody = modelPreviewShell.querySelector('.exam-builder-model-body');
+
+                if (modelBody) {
+                    modelBody.classList.remove('is-one-column', 'is-two-columns', 'is-three-columns');
+                    modelBody.classList.add(styleClass);
+                }
+            }
+
+            if (bodyPreviewIntro) {
+                bodyPreviewIntro.textContent = introText;
+            }
+
+            if (alertPreviewText) {
+                alertPreviewText.textContent = alertText;
+            }
+
+            if (footerPreviewText) {
+                footerPreviewText.textContent = footerText;
+            }
+
+            if (modelPreviewStyleLabel) {
+                modelPreviewStyleLabel.textContent = styleLabel;
+            }
+
+            if (modelPreviewStyleBadge) {
+                modelPreviewStyleBadge.textContent = styleLabel;
+            }
+
+            if (modelPreviewResponseLabel) {
+                modelPreviewResponseLabel.textContent = responseLabel;
+            }
         }
 
         examMetaForm.addEventListener('input', syncExamHeaderSummary);
@@ -280,6 +562,41 @@ document.addEventListener('DOMContentLoaded', function () {
         examMetaForm.addEventListener('input', syncHeaderPreview);
         examMetaForm.addEventListener('change', syncHeaderPreview);
         syncHeaderPreview();
+        examMetaForm.addEventListener('input', syncBodyAndFooterPreview);
+        examMetaForm.addEventListener('change', syncBodyAndFooterPreview);
+        syncBodyAndFooterPreview();
+
+        function activateResponseMode(nextMode) {
+            if (!responseModeInput || nextMode === '') {
+                return;
+            }
+
+            responseModeInput.value = nextMode;
+            syncHeaderPreview();
+            syncBodyAndFooterPreview();
+        }
+
+        responseModeButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                activateResponseMode(button.getAttribute('data-response-mode-option') || '');
+            });
+
+            button.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+
+                event.preventDefault();
+                activateResponseMode(button.getAttribute('data-response-mode-option') || '');
+            });
+        });
+
+        headerEditorTriggers.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                openHeaderEditor();
+            });
+        });
 
         examCreateNavLinks.forEach(function (link) {
             link.addEventListener('click', function () {

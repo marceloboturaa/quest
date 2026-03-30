@@ -27,7 +27,7 @@ if (is_post()) {
     $passwordConfirmation = (string) ($_POST['password_confirmation'] ?? '');
 
     if (!$tokenIsValid) {
-        flash('error', 'Esse link de redefinicao nao e mais valido.');
+        flash('error', 'Esse link de redefinição não é mais válido.');
         redirect('forgot-password.php');
     }
 
@@ -37,7 +37,7 @@ if (is_post()) {
     }
 
     if ($password !== $passwordConfirmation) {
-        flash('error', 'As senhas nao conferem.');
+        flash('error', 'As senhas não conferem.');
         redirect('reset-password.php?token=' . urlencode($token));
     }
 
@@ -50,7 +50,7 @@ if (is_post()) {
     $updateReset = db()->prepare('UPDATE password_resets SET used_at = NOW() WHERE id = :id');
     $updateReset->execute(['id' => $resetRequest['id']]);
 
-    flash('success', 'Senha redefinida com sucesso. Faca login.');
+    flash('success', 'Senha redefinida com sucesso. Faça login.');
     redirect('login.php');
 }
 
@@ -61,7 +61,7 @@ render_header('Redefinir senha', 'Crie uma nova senha para continuar usando o Qu
         <h2>Nova senha</h2>
 
         <?php if (!$tokenIsValid): ?>
-            <p>Esse link expirou ou ja foi utilizado.</p>
+            <p>Esse link expirou ou já foi utilizado.</p>
             <div class="form-actions">
                 <a class="button" href="forgot-password.php">Gerar novo link</a>
                 <a class="ghost-button" href="login.php">Voltar ao login</a>

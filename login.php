@@ -38,7 +38,7 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
 <div class="auth-wrap">
     <section class="auth-card">
         <h2>Acesse sua conta</h2>
-        <p>Entre com seu e-mail e senha para acessar o banco de questões e o painel do sistema.</p>
+        <p>Entre com seu e-mail e sua senha para acessar o banco de questões e o painel do sistema.</p>
 
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

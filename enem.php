@@ -19,10 +19,10 @@ if (is_post()) {
 
         try {
             $import = enem_import_question($userId, $year, $index, $language !== '' ? $language : null);
-            flash($import['created'] ? 'success' : 'info', $import['created'] ? 'Questao importada da API ENEM.' : 'Essa questao ja estava no seu banco.');
+            flash($import['created'] ? 'success' : 'info', $import['created'] ? 'Questão importada da API ENEM.' : 'Essa questão já estava no seu banco.');
             redirect('question-editor.php?edit=' . (int) $import['id']);
         } catch (Throwable $throwable) {
-            flash('error', 'Falha ao importar a questao do ENEM: ' . $throwable->getMessage());
+            flash('error', 'Falha ao importar a questão do ENEM: ' . $throwable->getMessage());
             redirect('enem.php?' . http_build_query(array_filter([
                 'year' => $year > 0 ? $year : null,
                 'language' => $language !== '' ? $language : null,
@@ -140,7 +140,7 @@ function enem_page_query(array $overrides = []): string
 
 render_header(
     'API ENEM',
-    'Navegue pelas provas oficiais do ENEM e importe questoes diretamente para o banco interno.'
+    'Navegue pelas provas oficiais do ENEM e importe questões diretamente para o banco interno.'
 );
 ?>
 
@@ -174,7 +174,7 @@ render_header(
             </label>
 
             <label>
-                Questoes por pagina
+                Questões por página
                 <select name="limit">
                     <?php foreach ([5, 10, 20] as $limitOption): ?>
                         <option value="<?= h((string) $limitOption) ?>" <?= $limit === $limitOption ? 'selected' : '' ?>>
@@ -206,12 +206,12 @@ render_header(
 
             <div class="kicker-card">
                 <strong>Volume atual</strong>
-                <p><?= h((string) $totalQuestions) ?> questoes no recorte selecionado.</p>
+                <p><?= h((string) $totalQuestions) ?> questões no recorte selecionado.</p>
             </div>
 
             <div class="kicker-card">
                 <strong>Importacao</strong>
-                <p>Cada questao entra no seu banco como multipla escolha privada e pode ser editada em seguida.</p>
+                <p>Cada questão entra no seu banco como múltipla escolha privada e pode ser editada em seguida.</p>
             </div>
         </div>
     </section>
@@ -246,7 +246,7 @@ render_header(
     </div>
 <?php elseif ($questions === []): ?>
     <div class="empty-state">
-        <h2>Nenhuma questao encontrada</h2>
+        <h2>Nenhuma questão encontrada</h2>
         <p>Altere o ano, o idioma ou a paginacao para consultar outro recorte.</p>
     </div>
 <?php else: ?>
@@ -279,7 +279,7 @@ render_header(
                 <?php if ($files !== []): ?>
                     <ul class="mini-list">
                         <?php foreach ($files as $fileUrl): ?>
-                            <li><a href="<?= h($fileUrl) ?>" target="_blank" rel="noreferrer">Abrir imagem da questao</a></li>
+                            <li><a href="<?= h($fileUrl) ?>" target="_blank" rel="noreferrer">Abrir imagem da questão</a></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
@@ -301,7 +301,7 @@ render_header(
                         <input type="hidden" name="year" value="<?= h((string) $questionYear) ?>">
                         <input type="hidden" name="index" value="<?= h((string) $questionIndex) ?>">
                         <input type="hidden" name="language" value="<?= h($questionLanguage) ?>">
-                        <button class="button" type="submit">Importar para questoes</button>
+                        <button class="button" type="submit">Importar para questões</button>
                     </form>
 
                     <a class="ghost-button" href="<?= h(enem_question_api_url($questionYear, $questionIndex, $questionLanguage !== '' ? $questionLanguage : null)) ?>" target="_blank" rel="noreferrer">
@@ -322,7 +322,7 @@ render_header(
             <span class="badge">Pagina <?= h((string) $page) ?> de <?= h((string) $totalPages) ?></span>
 
             <?php if ($page < $totalPages): ?>
-                <a class="button-secondary" href="enem.php?<?= h(enem_page_query(['year' => $selectedYear, 'page' => $nextPage])) ?>">Proxima pagina</a>
+                <a class="button-secondary" href="enem.php?<?= h(enem_page_query(['year' => $selectedYear, 'page' => $nextPage])) ?>">Próxima página</a>
             <?php endif; ?>
         </div>
     </section>

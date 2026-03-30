@@ -43,7 +43,7 @@ function question_edit_payload(int $userId, ?int $editId): array
     $edit = own_question($editId, $userId);
 
     if (!$edit) {
-        flash('error', 'Voce so pode editar questoes da sua autoria.');
+        flash('error', can_manage_all_questions() ? 'Questão não encontrada.' : 'Você só pode editar questões da sua autoria.');
         redirect('question-bank.php');
     }
 
@@ -60,6 +60,7 @@ function question_edit_payload(int $userId, ?int $editId): array
 
 function question_list(array $filters, int $userId): array
 {
+    $canManageAll = can_manage_all_questions();
     $query = 'SELECT questions.*, authors.name AS author_name, disciplines.name AS discipline_name,
                      subjects.name AS subject_name, base_authors.name AS based_on_author_name,
                      CASE WHEN question_favorites.id IS NULL THEN 0 ELSE 1 END AS is_favorite
@@ -71,11 +72,15 @@ function question_list(array $filters, int $userId): array
               LEFT JOIN users AS base_authors ON base_authors.id = base_questions.author_id
               LEFT JOIN question_favorites ON question_favorites.question_id = questions.id
                    AND question_favorites.user_id = :favorite_user_id
-              WHERE (questions.visibility = "public" OR questions.author_id = :current_user_id)';
+              WHERE 1 = 1';
     $params = [
         'favorite_user_id' => $userId,
-        'current_user_id' => $userId,
     ];
+
+    if (!$canManageAll) {
+        $query .= ' AND (questions.visibility = "public" OR questions.author_id = :current_user_id)';
+        $params['current_user_id'] = $userId;
+    }
 
     if ($filters['term'] !== '') {
         $query .= ' AND (

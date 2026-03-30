@@ -59,7 +59,7 @@ function db(): PDO
             ]
         );
     } catch (PDOException $exception) {
-        throw new RuntimeException('Nao foi possivel conectar ao banco de dados: ' . $exception->getMessage());
+        throw new RuntimeException('Não foi possível conectar ao banco de dados: ' . $exception->getMessage());
     }
 
     ensure_runtime_schema($pdo);
@@ -295,7 +295,7 @@ function verify_csrf(): bool
 function abort_if_invalid_csrf(): void
 {
     if (!verify_csrf()) {
-        flash('error', 'A sessao expirou. Tente novamente.');
+        flash('error', 'A sessão expirou. Tente novamente.');
         redirect($_SERVER['HTTP_REFERER'] ?? 'login.php');
     }
 }
@@ -362,7 +362,7 @@ function require_guest(): void
 function require_login(): void
 {
     if (current_user() === null) {
-        flash('error', 'Faca login para continuar.');
+        flash('error', 'Faça login para continuar.');
         redirect('login.php');
     }
 }
@@ -389,7 +389,7 @@ function require_role($roles): void
     require_login();
 
     if (!has_role($roles)) {
-        flash('error', 'Voce nao tem permissao para acessar essa area.');
+        flash('error', 'Você não tem permissão para acessar esta área.');
         redirect('dashboard.php');
     }
 }
@@ -404,7 +404,7 @@ function role_label(string $role): string
         case 'xerox':
             return 'Xerox';
         default:
-            return 'Usuario';
+            return 'Usuário';
     }
 }
 
@@ -412,15 +412,15 @@ function question_type_label(string $type): string
 {
     switch ($type) {
         case 'multiple_choice':
-            return 'Multipla escolha';
+            return 'Múltipla escolha';
         case 'discursive':
             return 'Discursiva';
         case 'drawing':
-            return 'Desenho / espaco livre';
+            return 'Desenho / espaço livre';
         case 'true_false':
             return 'Verdadeiro ou falso';
         default:
-            return 'Nao definido';
+            return 'Não definido';
     }
 }
 
@@ -428,7 +428,7 @@ function visibility_label(string $visibility): string
 {
     switch ($visibility) {
         case 'public':
-            return 'Publica';
+            return 'Pública';
         default:
             return 'Privada';
     }
@@ -440,13 +440,13 @@ function education_level_label(string $level): string
         case 'fundamental':
             return 'Ensino Fundamental';
         case 'medio':
-            return 'Ensino Medio';
+            return 'Ensino Médio';
         case 'tecnico':
-            return 'Tecnico';
+            return 'Técnico';
         case 'superior':
             return 'Superior';
         default:
-            return 'Nao definido';
+            return 'Não definido';
     }
 }
 
@@ -460,7 +460,7 @@ function drawing_size_label(?string $size, ?int $height = null): string
         case 'large':
             return 'Grande';
         default:
-            return 'Medio';
+            return 'Médio';
     }
 }
 
@@ -470,7 +470,7 @@ function status_label(string $status): string
         case 'published':
             return 'Publicada';
         case 'review':
-            return 'Em revisao';
+            return 'Em revisão';
         default:
             return 'Rascunho';
     }
@@ -528,12 +528,12 @@ function option_label(int $index): string
 function send_password_reset_email(array $user, string $token): bool
 {
     $resetLink = app_url('reset-password.php?token=' . urlencode($token));
-    $subject = 'Quest - Redefinicao de senha';
-    $message = "Ola {$user['name']},\n\n";
+    $subject = 'Quest - Redefinição de senha';
+    $message = "Olá {$user['name']},\n\n";
     $message .= "Recebemos um pedido para redefinir a sua senha.\n";
     $message .= "Use o link abaixo para criar uma nova senha:\n\n";
     $message .= $resetLink . "\n\n";
-    $message .= 'Se voce nao fez essa solicitacao, ignore este e-mail.';
+    $message .= 'Se você não fez esta solicitação, ignore este e-mail.';
 
     $headers = [
         'From: ' . config('mail.from_name') . ' <' . config('mail.from_email') . '>',
@@ -606,7 +606,7 @@ function dashboard_metrics(array $user): array
     ];
 }
 
-function datetime_label(?string $value, string $fallback = 'Nao informado'): string
+function datetime_label(?string $value, string $fallback = 'Não informado'): string
 {
     if ($value === null || trim($value) === '') {
         return $fallback;
@@ -631,7 +631,7 @@ function xerox_status_label(string $status): string
         case 'finished':
             return 'Finalizado';
         default:
-            return 'Nao encaminhado';
+            return 'Não encaminhado';
     }
 }
 

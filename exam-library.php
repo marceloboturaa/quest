@@ -27,11 +27,7 @@ if (is_post()) {
 }
 
 $recentExams = array_slice(exam_list($userId), 0, 8);
-$libraryMetrics = [
-    ['label' => 'Modelos prontos', 'value' => 'Biblioteca separada', 'icon' => 'fa-regular fa-star'],
-    ['label' => 'Provas recentes', 'value' => (string) count($recentExams), 'icon' => 'fa-solid fa-clock-rotate-left'],
-    ['label' => 'Fluxo atual', 'value' => 'Separado por etapas', 'icon' => 'fa-solid fa-layer-group'],
-];
+$recentCount = count($recentExams);
 
 render_header(
     'Central de provas',
@@ -41,51 +37,38 @@ render_header(
 
 <section class="simple-stack">
     <article class="simple-card exam-library-hero">
-        <div class="simple-card-head">
-            <div>
-                <h2>Fluxo de provas</h2>
-                <p class="helper-text">Use a central para evitar telas carregadas demais durante a montagem.</p>
-            </div>
+        <div class="exam-library-hero-copy">
+            <span class="exam-library-kicker">Organização por etapas</span>
+            <h2>Comece por um único caminho</h2>
+            <p class="helper-text">A central ficou mais curta. Escolha só o que você precisa agora: criar, usar um modelo ou retomar uma prova recente.</p>
         </div>
 
-        <div class="exam-library-metrics">
-            <?php foreach ($libraryMetrics as $metric): ?>
-                <div class="exam-library-metric">
-                    <span class="exam-library-metric-icon"><i class="<?= h((string) $metric['icon']) ?>" aria-hidden="true"></i></span>
-                    <strong><?= h($metric['value']) ?></strong>
-                    <span><?= h($metric['label']) ?></span>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="simple-decision-grid">
-            <a class="simple-action-card" href="exam-create.php">
-                <span class="simple-action-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span>
-                <span>
+        <div class="exam-library-entry-grid">
+            <a class="exam-library-entry-card is-primary" href="exam-create.php">
+                <span class="exam-library-entry-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span>
+                <div>
                     <strong>Nova prova</strong>
-                    <small>Começar uma montagem do zero</small>
-                </span>
+                    <p>Preencha os dados principais e siga para as questões.</p>
+                </div>
+                <small>Começar do zero</small>
             </a>
-            <a class="simple-action-card" href="exams.php">
-                <span class="simple-action-icon"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></span>
-                <span>
-                    <strong>Seleção de questões</strong>
-                    <small>Abrir a etapa de composição e salvamento</small>
-                </span>
-            </a>
-            <a class="simple-action-card" href="exam-models.php">
-                <span class="simple-action-icon"><i class="fa-regular fa-star" aria-hidden="true"></i></span>
-                <span>
+
+            <a class="exam-library-entry-card" href="exam-models.php">
+                <span class="exam-library-entry-icon"><i class="fa-regular fa-star" aria-hidden="true"></i></span>
+                <div>
                     <strong>Modelos de prova</strong>
-                    <small>Abrir a biblioteca específica de modelos</small>
-                </span>
+                    <p>Abra modelos prontos e carregue uma base já preenchida.</p>
+                </div>
+                <small>Biblioteca separada</small>
             </a>
-            <a class="simple-action-card" href="#exam-history">
-                <span class="simple-action-icon"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></span>
-                <span>
+
+            <a class="exam-library-entry-card" href="#exam-history">
+                <span class="exam-library-entry-icon"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></span>
+                <div>
                     <strong>Provas recentes</strong>
-                    <small>Retomar uma prova já criada</small>
-                </span>
+                    <p>Retome uma prova já iniciada sem voltar ao começo.</p>
+                </div>
+                <small><?= h((string) $recentCount) ?> disponível(is)</small>
             </a>
         </div>
     </article>
@@ -96,6 +79,7 @@ render_header(
                 <h2>Provas recentes</h2>
                 <p class="helper-text">Reabra uma prova já iniciada sem voltar para a criação completa.</p>
             </div>
+            <span class="badge"><?= h((string) $recentCount) ?> registro(s)</span>
         </div>
 
         <?php if ($recentExams === []): ?>

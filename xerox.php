@@ -21,7 +21,7 @@ if (is_post()) {
 
     if ($action === 'set_xerox_role') {
         if (!can_authorize_xerox_users()) {
-            flash('error', 'Voce nao pode autorizar usuarios para o setor Xerox.');
+            flash('error', 'Você não pode autorizar usuários para o setor Xerox.');
             redirect('xerox.php');
         }
 
@@ -29,11 +29,11 @@ if (is_post()) {
         $newRole = (string) ($_POST['role'] ?? 'user');
 
         if (!xerox_set_user_role($targetUserId, $newRole)) {
-            flash('error', 'Nao foi possivel atualizar o acesso do setor Xerox.');
+            flash('error', 'Não foi possível atualizar o acesso do setor Xerox.');
             redirect('xerox.php');
         }
 
-        flash('success', $newRole === 'xerox' ? 'Usuario autorizado para o setor Xerox.' : 'Usuario removido do setor Xerox.');
+        flash('success', $newRole === 'xerox' ? 'Usuário autorizado para o setor Xerox.' : 'Usuário removido do setor Xerox.');
         redirect('xerox.php');
     }
 
@@ -41,7 +41,7 @@ if (is_post()) {
         $examId = (int) ($_POST['exam_id'] ?? 0);
 
         if (!xerox_cancel_exam($examId, $userId)) {
-            flash('error', 'Nao foi possivel cancelar o envio dessa prova.');
+            flash('error', 'Não foi possível cancelar o envio desta prova.');
             redirect('xerox.php');
         }
 
@@ -53,12 +53,12 @@ if (is_post()) {
         $examId = (int) ($_POST['exam_id'] ?? 0);
 
         if (!xerox_is_available()) {
-            flash('error', 'Nenhum usuario Xerox esta autorizado no momento.');
+            flash('error', 'Nenhum usuário Xerox está autorizado no momento.');
             redirect('xerox.php');
         }
 
         if (!xerox_resend_exam($examId, $userId)) {
-            flash('error', 'Nao foi possivel reenviar essa prova.');
+            flash('error', 'Não foi possível reenviar esta prova.');
             redirect('xerox.php');
         }
 
@@ -68,31 +68,31 @@ if (is_post()) {
 
     if ($action === 'xerox_accept_exam') {
         if (!is_xerox_user()) {
-            flash('error', 'Somente usuarios Xerox podem aceitar provas para impressao.');
+            flash('error', 'Somente usuários do Xerox podem aceitar provas para impressão.');
             redirect('xerox.php');
         }
 
         $examId = (int) ($_POST['exam_id'] ?? 0);
 
         if (!xerox_accept_exam($examId, $userId)) {
-            flash('error', 'Nao foi possivel colocar a prova em andamento.');
+            flash('error', 'Não foi possível colocar a prova em andamento.');
             redirect('xerox.php');
         }
 
-        flash('success', 'Prova aceita e movida para em andamento.');
+            flash('success', 'Prova aceita e movida para a fila de impressão.');
         redirect('xerox.php');
     }
 
     if ($action === 'xerox_finish_exam') {
         if (!is_xerox_user()) {
-            flash('error', 'Somente usuarios Xerox podem finalizar impressoes.');
+            flash('error', 'Somente usuários do Xerox podem finalizar impressões.');
             redirect('xerox.php');
         }
 
         $examId = (int) ($_POST['exam_id'] ?? 0);
 
         if (!xerox_finish_exam($examId, $userId)) {
-            flash('error', 'Nao foi possivel finalizar essa prova.');
+            flash('error', 'Não foi possível finalizar esta prova.');
             redirect('xerox.php');
         }
 
@@ -140,6 +140,23 @@ $queue = array_values(array_filter($queue, $matchesXeroxFilters));
 $sentExams = array_values(array_filter($queue, static fn(array $exam): bool => (string) $exam['xerox_status'] === 'sent'));
 $inProgressExams = array_values(array_filter($queue, static fn(array $exam): bool => (string) $exam['xerox_status'] === 'in_progress'));
 $finishedExams = array_values(array_filter($queue, static fn(array $exam): bool => (string) $exam['xerox_status'] === 'finished'));
+$panelCount = 1 + (can_view_xerox_queue() ? 3 : 0) + (can_authorize_xerox_users() ? 1 : 0);
+$showXeroxSwitcher = $panelCount > 1;
+$xeroxHeadline = is_xerox_user()
+    ? 'Controle da fila de impressão'
+    : (can_authorize_xerox_users() ? 'Painel do setor Xerox' : 'Acompanhe suas provas no Xerox');
+$xeroxQuickFacts = can_view_xerox_queue()
+    ? [
+        ['label' => 'Operadores', 'value' => (string) count($operators)],
+        ['label' => 'Na fila', 'value' => (string) count($sentExams)],
+        ['label' => 'Em andamento', 'value' => (string) count($inProgressExams)],
+        ['label' => 'Finalizadas', 'value' => (string) count($finishedExams)],
+    ]
+    : [
+        ['label' => 'Setor', 'value' => xerox_is_available() ? 'Ativo' : 'Parado'],
+        ['label' => 'Operadores', 'value' => (string) count($operators)],
+        ['label' => 'Minhas provas', 'value' => (string) count($ownerForwardedExams)],
+    ];
 
 $defaultPanel = 'mine';
 if (is_xerox_user()) {
@@ -152,15 +169,17 @@ render_header(
     'Xerox',
     can_view_xerox_queue()
         ? 'Receba, acompanhe e finalize impressões em um fluxo simples.'
-        : 'Acompanhe o andamento das provas enviadas para impressão.'
+        : 'Acompanhe o andamento das provas enviadas para impressão.',
+    false
 );
 ?>
 
 <section class="simple-stack">
     <article class="simple-card xerox-overview-card">
-        <div class="simple-card-head">
-            <div>
-                <h2>Painel Xerox</h2>
+        <div class="xerox-overview-headline">
+            <div class="xerox-overview-copy">
+                <span class="exam-library-kicker">Setor de impressão</span>
+                <h1><?= h($xeroxHeadline) ?></h1>
                 <p class="helper-text">
                     <?= is_xerox_user()
                         ? 'Veja a fila, aceite provas e finalize a impressão.'
@@ -169,58 +188,40 @@ render_header(
                             : 'Veja somente as suas provas enviadas ao setor.') ?>
                 </p>
             </div>
-            <?php if (!xerox_is_available()): ?>
-                <span class="badge">Sem operador Xerox</span>
-            <?php endif; ?>
+            <aside class="xerox-status-panel">
+                <?php if (!xerox_is_available()): ?>
+                    <span class="badge">Sem operador Xerox</span>
+                <?php endif; ?>
+                <div class="xerox-status-list">
+                    <?php foreach ($xeroxQuickFacts as $fact): ?>
+                        <div class="xerox-status-item">
+                            <small><?= h($fact['label']) ?></small>
+                            <strong><?= h($fact['value']) ?></strong>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </aside>
         </div>
 
-        <section class="simple-metric-grid xerox-metric-grid">
-            <article class="simple-metric-card">
-                <small>Minhas provas</small>
-                <strong><?= h((string) count($ownerForwardedExams)) ?></strong>
-            </article>
-            <?php if (can_view_xerox_queue()): ?>
-                <article class="simple-metric-card">
-                    <small>Encaminhadas</small>
-                    <strong><?= h((string) $queueTotals['sent']) ?></strong>
-                </article>
-                <article class="simple-metric-card">
-                    <small>Em andamento</small>
-                    <strong><?= h((string) $queueTotals['in_progress']) ?></strong>
-                </article>
-                <article class="simple-metric-card">
-                    <small>Finalizadas</small>
-                    <strong><?= h((string) $queueTotals['finished']) ?></strong>
-                </article>
-            <?php else: ?>
-                <article class="simple-metric-card">
-                    <small>Status</small>
-                    <strong><?= xerox_is_available() ? 'Ativo' : 'Parado' ?></strong>
-                </article>
-                <article class="simple-metric-card">
-                    <small>Operadores</small>
-                    <strong><?= h((string) count($operators)) ?></strong>
-                </article>
-                <article class="simple-metric-card">
-                    <small>Fila</small>
-                    <strong><?= h((string) ($queueTotals['sent'] + $queueTotals['in_progress'])) ?></strong>
-                </article>
-            <?php endif; ?>
-        </section>
-
-        <div class="xerox-switcher" data-xerox-switcher data-default-panel="<?= h($defaultPanel) ?>">
-            <button class="xerox-switch-chip" type="button" data-xerox-switch="mine">Minhas provas <span><?= h((string) count($ownerForwardedExams)) ?></span></button>
-            <?php if (can_view_xerox_queue()): ?>
-                <button class="xerox-switch-chip" type="button" data-xerox-switch="sent">Fila <span><?= h((string) count($sentExams)) ?></span></button>
-                <button class="xerox-switch-chip" type="button" data-xerox-switch="progress">Em andamento <span><?= h((string) count($inProgressExams)) ?></span></button>
-                <button class="xerox-switch-chip" type="button" data-xerox-switch="finished">Finalizadas <span><?= h((string) count($finishedExams)) ?></span></button>
-            <?php endif; ?>
-            <?php if (can_authorize_xerox_users()): ?>
-                <button class="xerox-switch-chip" type="button" data-xerox-switch="team">Equipe <span><?= h((string) count($operators)) ?></span></button>
-            <?php endif; ?>
-        </div>
+        <?php if ($showXeroxSwitcher): ?>
+            <div class="xerox-switcher" data-xerox-switcher data-default-panel="<?= h($defaultPanel) ?>">
+                <button class="xerox-switch-chip" type="button" data-xerox-switch="mine">Minhas provas <span><?= h((string) count($ownerForwardedExams)) ?></span></button>
+                <?php if (can_view_xerox_queue()): ?>
+                    <button class="xerox-switch-chip" type="button" data-xerox-switch="sent">Fila <span><?= h((string) count($sentExams)) ?></span></button>
+                    <button class="xerox-switch-chip" type="button" data-xerox-switch="progress">Em andamento <span><?= h((string) count($inProgressExams)) ?></span></button>
+                    <button class="xerox-switch-chip" type="button" data-xerox-switch="finished">Finalizadas <span><?= h((string) count($finishedExams)) ?></span></button>
+                <?php endif; ?>
+                <?php if (can_authorize_xerox_users()): ?>
+                    <button class="xerox-switch-chip" type="button" data-xerox-switch="team">Equipe <span><?= h((string) count($operators)) ?></span></button>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <form method="get" class="simple-filter-grid xerox-filter-grid">
+            <div class="xerox-filter-heading">
+                <strong>Filtrar a lista</strong>
+                    <span>Busque uma prova ou refine a lista por status e responsável.</span>
+            </div>
             <label>Buscar prova
                 <input type="text" name="term" value="<?= h($xeroxFilters['term']) ?>" placeholder="Título da prova">
             </label>
@@ -251,7 +252,7 @@ render_header(
         <?php if ($ownerForwardedExams === []): ?>
             <div class="empty-state">
                 <h2>Nenhuma prova encaminhada</h2>
-                <p>Abra o preview da prova e use o botão Xerox para enviar.</p>
+                <p>Abra o preview da prova e use o botão Xerox para enviar a impressão.</p>
             </div>
         <?php else: ?>
             <div class="simple-list">
@@ -467,7 +468,7 @@ render_header(
                                 <input type="hidden" name="user_id" value="<?= h((string) $managedUser['id']) ?>">
                                 <label>Perfil
                                     <select name="role">
-                                        <option value="user" <?= $managedUser['role'] === 'user' ? 'selected' : '' ?>>Usuario</option>
+                                        <option value="user" <?= $managedUser['role'] === 'user' ? 'selected' : '' ?>>Usuário</option>
                                         <option value="xerox" <?= $managedUser['role'] === 'xerox' ? 'selected' : '' ?>>Xerox</option>
                                     </select>
                                 </label>

@@ -102,7 +102,7 @@ function question_update_discipline(): never
     $name = trim((string) ($_POST['discipline_name'] ?? ''));
 
     if ($disciplineId <= 0 || $name === '') {
-        flash('error', 'Informe uma disciplina valida.');
+        flash('error', 'Informe uma disciplina válida.');
         question_redirect();
     }
 
@@ -111,7 +111,7 @@ function question_update_discipline(): never
         $update->execute(['name' => $name, 'id' => $disciplineId]);
         flash('success', 'Disciplina atualizada.');
     } catch (Throwable) {
-        flash('error', 'Nao foi possivel atualizar a disciplina.');
+        flash('error', 'Não foi possível atualizar a disciplina.');
     }
 
     question_redirect();
@@ -122,7 +122,7 @@ function question_delete_discipline(): never
     $disciplineId = (int) ($_POST['discipline_id'] ?? 0);
 
     if ($disciplineId <= 0) {
-        flash('error', 'Disciplina invalida.');
+        flash('error', 'Disciplina inválida.');
         question_redirect();
     }
 
@@ -139,7 +139,7 @@ function question_update_subject(): never
     $name = trim((string) ($_POST['subject_name'] ?? ''));
 
     if ($subjectId <= 0 || $disciplineId <= 0 || $name === '') {
-        flash('error', 'Informe um assunto valido.');
+        flash('error', 'Informe um assunto válido.');
         question_redirect();
     }
 
@@ -152,7 +152,7 @@ function question_update_subject(): never
         ]);
         flash('success', 'Assunto atualizado.');
     } catch (Throwable) {
-        flash('error', 'Nao foi possivel atualizar o assunto.');
+        flash('error', 'Não foi possível atualizar o assunto.');
     }
 
     question_redirect();
@@ -163,7 +163,7 @@ function question_delete_subject(): never
     $subjectId = (int) ($_POST['subject_id'] ?? 0);
 
     if ($subjectId <= 0) {
-        flash('error', 'Assunto invalido.');
+        flash('error', 'Assunto inválido.');
         question_redirect();
     }
 
@@ -179,7 +179,7 @@ function question_toggle_favorite(int $userId): never
     $question = visible_question_row($questionId, $userId);
 
     if (!$question) {
-        flash('error', 'Questao nao encontrada.');
+        flash('error', 'Questão não encontrada.');
         question_redirect();
     }
 
@@ -190,11 +190,11 @@ function question_toggle_favorite(int $userId): never
     if ($favorite) {
         $delete = db()->prepare('DELETE FROM question_favorites WHERE id = :id');
         $delete->execute(['id' => $favorite['id']]);
-        flash('success', 'Questao removida dos favoritos.');
+        flash('success', 'Questão removida dos favoritos.');
     } else {
         $insert = db()->prepare('INSERT INTO question_favorites (question_id, user_id, created_at) VALUES (:question_id, :user_id, NOW())');
         $insert->execute(['question_id' => $questionId, 'user_id' => $userId]);
-        flash('success', 'Questao favoritada.');
+        flash('success', 'Questão favoritada.');
     }
 
     question_redirect();
@@ -206,7 +206,7 @@ function question_clone(int $userId): never
     $source = visible_question_row($questionId, $userId);
 
     if (!$source || ($source['visibility'] !== 'public' && (int) $source['author_id'] !== $userId)) {
-        flash('error', 'Questao nao pode ser clonada.');
+        flash('error', 'Esta questão não pode ser clonada.');
         question_redirect();
     }
 
@@ -223,7 +223,7 @@ function question_clone(int $userId): never
         $insert->execute([
             'author_id' => $userId,
             'based_on_question_id' => $originId,
-            'title' => $source['title'] . ' (copia)',
+            'title' => $source['title'] . ' (cópia)',
             'prompt' => $source['prompt'],
             'prompt_image_url' => $source['prompt_image_url'],
             'question_type' => $source['question_type'],
@@ -267,7 +267,7 @@ function question_clone(int $userId): never
         }
 
         db()->commit();
-        flash('success', 'Questao clonada como privada.');
+        flash('success', 'Questão clonada como privada.');
     } catch (Throwable $throwable) {
         db()->rollBack();
         flash('error', 'Falha ao clonar: ' . $throwable->getMessage());
@@ -282,13 +282,13 @@ function question_delete(int $userId): never
     $question = own_question($questionId, $userId);
 
     if (!$question) {
-        flash('error', 'Somente o autor pode excluir.');
+        flash('error', can_manage_all_questions() ? 'Questão não encontrada.' : 'Somente o autor pode excluir.');
         question_redirect();
     }
 
     $delete = db()->prepare('DELETE FROM questions WHERE id = :id');
     $delete->execute(['id' => $questionId]);
-    flash('success', 'Questao excluida.');
+    flash('success', 'Questão excluída.');
     question_redirect();
 }
 
@@ -296,9 +296,10 @@ function question_save(int $userId, bool $isUpdate): never
 {
     $questionId = (int) ($_POST['question_id'] ?? 0);
     $editing = $isUpdate ? own_question($questionId, $userId) : null;
+    $canManageAll = can_manage_all_questions();
 
     if ($isUpdate && !$editing) {
-        flash('error', 'Questao nao encontrada.');
+        flash('error', 'Questão não encontrada.');
         redirect('question-bank.php');
     }
 
@@ -329,7 +330,7 @@ function question_save(int $userId, bool $isUpdate): never
 
     if ($officialSourceKey !== '') {
         if (!array_key_exists($officialSourceKey, $officialSources)) {
-            $errors[] = 'Fonte oficial invalida.';
+            $errors[] = 'Fonte oficial inválida.';
         } else {
             $sourceName = $officialSources[$officialSourceKey]['name'];
             $sourceUrl = $officialSources[$officialSourceKey]['url'];
@@ -337,31 +338,31 @@ function question_save(int $userId, bool $isUpdate): never
     }
 
     if ($title === '' || $prompt === '') {
-        $errors[] = 'Titulo e enunciado sao obrigatorios.';
+        $errors[] = 'Título e enunciado são obrigatórios.';
     }
 
     if ($promptImageUrl !== '' && !filter_var($promptImageUrl, FILTER_VALIDATE_URL)) {
-        $errors[] = 'Imagem deve ser uma URL valida.';
+        $errors[] = 'A imagem deve ser uma URL válida.';
     }
 
     if (!in_array($type, ['multiple_choice', 'discursive', 'drawing', 'true_false'], true)) {
-        $errors[] = 'Tipo de questao invalido.';
+        $errors[] = 'Tipo de questão inválido.';
     }
 
     if (!in_array($visibility, ['private', 'public'], true)) {
-        $errors[] = 'Visibilidade invalida.';
+        $errors[] = 'Visibilidade inválida.';
     }
 
     if ($disciplineId <= 0 || $subjectId <= 0 || !belongs_subject($subjectId, $disciplineId)) {
-        $errors[] = 'Disciplina e assunto precisam ser validos.';
+        $errors[] = 'Disciplina e assunto precisam ser válidos.';
     }
 
     if (!in_array($level, ['fundamental', 'medio', 'tecnico', 'superior'], true)) {
-        $errors[] = 'Nivel invalido.';
+        $errors[] = 'Nível inválido.';
     }
 
     if (!in_array($difficulty, ['facil', 'medio', 'dificil'], true)) {
-        $errors[] = 'Dificuldade invalida.';
+        $errors[] = 'Dificuldade inválida.';
     }
 
     if ($type === 'multiple_choice') {
@@ -376,7 +377,7 @@ function question_save(int $userId, bool $isUpdate): never
         }
 
         if ($allowMulti === 0 && $correctCount > 1) {
-            $errors[] = 'Sem multiplas corretas, marque apenas uma alternativa.';
+            $errors[] = 'Sem múltiplas corretas, marque apenas uma alternativa.';
         }
     } elseif ($type === 'true_false') {
         $allowMulti = 0;
@@ -391,7 +392,7 @@ function question_save(int $userId, bool $isUpdate): never
     }
 
     if ($type === 'discursive' && $responseLines < 1) {
-        $errors[] = 'Numero de linhas invalido.';
+        $errors[] = 'Número de linhas inválido.';
     }
 
     if ($type !== 'discursive') {
@@ -401,12 +402,12 @@ function question_save(int $userId, bool $isUpdate): never
 
     if ($type === 'drawing') {
         if (!in_array($drawingSize, ['small', 'medium', 'large', 'custom'], true)) {
-            $errors[] = 'Tamanho do espaco invalido.';
+            $errors[] = 'Tamanho do espaço inválido.';
         }
 
         if ($drawingSize === 'custom') {
             if ($drawingHeightPx < 120 || $drawingHeightPx > 1200) {
-                $errors[] = 'Altura customizada deve ficar entre 120 e 1200 pixels.';
+                $errors[] = 'A altura personalizada deve ficar entre 120 e 1200 pixels.';
             }
         } else {
             $drawingHeightPx = null;
@@ -429,8 +430,7 @@ function question_save(int $userId, bool $isUpdate): never
 
     try {
         if ($editing) {
-            $update = db()->prepare(
-                'UPDATE questions SET
+            $updateSql = 'UPDATE questions SET
                  title = :title,
                  prompt = :prompt,
                  prompt_image_url = :prompt_image_url,
@@ -450,9 +450,14 @@ function question_save(int $userId, bool $isUpdate): never
                  source_url = :source_url,
                  source_reference = :source_reference,
                  updated_at = NOW()
-                 WHERE id = :id AND author_id = :author_id'
-            );
-            $update->execute([
+                 WHERE id = :id';
+
+            if (!$canManageAll) {
+                $updateSql .= ' AND author_id = :author_id';
+            }
+
+            $update = db()->prepare($updateSql);
+            $updateParams = [
                 'title' => $title,
                 'prompt' => $prompt,
                 'prompt_image_url' => $promptImageUrl !== '' ? $promptImageUrl : null,
@@ -472,8 +477,13 @@ function question_save(int $userId, bool $isUpdate): never
                 'source_url' => $sourceUrl,
                 'source_reference' => $sourceReference !== '' ? $sourceReference : null,
                 'id' => $editing['id'],
-                'author_id' => $userId,
-            ]);
+            ];
+
+            if (!$canManageAll) {
+                $updateParams['author_id'] = $userId;
+            }
+
+            $update->execute($updateParams);
 
             $questionId = (int) $editing['id'];
             $deleteOptions = db()->prepare('DELETE FROM question_options WHERE question_id = :question_id');
@@ -528,10 +538,10 @@ function question_save(int $userId, bool $isUpdate): never
         }
 
         db()->commit();
-        flash('success', $editing ? 'Questao atualizada.' : 'Questao criada.');
+        flash('success', $editing ? 'Questão atualizada.' : 'Questão criada.');
     } catch (Throwable $throwable) {
         db()->rollBack();
-        flash('error', 'Falha ao salvar questao: ' . $throwable->getMessage());
+        flash('error', 'Falha ao salvar a questão: ' . $throwable->getMessage());
     }
 
     question_redirect();
@@ -546,12 +556,12 @@ function question_import_enem(int $userId): never
     $sourceName = 'API ENEM';
 
     if ($year <= 0 || $index <= 0) {
-        flash('error', 'Informe uma questao valida do ENEM para importar.');
+        flash('error', 'Informe uma questão válida do ENEM para importar.');
         question_redirect_query($redirectQuery);
     }
 
     if ($language !== '' && !array_key_exists($language, enem_api_supported_languages())) {
-        flash('error', 'Idioma do ENEM invalido.');
+        flash('error', 'Idioma do ENEM inválido.');
         question_redirect_query($redirectQuery);
     }
 
@@ -559,7 +569,7 @@ function question_import_enem(int $userId): never
     $existing = question_find_by_source_reference($userId, $sourceName, $sourceReference);
 
     if ($existing !== null) {
-        flash('success', 'Essa questao do ENEM ja foi importada para a sua conta.');
+        flash('success', 'Essa questão do ENEM já foi importada para a sua conta.');
         question_redirect_query($redirectQuery);
     }
 
@@ -607,11 +617,11 @@ function question_import_enem(int $userId): never
         }
 
         if ($prompt === '') {
-            throw new RuntimeException('A API ENEM retornou uma questao sem enunciado utilizavel.');
+            throw new RuntimeException('A API ENEM retornou uma questão sem enunciado utilizável.');
         }
 
         if (count($alternatives) < 2) {
-            throw new RuntimeException('A API ENEM retornou menos de duas alternativas validas.');
+            throw new RuntimeException('A API ENEM retornou menos de duas alternativas válidas.');
         }
 
         $allowMultipleCorrect = count(array_filter($alternatives, static fn(array $alternative): bool => $alternative['is_correct'] === 1)) > 1 ? 1 : 0;
@@ -626,7 +636,7 @@ function question_import_enem(int $userId): never
         );
         $insert->execute([
             'author_id' => $userId,
-            'title' => trim((string) ($question['title'] ?? 'Questao ENEM ' . $year)),
+            'title' => trim((string) ($question['title'] ?? 'Questão ENEM ' . $year)),
             'prompt' => $prompt,
             'prompt_image_url' => $promptImageUrl,
             'question_type' => 'multiple_choice',
@@ -658,13 +668,13 @@ function question_import_enem(int $userId): never
         }
 
         db()->commit();
-        flash('success', 'Questao do ENEM importada para o banco como privada.');
+        flash('success', 'Questão do ENEM importada para o banco como privada.');
     } catch (Throwable $throwable) {
         if (db()->inTransaction()) {
             db()->rollBack();
         }
 
-        flash('error', 'Falha ao importar questao do ENEM: ' . $throwable->getMessage());
+        flash('error', 'Falha ao importar a questão do ENEM: ' . $throwable->getMessage());
     }
 
     question_redirect_query($redirectQuery);

@@ -30,23 +30,23 @@ $latestRun = $history[0] ?? null;
 
 render_header(
     'Backup',
-    'Painel de seguranca para executar backup manual, acompanhar o historico e preparar o agendamento diario no Google Drive.'
+    'Painel de segurança para executar backup manual, acompanhar o histórico e preparar o agendamento diário no Google Drive.'
 );
 ?>
 
 <section class="stats-grid stats-grid-four">
     <article>
         <span class="metric-copy">Backup ativo</span>
-        <strong class="metric-number"><?= $summary['enabled'] ? 'Sim' : 'Nao' ?></strong>
-        <p>Rotina de backup habilitada na configuracao do sistema.</p>
+        <strong class="metric-number"><?= $summary['enabled'] ? 'Sim' : 'Não' ?></strong>
+        <p>Rotina de backup habilitada na configuração do sistema.</p>
     </article>
     <article>
         <span class="metric-copy">Google Drive</span>
         <strong class="metric-number"><?= $summary['google_drive_ready'] ? 'OK' : 'Pendente' ?></strong>
-        <p>Credencial e pasta remota para envio automatico.</p>
+        <p>Credencial e pasta remota para envio automático.</p>
     </article>
     <article>
-        <span class="metric-copy">Horario diario</span>
+        <span class="metric-copy">Horário diário</span>
         <strong class="metric-number"><?= h($summary['schedule_time']) ?></strong>
         <p>Horario previsto para a tarefa agendada.</p>
     </article>
@@ -69,18 +69,18 @@ render_header(
     </article>
 
     <article class="panel">
-        <h2>Status da integracao</h2>
+        <h2>Status da integração</h2>
         <ul class="mini-list">
             <li><strong>Credencial:</strong> <?= $summary['google_drive_credentials_exists'] ? 'Arquivo encontrado' : 'Arquivo ausente' ?></li>
-            <li><strong>Pasta Drive:</strong> <?= h($summary['google_drive_folder_id'] !== '' ? $summary['google_drive_folder_id'] : 'Nao configurada') ?></li>
+            <li><strong>Pasta Drive:</strong> <?= h($summary['google_drive_folder_id'] !== '' ? $summary['google_drive_folder_id'] : 'Não configurada') ?></li>
             <li><strong>Mysqldump:</strong> <?= h($summary['mysqldump_path']) ?></li>
             <li><strong>Pasta local:</strong> <?= h($summary['local_root']) ?></li>
         </ul>
     </article>
 
     <article class="panel">
-        <h2>Agendamento diario</h2>
-        <p>O script CLI ja esta pronto. Para registrar a tarefa no Windows, use o comando abaixo no PowerShell como administrador.</p>
+        <h2>Agendamento diário</h2>
+        <p>O script CLI já está pronto. Para registrar a tarefa no Windows, use o comando abaixo no PowerShell como administrador.</p>
         <div class="auth-note">
             <code><?= h(backup_register_task_command()) ?></code>
         </div>
@@ -89,7 +89,7 @@ render_header(
 
     <article class="panel">
         <h2>Onde configurar</h2>
-        <p>Defina as credenciais do Google Drive e a pasta remota no `config.local.php` ou por variaveis de ambiente.</p>
+        <p>Defina as credenciais do Google Drive e a pasta remota no `config.local.php` ou por variáveis de ambiente.</p>
         <div class="auth-note">
             <strong>Esperado</strong><br>
             <code>QUEST_GOOGLE_DRIVE_CREDENTIALS</code><br>
@@ -102,8 +102,8 @@ render_header(
 <section class="panel">
     <div class="workspace-panel-head">
         <div>
-            <p class="workspace-kicker">Historico</p>
-            <h2>Execucoes de backup</h2>
+            <p class="workspace-kicker">Histórico</p>
+            <h2>Execuções de backup</h2>
         </div>
         <span class="badge"><?= h((string) count($history)) ?> registros</span>
     </div>
@@ -111,19 +111,19 @@ render_header(
     <?php if ($history === []): ?>
         <div class="empty-state">
             <h2>Nenhum backup registrado</h2>
-            <p>Depois da primeira execucao, o historico aparece aqui com status e link do arquivo remoto.</p>
+            <p>Depois da primeira execução, o histórico aparece aqui com status e link do arquivo remoto.</p>
         </div>
     <?php else: ?>
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
-                    <th>Inicio</th>
+                    <th>Início</th>
                     <th>Tipo</th>
                     <th>Status</th>
                     <th>Arquivo</th>
                     <th>Tamanho</th>
-                    <th>Responsavel</th>
+                    <th>Responsável</th>
                     <th>Drive</th>
                     <th>Erro</th>
                 </tr>
