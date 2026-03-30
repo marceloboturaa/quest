@@ -53,3 +53,15 @@ Instituicao: CNI
 - Ajuste para usuarios enviarem mensagem ao administrador e ao setor Xerox quando houver operador habilitado.
 - Atualizacao do topo do sistema com atalho para `Meu painel`.
 - Atualizacao do favicon e do manifesto em `/favicon`, com novo tema roxo `#4f2ec9`, `favicon.svg` e `favicon-96x96.png`.
+
+2026-03-30
+- Simplificacao da experiencia de montagem para um fluxo de prova padrao, com reducao de variacoes de modelo em `exam-models.php` e `exam-create.php`.
+- Reestruturacao do cabeçalho editavel da prova, com dados puxados do perfil do usuario e ajustes visuais no proprio construtor.
+- Inclusao de configuracoes do gabarito no cabeçalho, com quantidade, orientacao, largura, altura, fonte e paleta de cores persistidas em metadata.
+- Evolucao de `exam-preview.php` para refletir configuracoes salvas da prova e aproximar o preview do comportamento final de impressao.
+- Refatoracao do renderizador compartilhado em `includes/exam_document_renderer.php` para manter paridade entre preview HTML e PDF.
+- Segmentacao de questoes longas em blocos de continuacao, com melhor distribuicao em colunas e paginas sem ultrapassar o rodape.
+- Reorganizacao do cabeçalho impresso da prova para linhas fixas de identificacao do professor/aluno e remocao do codigo da prova da area principal.
+- Ajuste para comentarios do corpo aparecerem apenas antes do rodape quando realmente existirem.
+- Normalizacao tipografica do documento e compactacao de espacamentos para reduzir areas brancas no preview e no PDF.
+- Blindagem defensiva na leitura de questoes em `includes/xerox_repository.php` para evitar repeticao de cards no preview.
