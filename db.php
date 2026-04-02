@@ -105,7 +105,9 @@ if (!function_exists('db')) {
             );
         }
 
-        ensure_runtime_schema($pdo);
+        if ($environment === 'local') {
+            ensure_runtime_schema($pdo);
+        }
         $connections[$environment] = $pdo;
 
         return $pdo;
@@ -263,9 +265,13 @@ if (!function_exists('db_example_select_users')) {
 if (!function_exists('system_setting')) {
     function system_setting(string $key, mixed $default = null): mixed
     {
-        $statement = db()->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :setting_key LIMIT 1');
-        $statement->execute(['setting_key' => $key]);
-        $value = $statement->fetchColumn();
+        try {
+            $statement = db()->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :setting_key LIMIT 1');
+            $statement->execute(['setting_key' => $key]);
+            $value = $statement->fetchColumn();
+        } catch (Throwable) {
+            return $default;
+        }
 
         if ($value === false) {
             return $default;
@@ -291,15 +297,28 @@ if (!function_exists('system_setting_bool')) {
 if (!function_exists('system_set_setting')) {
     function system_set_setting(string $key, string $value): void
     {
-        $statement = db()->prepare(
-            'INSERT INTO system_settings (setting_key, setting_value, updated_at)
-             VALUES (:setting_key, :setting_value, NOW())
-             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()'
-        );
-        $statement->execute([
-            'setting_key' => $key,
-            'setting_value' => $value,
-        ]);
+        try {
+            db()->exec(
+                "CREATE TABLE IF NOT EXISTS `system_settings` (
+                    `setting_key` VARCHAR(100) NOT NULL,
+                    `setting_value` VARCHAR(255) NOT NULL,
+                    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`setting_key`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+
+            $statement = db()->prepare(
+                'INSERT INTO system_settings (setting_key, setting_value, updated_at)
+                 VALUES (:setting_key, :setting_value, NOW())
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()'
+            );
+            $statement->execute([
+                'setting_key' => $key,
+                'setting_value' => $value,
+            ]);
+        } catch (Throwable $throwable) {
+            throw new RuntimeException('Nao foi possivel salvar a configuracao do sistema: ' . $throwable->getMessage(), 0, $throwable);
+        }
     }
 }
 
