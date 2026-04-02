@@ -5,6 +5,8 @@ require __DIR__ . '/bootstrap.php';
 
 require_guest();
 
+$registrationEnabled = system_registration_enabled();
+
 if (is_post()) {
     abort_if_invalid_csrf();
 
@@ -62,13 +64,19 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
             <div class="form-actions">
                 <button class="button" type="submit">Entrar</button>
                 <a class="ghost-button" href="forgot-password.php">Esqueci minha senha</a>
-                <a class="ghost-button" href="register.php">Criar conta</a>
+                <?php if ($registrationEnabled): ?>
+                    <a class="ghost-button" href="register.php">Criar conta</a>
+                <?php endif; ?>
             </div>
         </form>
 
         <div class="auth-note">
             <strong>Acesso</strong><br>
-            Se você ainda não tem conta, crie um cadastro. O perfil inicial entra como usuário comum.
+            <?php if ($registrationEnabled): ?>
+                Se você ainda não tem conta, crie um cadastro. O perfil inicial entra como usuário comum.
+            <?php else: ?>
+                O cadastro de novos usuários está bloqueado temporariamente pelo administrador master.
+            <?php endif; ?>
         </div>
 
         <div class="auth-back-link-wrap">

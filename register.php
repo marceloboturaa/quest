@@ -5,8 +5,15 @@ require __DIR__ . '/bootstrap.php';
 
 require_guest();
 
+$registrationEnabled = system_registration_enabled();
+
 if (is_post()) {
     abort_if_invalid_csrf();
+
+    if (!$registrationEnabled) {
+        flash('error', 'O cadastro de novos usuários está bloqueado no momento.');
+        redirect('login.php');
+    }
 
     $name = trim((string) ($_POST['name'] ?? ''));
     $email = trim((string) ($_POST['email'] ?? ''));
@@ -75,6 +82,12 @@ render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inici
         <h2>Novo cadastro</h2>
         <p>Depois do cadastro, a conta entra como usuário comum. O administrador master pode promover o perfil para admin local quando necessário.</p>
 
+        <?php if (!$registrationEnabled): ?>
+            <div class="flash flash-error">
+                O cadastro de novos usuários está temporariamente bloqueado pelo master admin.
+            </div>
+        <?php endif; ?>
+
         <form method="post" class="form-grid">
             <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
 
@@ -101,7 +114,7 @@ render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inici
             </div>
 
             <div class="form-actions">
-                <button class="button" type="submit">Criar conta</button>
+                <button class="button" type="submit" <?= !$registrationEnabled ? 'disabled' : '' ?>>Criar conta</button>
                 <a class="ghost-button" href="login.php">Já tenho login</a>
                 <a class="ghost-button" href="index.php">Voltar</a>
             </div>

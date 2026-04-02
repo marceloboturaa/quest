@@ -52,6 +52,14 @@ function handle_question_request(int $userId): void
         question_delete($userId);
     }
 
+    if ($action === 'bulk_delete_questions') {
+        question_bulk_delete_selected($userId);
+    }
+
+    if ($action === 'delete_all_questions') {
+        question_delete_all_questions($userId);
+    }
+
     if ($action === 'import_enem_question') {
         question_import_enem($userId);
     }
@@ -289,6 +297,88 @@ function question_delete(int $userId): never
     $delete = db()->prepare('DELETE FROM questions WHERE id = :id');
     $delete->execute(['id' => $questionId]);
     flash('success', 'Questão excluída.');
+    question_redirect();
+}
+
+function question_posted_question_ids(): array
+{
+    $ids = $_POST['question_ids'] ?? [];
+
+    if (!is_array($ids)) {
+        return [];
+    }
+
+    $ids = array_map(static fn(mixed $value): int => (int) $value, $ids);
+    $ids = array_values(array_unique(array_filter($ids, static fn(int $id): bool => $id > 0)));
+
+    return $ids;
+}
+
+function question_bulk_delete_selected(int $userId): never
+{
+    if (!can_manage_question_bulk_deletion()) {
+        flash('error', 'A exclusão em massa é restrita ao master admin.');
+        question_redirect();
+    }
+
+    $questionIds = question_posted_question_ids();
+
+    if ($questionIds === []) {
+        flash('error', 'Selecione ao menos uma questão para excluir.');
+        question_redirect();
+    }
+
+    $placeholders = implode(',', array_fill(0, count($questionIds), '?'));
+
+    db()->beginTransaction();
+
+    try {
+        $delete = db()->prepare('DELETE FROM questions WHERE id IN (' . $placeholders . ')');
+        $delete->execute($questionIds);
+        db()->commit();
+
+        flash('success', count($questionIds) . ' questão(ões) excluída(s).');
+    } catch (Throwable $throwable) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+
+        flash('error', 'Falha ao excluir as questões selecionadas: ' . $throwable->getMessage());
+    }
+
+    question_redirect();
+}
+
+function question_delete_all_questions(int $userId): never
+{
+    if (!can_manage_question_bulk_deletion()) {
+        flash('error', 'A exclusão em massa é restrita ao master admin.');
+        question_redirect();
+    }
+
+    db()->beginTransaction();
+
+    try {
+        $total = (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn();
+
+        if ($total <= 0) {
+            db()->rollBack();
+            flash('error', 'Não há questões para excluir.');
+            question_redirect();
+        }
+
+        db()->exec('DELETE FROM questions');
+        db()->commit();
+
+        flash('success', 'Todas as questões foram excluídas.');
+    } catch (Throwable $throwable) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+
+        flash('error', 'Falha ao excluir todas as questões: ' . $throwable->getMessage());
+    }
+
     question_redirect();
 }
 

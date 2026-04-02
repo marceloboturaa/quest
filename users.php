@@ -8,7 +8,9 @@ require_role('master_admin');
 if (is_post()) {
     abort_if_invalid_csrf();
 
-    if ((string) ($_POST['action'] ?? '') === 'set_role') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if ($action === 'set_role') {
         $userId = (int) ($_POST['user_id'] ?? 0);
         $newRole = (string) ($_POST['role'] ?? 'user');
         $allowedRoles = ['user', 'local_admin', 'xerox'];
@@ -48,9 +50,17 @@ if (is_post()) {
         flash('success', 'Perfil do usuário atualizado.');
         redirect('users.php');
     }
+
+    if ($action === 'toggle_registration') {
+        $enabled = (string) ($_POST['registration_enabled'] ?? '1') === '1';
+        system_set_registration_enabled($enabled);
+        flash('success', $enabled ? 'Cadastro liberado para usuários.' : 'Cadastro bloqueado para usuários.');
+        redirect('users.php');
+    }
 }
 
 $users = db()->query('SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+$registrationEnabled = system_registration_enabled();
 $counts = [
     'total' => count($users),
     'local_admins' => count(array_filter($users, static fn(array $user): bool => $user['role'] === 'local_admin')),
@@ -128,6 +138,36 @@ render_header(
                 </article>
             <?php endforeach; ?>
         </div>
+    </article>
+
+    <article class="simple-card">
+        <div class="simple-card-head">
+            <div>
+                <h2>Cadastro de usuários</h2>
+                <p class="helper-text">O master pode liberar ou bloquear a inscrição de novos usuários no sistema.</p>
+            </div>
+        </div>
+
+        <div class="simple-list">
+            <div class="simple-list-item">
+                <div>
+                    <strong>Status atual</strong>
+                    <p><?= $registrationEnabled ? 'Cadastro liberado' : 'Cadastro bloqueado' ?></p>
+                </div>
+                <span class="badge <?= $registrationEnabled ? 'badge-accent' : '' ?>">
+                    <?= $registrationEnabled ? 'Ativo' : 'Bloqueado' ?>
+                </span>
+            </div>
+        </div>
+
+        <form method="post" class="simple-action-row" style="margin-top: 16px;">
+            <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="toggle_registration">
+            <input type="hidden" name="registration_enabled" value="<?= $registrationEnabled ? '0' : '1' ?>">
+            <button class="<?= $registrationEnabled ? 'button-danger' : 'button' ?>" type="submit">
+                <?= $registrationEnabled ? 'Bloquear cadastro' : 'Liberar cadastro' ?>
+            </button>
+        </form>
     </article>
 
     <section class="simple-panel-grid">

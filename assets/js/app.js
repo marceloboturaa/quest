@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectedToggle = document.querySelector('[data-selected-toggle]');
     const bankList = document.querySelector('[data-bank-list]');
     const bankLoadMore = document.querySelector('[data-bank-load-more]');
+    const questionSelectAllButton = document.querySelector('[data-question-select-all]');
+    const questionBulkCheckboxes = document.querySelectorAll('[data-question-bulk-checkbox]');
+    const questionSelectedCount = document.querySelector('[data-question-selected-count]');
     const menuToggle = document.querySelector('[data-menu-toggle]');
     const menuPanel = document.querySelector('[data-menu-panel]');
     const topbar = document.querySelector('.topbar');
@@ -114,6 +117,38 @@ document.addEventListener('DOMContentLoaded', function () {
             void constructionScene.offsetWidth;
             constructionScene.classList.add('is-bumping');
         }, 3200);
+    }
+
+    if (questionSelectAllButton && questionBulkCheckboxes.length > 0) {
+        const syncQuestionSelectionCount = function () {
+            if (!questionSelectedCount) {
+                return;
+            }
+
+            const selectedTotal = Array.from(questionBulkCheckboxes).filter(function (checkbox) {
+                return checkbox.checked;
+            }).length;
+
+            questionSelectedCount.textContent = selectedTotal + (selectedTotal === 1 ? ' selecionada' : ' selecionadas');
+        };
+
+        syncQuestionSelectionCount();
+
+        questionBulkCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', syncQuestionSelectionCount);
+        });
+
+        questionSelectAllButton.addEventListener('click', function () {
+            const anyUnchecked = Array.from(questionBulkCheckboxes).some(function (checkbox) {
+                return !checkbox.checked;
+            });
+
+            questionBulkCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = anyUnchecked;
+            });
+
+            syncQuestionSelectionCount();
+        });
     }
 
     if (examMetaForm) {

@@ -21,6 +21,7 @@ $subjects = question_subjects();
 $authors = question_authors();
 $filters = question_filters($_GET);
 [$questions, $questionOptions] = question_list($filters, $userId);
+$canBulkDeleteQuestions = can_manage_question_bulk_deletion();
 $questionMetrics = [
     'private' => 0,
     'public' => 0,
@@ -161,10 +162,20 @@ render_header(
 
     <article class="simple-card">
         <div class="simple-card-head">
-            <h2>Montagem da prova</h2>
-            <form id="question-bulk-exam-form" method="get" action="exam-create.php" class="simple-action-row">
-                <button class="button-secondary" type="submit">Usar selecionadas</button>
+            <div>
+                <h2>Ações em massa</h2>
+                <p class="helper-text">Marque as questões que deseja usar ou excluir. O botão de exclusão em massa aparece apenas para o master admin.</p>
+            </div>
+            <form id="question-bulk-form" method="post" action="question-bank.php" class="simple-action-row">
+                <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
+                <span class="badge" data-question-selected-count>0 selecionadas</span>
+                <button class="ghost-button" type="button" data-question-select-all>Selecionar tudo</button>
+                <button class="button-secondary" type="submit" formaction="exam-create.php" formmethod="get">Usar selecionadas</button>
                 <a class="ghost-button" href="exam-create.php">Nova prova</a>
+                <?php if ($canBulkDeleteQuestions): ?>
+                    <button class="button-danger" type="submit" name="action" value="bulk_delete_questions" onclick="return confirm('Excluir as questões selecionadas?')">Excluir selecionadas</button>
+                    <button class="button-danger" type="submit" name="action" value="delete_all_questions" onclick="return confirm('Excluir todas as questões do banco? Esta ação não pode ser desfeita.')">Excluir tudo</button>
+                <?php endif; ?>
             </form>
         </div>
     </article>
@@ -175,7 +186,7 @@ render_header(
             <p>Ajuste os filtros ou crie uma nova questão.</p>
         </div>
     <?php else: ?>
-        <section class="simple-list">
+        <section class="simple-list" data-question-bulk-list>
             <?php foreach ($questions as $question): ?>
                 <?php
                 $visibility = (string) $question['visibility'];
@@ -185,7 +196,7 @@ render_header(
                 <article class="simple-list-card">
                     <div class="simple-list-card-top">
                         <label class="question-select-toggle">
-                            <input form="question-bulk-exam-form" type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>">
+                            <input form="question-bulk-form" type="checkbox" name="question_ids[]" value="<?= h((string) $question['id']) ?>" data-question-bulk-checkbox>
                             <span>Selecionar</span>
                         </label>
                         <div class="simple-inline-list">
