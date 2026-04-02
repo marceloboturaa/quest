@@ -26,15 +26,15 @@ render_header(
                 <span class="construction-core-icon">Q</span>
             </a>
             <div class="construction-question construction-question-one">
-                <strong>Questão 01</strong>
+                <strong>Questão de</strong>
                 <span>Matemática</span>
             </div>
             <div class="construction-question construction-question-two">
-                <strong>Questão 02</strong>
+                <strong>Questão de </strong>
                 <span>Linguagens</span>
             </div>
             <div class="construction-question construction-question-three">
-                <strong>Questão 03</strong>
+                <strong>Questão de</strong>
                 <span>Ciências</span>
             </div>
             <div class="construction-chip construction-chip-one">HTML</div>
