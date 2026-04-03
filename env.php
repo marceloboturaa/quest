@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 return [
-    'default_environment' => getenv('QUEST_DB_ENV') ?: 'local',
+    'default_environment' => 'local',
     'connections' => [
         'local' => [
             'host' => '127.0.0.1',
@@ -17,7 +17,7 @@ return [
             'port' => 3306,
             'database' => 'u488847015_quest_baseDado',
             'username' => 'u488847015_quest_userName',
-            'password' => getenv('QUEST_DB_HOSTINGER_PASS') ?: getenv('QUEST_DB_PASS') ?: '',
+            'password' => '.9botsouz4M',
             'charset' => 'utf8mb4',
         ],
     ],

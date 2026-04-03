@@ -4,25 +4,32 @@ declare(strict_types=1);
 date_default_timezone_set('America/Sao_Paulo');
 
 $dbEnvironmentConfig = require __DIR__ . '/env.php';
-$dbConnections = $dbEnvironmentConfig['connections'] ?? [];
-$configuredDbEnvironment = trim((string) (getenv('QUEST_DB_ENV') ?: ($dbEnvironmentConfig['default_environment'] ?? '')));
+$dbConnections = is_array($dbEnvironmentConfig['connections'] ?? null) ? $dbEnvironmentConfig['connections'] : [];
+$defaultDbEnvironment = (string) ($dbEnvironmentConfig['default_environment'] ?? 'local');
 
-if ($configuredDbEnvironment !== '' && array_key_exists($configuredDbEnvironment, $dbConnections)) {
-    $defaultDbEnvironment = $configuredDbEnvironment;
-} else {
-    $serverHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
-    $isLocalHost = $serverHost !== '' && (
-        str_contains($serverHost, 'localhost')
-        || str_contains($serverHost, '127.0.0.1')
-        || str_contains($serverHost, '::1')
-    );
-
-    $hasHostingerCredentials = trim((string) (getenv('QUEST_DB_HOSTINGER_PASS') ?: getenv('QUEST_DB_PASS') ?: '')) !== '';
-
-    $defaultDbEnvironment = $isLocalHost || !$hasHostingerCredentials ? 'local' : 'hostinger';
+if (!isset($dbConnections[$defaultDbEnvironment])) {
+    $defaultDbEnvironment = array_key_first($dbConnections) ?: 'local';
 }
 
-$activeDbEnvironment = array_key_exists($defaultDbEnvironment, $dbConnections) ? $defaultDbEnvironment : 'local';
+$serverHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+$isLocalHost = $serverHost !== '' && (
+    str_contains($serverHost, 'localhost')
+    || str_contains($serverHost, '127.0.0.1')
+    || str_contains($serverHost, '::1')
+);
+
+$forcedDbEnvironment = strtolower(trim((string) getenv('QUEST_DB_ENV')));
+
+if ($forcedDbEnvironment !== '' && isset($dbConnections[$forcedDbEnvironment])) {
+    $activeDbEnvironment = $forcedDbEnvironment;
+} else {
+    $activeDbEnvironment = $isLocalHost ? 'local' : 'hostinger';
+
+    if (!isset($dbConnections[$activeDbEnvironment])) {
+        $activeDbEnvironment = $defaultDbEnvironment;
+    }
+}
+
 $activeDbConfig = $dbConnections[$activeDbEnvironment] ?? [
     'host' => '127.0.0.1',
     'port' => 3306,
@@ -32,14 +39,11 @@ $activeDbConfig = $dbConnections[$activeDbEnvironment] ?? [
     'charset' => 'utf8mb4',
 ];
 
-$runtimeEnvironment = $activeDbEnvironment;
-$overrideFileCandidates = [
-    __DIR__ . DIRECTORY_SEPARATOR . 'config.' . $runtimeEnvironment . '.php',
-];
-
 $config = [
     'app_name' => 'Quest',
-    'app_url' => getenv('QUEST_APP_URL') ?: 'https://quest.cidadenovainforma.com.br',
+    'app_url' => $activeDbEnvironment === 'local'
+        ? 'http://localhost/quest'
+        : 'https://quest.cidadenovainforma.com.br',
     'storage_path' => getenv('QUEST_STORAGE_PATH') ?: dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'quest-storage',
     'db_environment' => $activeDbEnvironment,
     'db_connections' => $dbConnections,
@@ -64,17 +68,5 @@ $config = [
     ],
     'password_reset_expires_minutes' => 60,
 ];
-
-foreach ($overrideFileCandidates as $overrideFilePath) {
-    if (!is_file($overrideFilePath)) {
-        continue;
-    }
-
-    $overrides = require $overrideFilePath;
-
-    if (is_array($overrides)) {
-        $config = array_replace_recursive($config, $overrides);
-    }
-}
 
 return $config;

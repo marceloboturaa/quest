@@ -1,4 +1,2 @@
-config.local.php
-config.hostinger.php
 storage/*.log
 .vscode/

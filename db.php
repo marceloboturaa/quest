@@ -32,9 +32,7 @@ if (!function_exists('set_db_environment')) {
         $connections = db_connection_catalog();
 
         if (!isset($connections[$environment])) {
-            throw new InvalidArgumentException(
-                'Ambiente de banco invalido: ' . $environment . '. Use local ou hostinger.'
-            );
+            throw new InvalidArgumentException('Ambiente de banco invalido: ' . $environment . '. Use local ou hostinger.');
         }
 
         global $config;
@@ -50,9 +48,7 @@ if (!function_exists('db_config')) {
         $environment = strtolower(trim($environment ?? db_current_environment()));
 
         if (!isset($connections[$environment])) {
-            throw new InvalidArgumentException(
-                'Ambiente de banco invalido: ' . $environment . '. Use local ou hostinger.'
-            );
+            throw new InvalidArgumentException('Ambiente de banco invalido: ' . $environment . '. Use local ou hostinger.');
         }
 
         return $connections[$environment];
@@ -98,16 +94,13 @@ if (!function_exists('db')) {
                 ]
             );
         } catch (PDOException $exception) {
-            throw new RuntimeException(
-                'Nao foi possivel conectar ao banco de dados [' . $environment . ']: ' . $exception->getMessage(),
-                0,
-                $exception
-            );
+            throw new RuntimeException('Nao foi possivel conectar ao banco de dados [' . $environment . ']: ' . $exception->getMessage(), 0, $exception);
         }
 
         if ($environment === 'local') {
             ensure_runtime_schema($pdo);
         }
+
         $connections[$environment] = $pdo;
 
         return $pdo;
@@ -136,26 +129,16 @@ if (!function_exists('ensure_runtime_schema')) {
         }
 
         $userColumnStatements = [
-            'preferred_teacher_name' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_teacher_name` VARCHAR(120) NULL DEFAULT NULL AFTER `role`",
-            'preferred_discipline' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_discipline` VARCHAR(120) NULL DEFAULT NULL AFTER `preferred_teacher_name`",
-            'preferred_component_name' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_component_name` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_discipline`",
-            'preferred_class_name' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_class_name` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_component_name`",
-            'preferred_year_reference' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_year_reference` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_class_name`",
-            'preferred_exam_label' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_exam_label` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_year_reference`",
-            'preferred_school_name' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_school_name` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_exam_label`",
-            'preferred_school_subtitle' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_school_subtitle` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_school_name`",
-            'preferred_header_logo_left' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_header_logo_left` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_school_subtitle`",
-            'preferred_header_logo_right' => "ALTER TABLE `users`
-                ADD COLUMN `preferred_header_logo_right` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_header_logo_left`",
+            'preferred_teacher_name' => "ALTER TABLE `users` ADD COLUMN `preferred_teacher_name` VARCHAR(120) NULL DEFAULT NULL AFTER `role`",
+            'preferred_discipline' => "ALTER TABLE `users` ADD COLUMN `preferred_discipline` VARCHAR(120) NULL DEFAULT NULL AFTER `preferred_teacher_name`",
+            'preferred_component_name' => "ALTER TABLE `users` ADD COLUMN `preferred_component_name` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_discipline`",
+            'preferred_class_name' => "ALTER TABLE `users` ADD COLUMN `preferred_class_name` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_component_name`",
+            'preferred_year_reference' => "ALTER TABLE `users` ADD COLUMN `preferred_year_reference` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_class_name`",
+            'preferred_exam_label' => "ALTER TABLE `users` ADD COLUMN `preferred_exam_label` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_year_reference`",
+            'preferred_school_name' => "ALTER TABLE `users` ADD COLUMN `preferred_school_name` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_exam_label`",
+            'preferred_school_subtitle' => "ALTER TABLE `users` ADD COLUMN `preferred_school_subtitle` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_school_name`",
+            'preferred_header_logo_left' => "ALTER TABLE `users` ADD COLUMN `preferred_header_logo_left` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_school_subtitle`",
+            'preferred_header_logo_right' => "ALTER TABLE `users` ADD COLUMN `preferred_header_logo_right` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_header_logo_left`",
         ];
 
         foreach ($userColumnStatements as $column => $statement) {
@@ -167,16 +150,11 @@ if (!function_exists('ensure_runtime_schema')) {
         }
 
         $examColumnStatements = [
-            'xerox_status' => "ALTER TABLE `exams`
-                ADD COLUMN `xerox_status` ENUM('not_sent', 'sent', 'in_progress', 'finished') NOT NULL DEFAULT 'not_sent' AFTER `instructions`",
-            'xerox_target_user_id' => "ALTER TABLE `exams`
-                ADD COLUMN `xerox_target_user_id` INT UNSIGNED NULL DEFAULT NULL AFTER `xerox_status`",
-            'xerox_requested_at' => "ALTER TABLE `exams`
-                ADD COLUMN `xerox_requested_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_target_user_id`",
-            'xerox_started_at' => "ALTER TABLE `exams`
-                ADD COLUMN `xerox_started_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_requested_at`",
-            'xerox_finished_at' => "ALTER TABLE `exams`
-                ADD COLUMN `xerox_finished_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_started_at`",
+            'xerox_status' => "ALTER TABLE `exams` ADD COLUMN `xerox_status` ENUM('not_sent', 'sent', 'in_progress', 'finished') NOT NULL DEFAULT 'not_sent' AFTER `instructions`",
+            'xerox_target_user_id' => "ALTER TABLE `exams` ADD COLUMN `xerox_target_user_id` INT UNSIGNED NULL DEFAULT NULL AFTER `xerox_status`",
+            'xerox_requested_at' => "ALTER TABLE `exams` ADD COLUMN `xerox_requested_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_target_user_id`",
+            'xerox_started_at' => "ALTER TABLE `exams` ADD COLUMN `xerox_started_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_requested_at`",
+            'xerox_finished_at' => "ALTER TABLE `exams` ADD COLUMN `xerox_finished_at` TIMESTAMP NULL DEFAULT NULL AFTER `xerox_started_at`",
         ];
 
         foreach ($examColumnStatements as $column => $statement) {
