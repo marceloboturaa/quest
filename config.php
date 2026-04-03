@@ -5,7 +5,23 @@ date_default_timezone_set('America/Sao_Paulo');
 
 $dbEnvironmentConfig = require __DIR__ . '/env.php';
 $dbConnections = $dbEnvironmentConfig['connections'] ?? [];
-$defaultDbEnvironment = (string) ($dbEnvironmentConfig['default_environment'] ?? 'local');
+$configuredDbEnvironment = trim((string) (getenv('QUEST_DB_ENV') ?: ($dbEnvironmentConfig['default_environment'] ?? '')));
+
+if ($configuredDbEnvironment !== '' && array_key_exists($configuredDbEnvironment, $dbConnections)) {
+    $defaultDbEnvironment = $configuredDbEnvironment;
+} else {
+    $serverHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+    $isLocalHost = $serverHost !== '' && (
+        str_contains($serverHost, 'localhost')
+        || str_contains($serverHost, '127.0.0.1')
+        || str_contains($serverHost, '::1')
+    );
+
+    $hasHostingerCredentials = trim((string) (getenv('QUEST_DB_HOSTINGER_PASS') ?: getenv('QUEST_DB_PASS') ?: '')) !== '';
+
+    $defaultDbEnvironment = $isLocalHost || !$hasHostingerCredentials ? 'local' : 'hostinger';
+}
+
 $activeDbEnvironment = array_key_exists($defaultDbEnvironment, $dbConnections) ? $defaultDbEnvironment : 'local';
 $activeDbConfig = $dbConnections[$activeDbEnvironment] ?? [
     'host' => '127.0.0.1',
@@ -14,6 +30,11 @@ $activeDbConfig = $dbConnections[$activeDbEnvironment] ?? [
     'username' => '',
     'password' => '',
     'charset' => 'utf8mb4',
+];
+
+$runtimeEnvironment = $activeDbEnvironment;
+$overrideFileCandidates = [
+    __DIR__ . DIRECTORY_SEPARATOR . 'config.' . $runtimeEnvironment . '.php',
 ];
 
 $config = [
@@ -44,10 +65,12 @@ $config = [
     'password_reset_expires_minutes' => 60,
 ];
 
-$localConfigPath = __DIR__ . DIRECTORY_SEPARATOR . 'config.local.php';
+foreach ($overrideFileCandidates as $overrideFilePath) {
+    if (!is_file($overrideFilePath)) {
+        continue;
+    }
 
-if (is_file($localConfigPath)) {
-    $overrides = require $localConfigPath;
+    $overrides = require $overrideFilePath;
 
     if (is_array($overrides)) {
         $config = array_replace_recursive($config, $overrides);
