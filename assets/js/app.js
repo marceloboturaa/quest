@@ -1196,9 +1196,7 @@ document.addEventListener('DOMContentLoaded', function () {
         syncSubjectSelect(select);
     });
 
-    if (!questionForm) {
-        return;
-    }
+    if (questionForm) {
 
     const typeField = questionForm.querySelector('[name="question_type"]');
     const multipleChoiceSection = questionForm.querySelector('[data-question-section="multiple_choice"]');
@@ -1259,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (titleField && previewTitle) {
             const normalizedTitle = normalizeEditorText(titleField.value, true);
-            previewTitle.textContent = normalizedTitle || 'Titulo da questao';
+            previewTitle.textContent = normalizedTitle || 'Título da questão';
         }
 
         if (typeField && previewType) {
@@ -1343,4 +1341,865 @@ document.addEventListener('DOMContentLoaded', function () {
     updateQuestionPreview();
     toggleQuestionSections();
     refreshOptionLabels();
+    }
+
+    const questionEditorForm = document.querySelector('[data-question-editor]');
+
+    if (questionEditorForm) {
+        const editorBody = questionEditorForm.querySelector('[data-question-editor-body]');
+        const promptSource = questionEditorForm.querySelector('[data-question-editor-source]');
+        const titleSource = questionEditorForm.querySelector('[data-question-editor-title]');
+        const previewOutput = questionEditorForm.querySelector('[data-question-editor-preview-output]');
+        const editorToolbar = questionEditorForm.querySelector('[data-editor-toolbar]');
+        const imageUrlField = questionEditorForm.querySelector('[data-editor-image-url]');
+        const imageUrlInsert = questionEditorForm.querySelector('[data-editor-image-url-insert]');
+        const imageUploadTrigger = questionEditorForm.querySelector('[data-editor-image-upload-trigger]');
+        const imageUploadInput = questionEditorForm.querySelector('[data-editor-image-upload]');
+        const imageTools = questionEditorForm.querySelector('[data-editor-image-tools]');
+        const imageSizeButtons = questionEditorForm.querySelectorAll('[data-editor-image-size]');
+        const imageAlignButtons = questionEditorForm.querySelectorAll('[data-editor-image-align]');
+        const imageRemoveButton = questionEditorForm.querySelector('[data-editor-image-remove]');
+        const typeField = questionEditorForm.querySelector('[data-question-editor-type]');
+        const visibilityField = questionEditorForm.querySelector('[data-question-editor-visibility]');
+        const disciplineField = questionEditorForm.querySelector('[data-question-editor-discipline-select]');
+        const subjectField = questionEditorForm.querySelector('[data-question-editor-subject-select]');
+        const blockSelect = questionEditorForm.querySelector('[data-editor-block]');
+        const drawingSizeSelect = questionEditorForm.querySelector('[data-drawing-size-select]');
+        const drawingCustomField = questionEditorForm.querySelector('[data-drawing-custom-field]');
+        const typeSections = {
+            multiple_choice: questionEditorForm.querySelector('[data-question-editor-section="multiple_choice"]'),
+            discursive: questionEditorForm.querySelector('[data-question-editor-section="discursive"]'),
+            drawing: questionEditorForm.querySelector('[data-question-editor-section="drawing"]'),
+            true_false: questionEditorForm.querySelector('[data-question-editor-section="true_false"]')
+        };
+        const comboboxes = Array.from(questionEditorForm.querySelectorAll('[data-question-combobox]'));
+        const optionsContainer = questionEditorForm.querySelector('[data-options-container]');
+        const addOptionButton = questionEditorForm.querySelector('[data-add-option]');
+        const template = document.getElementById('question-option-template');
+        let nextOptionIndex = Number.parseInt(questionEditorForm.dataset.nextOptionIndex || '0', 10);
+        let savedRange = null;
+        let selectedImage = null;
+
+        function normalizeComboboxText(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function getComboboxElements(combobox) {
+            return {
+                input: combobox.querySelector('[data-question-combobox-input]'),
+                idField: combobox.querySelector('[data-question-combobox-id]'),
+                panel: combobox.querySelector('[data-question-combobox-panel]'),
+                options: Array.from(combobox.querySelectorAll('[data-question-combobox-option]'))
+            };
+        }
+
+        function getDisciplineCombobox() {
+            return questionEditorForm.querySelector('[data-question-combobox="discipline"]');
+        }
+
+        function getSubjectCombobox() {
+            return questionEditorForm.querySelector('[data-question-combobox="subject"]');
+        }
+
+        function removeGeneratedComboboxOptions(combobox) {
+            Array.from(combobox.querySelectorAll('[data-question-combobox-create-option]')).forEach(function (option) {
+                option.remove();
+            });
+        }
+
+        function createGeneratedComboboxOption(combobox, term) {
+            const elements = getComboboxElements(combobox);
+            if (!elements.panel || !elements.input) {
+                return null;
+            }
+
+            const option = document.createElement('button');
+            const label = combobox.dataset.questionCombobox === 'subject' ? 'assunto' : 'disciplina';
+            const searchTerm = String(term || '').trim();
+
+            option.type = 'button';
+            option.className = 'question-combobox-option question-combobox-option-create';
+            option.dataset.questionComboboxOption = '';
+            option.dataset.questionComboboxCreateOption = '1';
+            option.dataset.optionId = '';
+            option.dataset.optionValue = searchTerm;
+            const labelNode = document.createElement('span');
+            labelNode.textContent = 'Criar ' + label + ' "' + searchTerm + '"';
+            option.appendChild(labelNode);
+
+            return option;
+        }
+
+        function getDisciplineIdValue() {
+            const disciplineCombobox = getDisciplineCombobox();
+            if (!disciplineCombobox) {
+                return '';
+            }
+
+            const elements = getComboboxElements(disciplineCombobox);
+            return elements.idField ? String(elements.idField.value || '') : '';
+        }
+
+        function closeCombobox(combobox) {
+            const elements = getComboboxElements(combobox);
+            if (elements.panel) {
+                elements.panel.hidden = true;
+            }
+            combobox.classList.remove('is-open');
+        }
+
+        function openCombobox(combobox) {
+            const elements = getComboboxElements(combobox);
+            if (elements.panel) {
+                elements.panel.hidden = false;
+            }
+            combobox.classList.add('is-open');
+        }
+
+        function selectComboboxOption(combobox, option) {
+            const elements = getComboboxElements(combobox);
+            if (!elements.input || !elements.idField || !option) {
+                return;
+            }
+
+            const optionValue = String(option.dataset.optionValue || '');
+            const optionId = String(option.dataset.optionId || '');
+
+            elements.input.value = optionValue;
+            elements.idField.value = optionId;
+            combobox.dataset.selectedValue = optionValue;
+            combobox.dataset.selectedId = optionId;
+            elements.input.dataset.userTyping = '0';
+            closeCombobox(combobox);
+            elements.input.dispatchEvent(new Event('change', { bubbles: true }));
+
+            if (combobox.dataset.questionCombobox === 'discipline') {
+                const subjectCombobox = getSubjectCombobox();
+                if (subjectCombobox) {
+                    refreshComboboxOptions(subjectCombobox);
+                }
+            }
+        }
+
+        function refreshComboboxOptions(combobox) {
+            removeGeneratedComboboxOptions(combobox);
+
+            const elements = getComboboxElements(combobox);
+            if (!elements.input || !elements.panel) {
+                return;
+            }
+
+            const term = normalizeComboboxText(elements.input.value);
+            const minimumSearchLength = 1;
+            const maxVisibleSuggestions = 5;
+            const isSubject = combobox.dataset.questionCombobox === 'subject';
+            const disciplineId = isSubject ? getDisciplineIdValue() : '';
+            let firstVisibleOption = null;
+            let exactMatch = null;
+            const scoredMatches = [];
+
+            elements.options.forEach(function (option) {
+                if (option.dataset.questionComboboxCreateOption === '1') {
+                    return;
+                }
+
+                const optionValue = normalizeComboboxText(option.dataset.optionValue || option.textContent || '');
+                const optionDisciplineId = String(option.dataset.disciplineId || '');
+                const matchesDiscipline = !isSubject || disciplineId === '' || disciplineId === '0' || optionDisciplineId === disciplineId;
+                const matchesText = term === '' || optionValue.includes(term);
+                const visible = matchesDiscipline && matchesText;
+
+                option.hidden = !visible;
+
+                if (!visible) {
+                    return;
+                }
+
+                let score = 3;
+                if (term === '') {
+                    score = 0;
+                } else if (optionValue === term) {
+                    score = 0;
+                } else if (optionValue.startsWith(term)) {
+                    score = 1;
+                } else {
+                    score = 2;
+                }
+
+                scoredMatches.push({
+                    option: option,
+                    score: score,
+                    label: optionValue
+                });
+
+                if (term !== '' && matchesDiscipline && optionValue === term) {
+                    exactMatch = option;
+                }
+            });
+
+            if (term === '') {
+                elements.options.forEach(function (option) {
+                    if (option.dataset.questionComboboxCreateOption === '1') {
+                        return;
+                    }
+
+                    option.hidden = false;
+                    elements.panel.appendChild(option);
+                });
+            } else {
+                scoredMatches.sort(function (left, right) {
+                    if (left.score !== right.score) {
+                        return left.score - right.score;
+                    }
+
+                    return left.label.localeCompare(right.label, 'pt-BR');
+                });
+
+                scoredMatches.slice(0, maxVisibleSuggestions).forEach(function (match, index) {
+                    if (index === 0) {
+                        firstVisibleOption = match.option;
+                    }
+
+                    match.option.hidden = false;
+                    elements.panel.appendChild(match.option);
+                });
+            }
+
+            if (term === '') {
+                elements.idField.value = elements.input.dataset.selectedId || '';
+            } else {
+                exactMatch = exactMatch || elements.options.find(function (option) {
+                    if (option.dataset.questionComboboxCreateOption === '1') {
+                        return false;
+                    }
+
+                    const optionValue = normalizeComboboxText(option.dataset.optionValue || option.textContent || '');
+                    const optionDisciplineId = String(option.dataset.disciplineId || '');
+                    const matchesDiscipline = !isSubject || disciplineId === '' || disciplineId === '0' || optionDisciplineId === disciplineId;
+                    return matchesDiscipline && optionValue === term;
+                });
+
+                elements.idField.value = exactMatch ? String(exactMatch.dataset.optionId || '') : '';
+            }
+
+            if (isSubject && elements.idField.value && disciplineId !== '' && disciplineId !== '0') {
+                const selectedOption = elements.options.find(function (option) {
+                    return String(option.dataset.optionId || '') === String(elements.idField.value);
+                });
+
+                if (selectedOption && String(selectedOption.dataset.disciplineId || '') !== disciplineId) {
+                    elements.idField.value = '';
+                }
+            }
+
+            if (term !== '' && !elements.idField.value) {
+                elements.input.dataset.selectedId = '';
+                elements.input.dataset.selectedValue = '';
+            }
+
+            const hasVisibleOptions = scoredMatches.length > 0 || term === '';
+
+            if (term !== '' && !exactMatch && !hasVisibleOptions) {
+                const createOption = createGeneratedComboboxOption(combobox, elements.input.value);
+
+                if (createOption) {
+                    elements.panel.insertBefore(createOption, elements.panel.firstChild);
+                    firstVisibleOption = firstVisibleOption || createOption;
+                }
+            }
+
+            if (firstVisibleOption && term !== '') {
+                elements.options.forEach(function (option) {
+                    option.classList.remove('is-active');
+                });
+                firstVisibleOption.classList.add('is-active');
+            }
+
+            const hasCreateOption = !!elements.panel.querySelector('[data-question-combobox-create-option]');
+
+            const isUserTyping = elements.input.dataset.userTyping === '1';
+            elements.panel.hidden = !(isUserTyping && term.length >= minimumSearchLength && (hasVisibleOptions || hasCreateOption));
+            if (!elements.panel.hidden) {
+                elements.panel.scrollTop = 0;
+            }
+        }
+
+        function initCombobox(combobox) {
+            const elements = getComboboxElements(combobox);
+            if (!elements.input || !elements.idField || !elements.panel) {
+                return;
+            }
+
+            const currentValue = normalizeComboboxText(elements.input.value);
+            const currentSelectedId = String(elements.idField.value || '');
+            elements.input.dataset.selectedValue = elements.input.value || '';
+            elements.input.dataset.selectedId = currentSelectedId;
+            elements.input.dataset.userTyping = '0';
+
+            refreshComboboxOptions(combobox);
+
+            elements.input.addEventListener('focus', function () {
+                refreshComboboxOptions(combobox);
+            });
+
+            elements.input.addEventListener('click', function () {
+                refreshComboboxOptions(combobox);
+            });
+
+            elements.input.addEventListener('input', function () {
+                elements.idField.value = '';
+                elements.input.dataset.userTyping = '1';
+                refreshComboboxOptions(combobox);
+
+                if (combobox.dataset.questionCombobox === 'discipline') {
+                    const subjectCombobox = getSubjectCombobox();
+                    if (subjectCombobox) {
+                        refreshComboboxOptions(subjectCombobox);
+                    }
+                }
+            });
+
+            elements.input.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeCombobox(combobox);
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    refreshComboboxOptions(combobox);
+                }
+
+                if (event.key === 'Enter') {
+                    const createOption = elements.panel.querySelector('[data-question-combobox-create-option]');
+
+                    if (createOption && elements.input.value.trim() !== '') {
+                        event.preventDefault();
+                        selectComboboxOption(combobox, createOption);
+                        return;
+                    }
+
+                    const activeOption = elements.options.find(function (option) {
+                        return !option.hidden && option.classList.contains('is-active');
+                    }) || elements.options.find(function (option) {
+                        return !option.hidden;
+                    });
+
+                    if (combobox.classList.contains('is-open') && activeOption) {
+                        event.preventDefault();
+                        selectComboboxOption(combobox, activeOption);
+                    }
+                }
+            });
+
+            elements.input.addEventListener('blur', function () {
+                window.setTimeout(function () {
+                    elements.input.dataset.userTyping = '0';
+                    const exactOption = elements.options.find(function (option) {
+                        return !option.hidden && normalizeComboboxText(option.dataset.optionValue || option.textContent || '') === normalizeComboboxText(elements.input.value);
+                    });
+
+                    if (exactOption) {
+                        selectComboboxOption(combobox, exactOption);
+                        return;
+                    }
+
+                    if (normalizeComboboxText(elements.input.value) === '') {
+                        elements.idField.value = '';
+                    }
+
+                    closeCombobox(combobox);
+                }, 140);
+            });
+
+            elements.panel.addEventListener('click', function (event) {
+                const option = event.target.closest('[data-question-combobox-option]');
+                if (!option) {
+                    return;
+                }
+
+                selectComboboxOption(combobox, option);
+            });
+
+            if (currentValue !== '' && currentSelectedId === '') {
+                refreshComboboxOptions(combobox);
+            }
+        }
+
+        comboboxes.forEach(initCombobox);
+
+        document.addEventListener('click', function (event) {
+            comboboxes.forEach(function (combobox) {
+                if (!combobox.contains(event.target)) {
+                    closeCombobox(combobox);
+                }
+            });
+        });
+
+        function buildTitleFromHtml(html) {
+            const container = document.createElement('div');
+            container.innerHTML = String(html || '');
+            const text = (container.textContent || container.innerText || '').replace(/\s+/g, ' ').trim();
+
+            if (!text) {
+                return 'Nova questão';
+            }
+
+            return text.length > 90 ? text.slice(0, 87).trimEnd() + '...' : text;
+        }
+
+        function updatePreviewMath() {
+            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function' && previewOutput) {
+                window.MathJax.typesetPromise([previewOutput]).catch(function () {
+                    // ignore preview typesetting errors
+                });
+            }
+        }
+
+        function syncEditor() {
+            if (!editorBody || !promptSource) {
+                return;
+            }
+
+            const html = editorBody.innerHTML.trim();
+            const normalizedHtml = html === '<br>' ? '' : html;
+            const title = buildTitleFromHtml(normalizedHtml);
+
+            promptSource.value = normalizedHtml;
+
+            if (titleSource) {
+                titleSource.value = title;
+            }
+
+            if (previewOutput) {
+                previewOutput.innerHTML = normalizedHtml || '<p class="helper-text">Digite ou cole o enunciado para ver a prévia.</p>';
+            }
+
+            updatePreviewMath();
+        }
+
+        function saveSelection() {
+            const selection = window.getSelection();
+
+            if (!selection || selection.rangeCount === 0 || !editorBody) {
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+
+            if (editorBody.contains(range.commonAncestorContainer)) {
+                savedRange = range;
+            }
+        }
+
+        function restoreSelection() {
+            const selection = window.getSelection();
+
+            if (!selection || !savedRange) {
+                return;
+            }
+
+            selection.removeAllRanges();
+            selection.addRange(savedRange);
+        }
+
+        function execCommand(command, value) {
+            if (!editorBody) {
+                return;
+            }
+
+            editorBody.focus();
+            restoreSelection();
+            document.execCommand(command, false, value || null);
+            syncEditor();
+        }
+
+        function applyBlockFormat(tagName) {
+            if (!tagName) {
+                return;
+            }
+
+            execCommand('formatBlock', tagName === 'p' ? 'p' : tagName);
+        }
+
+        function insertHtml(html) {
+            if (!editorBody) {
+                return;
+            }
+
+            editorBody.focus();
+            restoreSelection();
+            document.execCommand('insertHTML', false, html);
+            syncEditor();
+        }
+
+        function insertImage(src) {
+            const value = String(src || '').trim();
+
+            if (!value) {
+                return;
+            }
+
+            if (!/^https?:\/\//i.test(value) && !/^data:image\//i.test(value)) {
+                return;
+            }
+
+            const html = '<figure class="editor-image-frame"><img src="' + escapeHtml(value) + '" alt="" class="question-editor-image is-medium is-center"></figure>';
+            insertHtml(html);
+        }
+
+        function insertHorizontalRule() {
+            if (!editorBody) {
+                return;
+            }
+
+            editorBody.focus();
+            restoreSelection();
+            document.execCommand('insertHorizontalRule', false, null);
+            syncEditor();
+        }
+
+        function updateImageToolsVisibility() {
+            if (!imageTools) {
+                return;
+            }
+
+            imageTools.classList.toggle('hidden', !selectedImage);
+        }
+
+        function currentImage() {
+            if (!selectedImage || !editorBody || !editorBody.contains(selectedImage)) {
+                return null;
+            }
+
+            return selectedImage;
+        }
+
+        function setSelectedImage(image) {
+            selectedImage = image;
+            updateImageToolsVisibility();
+        }
+
+        function applyImageSize(size) {
+            const image = currentImage();
+
+            if (!image) {
+                return;
+            }
+
+            image.classList.remove('is-small', 'is-medium', 'is-large');
+            image.classList.add('is-' + size);
+            syncEditor();
+        }
+
+        function applyImageAlign(align) {
+            const image = currentImage();
+
+            if (!image) {
+                return;
+            }
+
+            image.dataset.align = align;
+            image.classList.remove('is-left', 'is-center', 'is-right');
+            image.classList.add('is-' + align);
+            syncEditor();
+        }
+
+        function removeSelectedImage() {
+            const image = currentImage();
+
+            if (!image) {
+                return;
+            }
+
+            image.closest('figure')?.remove() || image.remove();
+            selectedImage = null;
+            updateImageToolsVisibility();
+            syncEditor();
+        }
+
+        function refreshDrawingVisibility() {
+            if (!drawingSizeSelect || !drawingCustomField) {
+                return;
+            }
+
+            const shouldShow = typeField?.value === 'drawing' && drawingSizeSelect.value === 'custom';
+            drawingCustomField.classList.toggle('hidden', !shouldShow);
+        }
+
+        function refreshTypeVisibility() {
+            if (!typeField) {
+                return;
+            }
+
+            Object.keys(typeSections).forEach(function (key) {
+                const section = typeSections[key];
+
+                if (!section) {
+                    return;
+                }
+
+                section.classList.toggle('hidden', key !== typeField.value);
+            });
+        }
+
+        function autoGrowTextarea(textarea) {
+            if (!textarea) {
+                return;
+            }
+
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        if (editorBody) {
+            editorBody.addEventListener('input', syncEditor);
+            editorBody.addEventListener('keyup', saveSelection);
+            editorBody.addEventListener('mouseup', saveSelection);
+            editorBody.addEventListener('focus', saveSelection);
+            editorBody.addEventListener('blur', saveSelection);
+            editorBody.addEventListener('click', function (event) {
+                const target = event.target;
+
+                if (target && target.tagName === 'IMG') {
+                    setSelectedImage(target);
+                } else if (!event.target.closest('.editor-image-tools')) {
+                    selectedImage = null;
+                    updateImageToolsVisibility();
+                }
+
+                saveSelection();
+            });
+            editorBody.addEventListener('paste', function (event) {
+                const clipboard = event.clipboardData;
+
+                if (!clipboard) {
+                    return;
+                }
+
+                event.preventDefault();
+                const html = clipboard.getData('text/html');
+                const text = clipboard.getData('text/plain');
+
+                if (html) {
+                    document.execCommand('insertHTML', false, html);
+                } else {
+                    document.execCommand('insertText', false, text);
+                }
+
+                syncEditor();
+            });
+        }
+
+        document.addEventListener('selectionchange', function () {
+            saveSelection();
+        });
+
+        if (editorToolbar) {
+            editorToolbar.addEventListener('click', function (event) {
+                const button = event.target.closest('[data-editor-command]');
+
+                if (!button) {
+                    return;
+                }
+
+                event.preventDefault();
+                const command = button.dataset.editorCommand || '';
+                const value = button.dataset.editorValue || '';
+
+                switch (command) {
+                    case 'insertText':
+                        execCommand('insertText', value);
+                        break;
+                    case 'undo':
+                    case 'redo':
+                        execCommand(command);
+                        break;
+                    case 'insertHorizontalRule':
+                        insertHorizontalRule();
+                        break;
+                    case 'insertImageUrl': {
+                        const url = imageUrlField ? imageUrlField.value.trim() : window.prompt('Digite a URL da imagem') || '';
+
+                        if (imageUrlField) {
+                            imageUrlField.value = '';
+                        }
+
+                        insertImage(url);
+                        break;
+                    }
+                    case 'insertImageUpload':
+                        imageUploadInput?.click();
+                        break;
+                    case 'createLink': {
+                        const linkUrl = window.prompt('Digite a URL do link');
+
+                        if (linkUrl) {
+                            execCommand('createLink', linkUrl);
+                        }
+                        break;
+                    }
+                    default:
+                        execCommand(command, value);
+                        break;
+                }
+            });
+        }
+
+        if (blockSelect) {
+            blockSelect.addEventListener('change', function () {
+                applyBlockFormat(blockSelect.value || 'p');
+            });
+        }
+
+        if (imageUrlInsert) {
+            imageUrlInsert.addEventListener('click', function () {
+                const url = imageUrlField ? imageUrlField.value.trim() : '';
+                insertImage(url);
+            });
+        }
+
+        if (imageUploadTrigger && imageUploadInput) {
+            imageUploadTrigger.addEventListener('click', function () {
+                imageUploadInput.click();
+            });
+        }
+
+        if (imageUploadInput) {
+            imageUploadInput.addEventListener('change', function () {
+                const file = imageUploadInput.files && imageUploadInput.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function () {
+                    insertImage(String(reader.result || ''));
+                };
+                reader.readAsDataURL(file);
+                imageUploadInput.value = '';
+            });
+        }
+
+        imageSizeButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                applyImageSize(button.dataset.editorImageSize || 'medium');
+            });
+        });
+
+        imageAlignButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                applyImageAlign(button.dataset.editorImageAlign || 'center');
+            });
+        });
+
+        if (imageRemoveButton) {
+            imageRemoveButton.addEventListener('click', function () {
+                removeSelectedImage();
+            });
+        }
+
+        if (typeField) {
+            typeField.addEventListener('change', function () {
+                refreshTypeVisibility();
+                refreshDrawingVisibility();
+                syncEditor();
+            });
+        }
+
+        if (drawingSizeSelect) {
+            drawingSizeSelect.addEventListener('change', function () {
+                refreshDrawingVisibility();
+            });
+        }
+
+        questionEditorForm.querySelectorAll('[data-rich-paste]').forEach(function (field) {
+            bindRichPasteField(field);
+        });
+
+        questionEditorForm.querySelectorAll('[data-auto-grow]').forEach(function (field) {
+            autoGrowTextarea(field);
+            field.addEventListener('input', function () {
+                autoGrowTextarea(field);
+            });
+        });
+
+        if (visibilityField) {
+            visibilityField.addEventListener('change', syncEditor);
+        }
+
+        if (disciplineField) {
+            disciplineField.addEventListener('change', syncEditor);
+        }
+
+        if (subjectField) {
+            subjectField.addEventListener('change', syncEditor);
+        }
+
+        if (addOptionButton && optionsContainer && template) {
+            function refreshOptionLabels() {
+                Array.from(optionsContainer.querySelectorAll('.option-editor-row')).forEach(function (row, index) {
+                    const label = row.querySelector('strong');
+
+                    if (label) {
+                        label.textContent = optionLabel(index);
+                    }
+                });
+            }
+
+            function addOptionRow() {
+                const markup = template.innerHTML
+                    .replace(/__INDEX__/g, String(nextOptionIndex))
+                    .replace(/__LABEL__/g, optionLabel(optionsContainer.children.length));
+
+                optionsContainer.insertAdjacentHTML('beforeend', markup);
+                const lastField = optionsContainer.lastElementChild?.querySelector('[data-rich-paste]');
+
+                if (lastField) {
+                    bindRichPasteField(lastField);
+                }
+
+                nextOptionIndex += 1;
+                refreshOptionLabels();
+            }
+
+            addOptionButton.addEventListener('click', addOptionRow);
+
+            optionsContainer.addEventListener('click', function (event) {
+                const removeButton = event.target.closest('[data-remove-option]');
+
+                if (!removeButton) {
+                    return;
+                }
+
+                const row = removeButton.closest('.option-editor-row');
+
+                if (!row || optionsContainer.children.length <= 2) {
+                    return;
+                }
+
+                row.remove();
+                refreshOptionLabels();
+            });
+
+            refreshOptionLabels();
+        }
+
+        syncEditor();
+        refreshTypeVisibility();
+        refreshDrawingVisibility();
+
+        document.addEventListener('click', function (event) {
+            const image = event.target.closest('.question-editor-image');
+
+            if (image && editorBody && editorBody.contains(image)) {
+                setSelectedImage(image);
+            }
+        });
+    }
 });

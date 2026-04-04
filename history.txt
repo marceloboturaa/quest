@@ -30,7 +30,7 @@ Instituicao: CNI
 - Criacao da central `xerox.php` com visao para professor, operador e administradores.
 - Simplificacao da navegacao e padronizacao visual das telas principais.
 - Reestruturacao da area de questoes em `questions.php`, `question-bank.php` e `question-editor.php`.
-- Evolucao da montagem de provas para um fluxo mais guiado entre `exam-create.php` e `exams.php`.
+- Evolucao da montagem de provas para um fluxo mais guiado entre a area de questoes e o fluxo legado de impressao.
 - Criacao da base de backup com `backup.php`, `includes/backup_repository.php` e scripts de automacao.
 
 2026-03-28
@@ -42,9 +42,9 @@ Instituicao: CNI
 - Ajuste da paginacao das questoes para reduzir corte de conteudo no PDF e aproximar preview e impressao.
 
 2026-03-29
-- Criacao da central de provas em `exam-library.php` e da pagina dedicada de modelos em `exam-models.php`.
-- Inclusao de preview de modelos em `exam-model-preview.php` e reorganizacao do fluxo de montagem.
-- Simplificacao estrutural de `exam-create.php`, com foco em dados principais, formato, cabeçalho e textos.
+- Criacao da central de provas e da pagina dedicada de modelos no fluxo legado.
+- Inclusao de preview de modelos e reorganizacao do fluxo de montagem.
+- Simplificacao estrutural do construtor legado, com foco em dados principais, formato, cabeçalho e textos.
 - Evolucao do renderizador de provas para reforcar protecao do rodape, codigo da prova no rodape e ajustes de pagina A4.
 - Inclusao do sistema interno de mensagens em `messages.php` com inbox, respostas, envio direto e avisos gerais.
 - Inclusao de exclusao de mensagens da caixa de entrada e toast flutuante para avisos e mensagens novas.
@@ -55,13 +55,17 @@ Instituicao: CNI
 - Atualizacao do favicon e do manifesto em `/favicon`, com novo tema roxo `#4f2ec9`, `favicon.svg` e `favicon-96x96.png`.
 
 2026-03-30
-- Simplificacao da experiencia de montagem para um fluxo de prova padrao, com reducao de variacoes de modelo em `exam-models.php` e `exam-create.php`.
+- Simplificacao da experiencia de montagem para um fluxo de prova padrao, com reducao de variacoes de modelo.
 - Reestruturacao do cabeçalho editavel da prova, com dados puxados do perfil do usuario e ajustes visuais no proprio construtor.
 - Inclusao de configuracoes do gabarito no cabeçalho, com quantidade, orientacao, largura, altura, fonte e paleta de cores persistidas em metadata.
-- Evolucao de `exam-preview.php` para refletir configuracoes salvas da prova e aproximar o preview do comportamento final de impressao.
+- Evolucao do preview para refletir configuracoes salvas da prova e aproximar o comportamento final de impressao.
 - Refatoracao do renderizador compartilhado em `includes/exam_document_renderer.php` para manter paridade entre preview HTML e PDF.
 - Segmentacao de questoes longas em blocos de continuacao, com melhor distribuicao em colunas e paginas sem ultrapassar o rodape.
 - Reorganizacao do cabeçalho impresso da prova para linhas fixas de identificacao do professor/aluno e remocao do codigo da prova da area principal.
 - Ajuste para comentarios do corpo aparecerem apenas antes do rodape quando realmente existirem.
 - Normalizacao tipografica do documento e compactacao de espacamentos para reduzir areas brancas no preview e no PDF.
 - Blindagem defensiva na leitura de questoes em `includes/xerox_repository.php` para evitar repeticao de cards no preview.
+
+2026-04-03
+- Persistencia das cores do gerador em configuracao do sistema, editavel pelo master admin.
+- Correlacao do fluxo com o banco de questoes, adicionando atalhos diretos para montar a prova a partir da seleção.

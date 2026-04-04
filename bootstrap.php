@@ -31,6 +31,7 @@ function config(?string $key = null, mixed $default = null): mixed
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/includes/question_helpers.php';
 
 function h(?string $value): string
 {
@@ -244,8 +245,12 @@ function role_label(string $role): string
             return 'Master Admin';
         case 'local_admin':
             return 'Admin Local';
+        case 'professor':
+            return 'Professor';
         case 'xerox':
             return 'Xerox';
+        case 'aluno':
+            return 'Aluno';
         default:
             return 'Usuário';
     }
@@ -341,7 +346,7 @@ function is_xerox_user(): bool
 
 function can_manage_all_questions(): bool
 {
-    return has_role(['master_admin', 'local_admin']);
+    return has_role(['master_admin', 'local_admin', 'professor']);
 }
 
 function can_manage_question_bulk_deletion(): bool
@@ -351,7 +356,7 @@ function can_manage_question_bulk_deletion(): bool
 
 function can_manage_catalogs(): bool
 {
-    return has_role(['master_admin', 'local_admin']);
+    return has_role(['master_admin', 'local_admin', 'professor']);
 }
 
 function can_manage_backups(): bool
@@ -427,7 +432,6 @@ function dashboard_metrics(array $user): array
         return [
             'users' => (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'questions' => (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn(),
-            'exams' => (int) db()->query('SELECT COUNT(*) FROM exams')->fetchColumn(),
             'local_admins' => (int) db()->query("SELECT COUNT(*) FROM users WHERE role = 'local_admin'")->fetchColumn(),
         ];
     }
@@ -436,20 +440,16 @@ function dashboard_metrics(array $user): array
         return [
             'users' => (int) db()->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'questions' => (int) db()->query('SELECT COUNT(*) FROM questions')->fetchColumn(),
-            'exams' => (int) db()->query('SELECT COUNT(*) FROM exams')->fetchColumn(),
             'local_admins' => (int) db()->query("SELECT COUNT(*) FROM users WHERE role = 'local_admin'")->fetchColumn(),
         ];
     }
 
     $statement = db()->prepare('SELECT COUNT(*) FROM questions WHERE author_id = :author_id');
     $statement->execute(['author_id' => $user['id']]);
-    $examStatement = db()->prepare('SELECT COUNT(*) FROM exams WHERE user_id = :user_id');
-    $examStatement->execute(['user_id' => $user['id']]);
 
     return [
         'users' => 1,
         'questions' => (int) $statement->fetchColumn(),
-        'exams' => (int) $examStatement->fetchColumn(),
         'local_admins' => 0,
     ];
 }
@@ -497,3 +497,4 @@ function xerox_status_badge_class(string $status): string
 }
 
 require_once __DIR__ . '/includes/messages_repository.php';
+require_once __DIR__ . '/includes/study_repository.php';

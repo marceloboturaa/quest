@@ -35,7 +35,7 @@ if (is_post()) {
     redirect('dashboard.php');
 }
 
-render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, false);
+render_header('Entrar', 'Use sua conta para acessar o painel do Quest e o Modo Estudo.', false, false);
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
@@ -73,7 +73,7 @@ render_header('Entrar', 'Use sua conta para acessar o painel do Quest.', false, 
         <div class="auth-note">
             <strong>Acesso</strong><br>
             <?php if ($registrationEnabled): ?>
-                Se você ainda não tem conta, crie um cadastro. O perfil inicial entra como usuário comum.
+                Se você ainda não tem conta, crie um cadastro. O perfil inicial entra como aluno.
             <?php else: ?>
                 O cadastro de novos usuários está bloqueado temporariamente pelo administrador master.
             <?php endif; ?>

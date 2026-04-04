@@ -222,18 +222,20 @@ function question_clone(int $userId): never
     db()->beginTransaction();
 
     try {
-        $insert = db()->prepare(
-            'INSERT INTO questions
-             (author_id,based_on_question_id,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,drawing_height_px,true_false_answer,source_name,source_url,source_reference,usage_count,created_at,updated_at)
+    $insert = db()->prepare(
+        'INSERT INTO questions
+             (author_id,based_on_question_id,question_code,title,prompt,prompt_image_url,question_type,visibility,discipline_id,subject_id,education_level,difficulty,status,allow_multiple_correct,discursive_answer,response_lines,drawing_size,drawing_height_px,true_false_answer,explanation,source_name,source_url,source_reference,usage_count,created_at,updated_at)
              VALUES
-             (:author_id,:based_on_question_id,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,:drawing_height_px,:true_false_answer,:source_name,:source_url,:source_reference,0,NOW(),NOW())'
-        );
-        $insert->execute([
-            'author_id' => $userId,
-            'based_on_question_id' => $originId,
-            'title' => $source['title'] . ' (cópia)',
-            'prompt' => $source['prompt'],
-            'prompt_image_url' => $source['prompt_image_url'],
+             (:author_id,:based_on_question_id,:question_code,:title,:prompt,:prompt_image_url,:question_type,:visibility,:discipline_id,:subject_id,:education_level,:difficulty,:status,:allow_multiple_correct,:discursive_answer,:response_lines,:drawing_size,:drawing_height_px,:true_false_answer,:explanation,:source_name,:source_url,:source_reference,0,NOW(),NOW())'
+    );
+    $cloneCode = question_generate_code();
+    $insert->execute([
+        'author_id' => $userId,
+        'based_on_question_id' => $originId,
+        'question_code' => $cloneCode,
+        'title' => $source['title'] . ' (cópia)',
+        'prompt' => $source['prompt'],
+        'prompt_image_url' => $source['prompt_image_url'],
             'question_type' => $source['question_type'],
             'visibility' => 'private',
             'discipline_id' => $source['discipline_id'],
@@ -247,6 +249,7 @@ function question_clone(int $userId): never
             'drawing_size' => $source['drawing_size'],
             'drawing_height_px' => $source['drawing_height_px'],
             'true_false_answer' => $source['true_false_answer'],
+            'explanation' => $source['explanation'] ?? null,
             'source_name' => $source['source_name'],
             'source_url' => $source['source_url'],
             'source_reference' => $source['source_reference'],
@@ -393,17 +396,19 @@ function question_save(int $userId, bool $isUpdate): never
         redirect('question-bank.php');
     }
 
-    $title = question_normalize_editor_text((string) ($_POST['title'] ?? ''), true);
-    $prompt = question_normalize_editor_text((string) ($_POST['prompt'] ?? ''));
+    $prompt = question_normalize_rich_editor_input((string) ($_POST['prompt'] ?? ''));
     $promptImageUrl = trim((string) ($_POST['prompt_image_url'] ?? ''));
     $type = (string) ($_POST['question_type'] ?? '');
     $visibility = (string) ($_POST['visibility'] ?? 'private');
     $disciplineId = (int) ($_POST['discipline_id'] ?? 0);
     $subjectId = (int) ($_POST['subject_id'] ?? 0);
+    $disciplineName = question_normalize_editor_text((string) ($_POST['discipline_name'] ?? ($_POST['new_discipline_name'] ?? '')), true);
+    $subjectName = question_normalize_editor_text((string) ($_POST['subject_name'] ?? ($_POST['new_subject_name'] ?? '')), true);
     $level = (string) ($_POST['education_level'] ?? 'medio');
     $difficulty = (string) ($_POST['difficulty'] ?? 'medio');
     $allowMulti = !empty($_POST['allow_multiple_correct']) ? 1 : 0;
     $discursiveAnswer = question_normalize_editor_text((string) ($_POST['discursive_answer'] ?? ''));
+    $explanation = question_normalize_rich_editor_input((string) ($_POST['explanation'] ?? ''));
     $responseLines = (int) ($_POST['response_lines'] ?? 5);
     $drawingSize = (string) ($_POST['drawing_size'] ?? 'medium');
     $drawingHeightPx = (int) ($_POST['drawing_height_px'] ?? 0);
@@ -417,6 +422,8 @@ function question_save(int $userId, bool $isUpdate): never
     $sourceName = null;
     $sourceUrl = null;
     $errors = [];
+    $questionCode = trim((string) ($editing['question_code'] ?? ''));
+    $questionCode = $questionCode !== '' ? $questionCode : question_generate_code();
 
     if ($officialSourceKey !== '') {
         if (!array_key_exists($officialSourceKey, $officialSources)) {
@@ -425,10 +432,6 @@ function question_save(int $userId, bool $isUpdate): never
             $sourceName = $officialSources[$officialSourceKey]['name'];
             $sourceUrl = $officialSources[$officialSourceKey]['url'];
         }
-    }
-
-    if ($title === '' || $prompt === '') {
-        $errors[] = 'Título e enunciado são obrigatórios.';
     }
 
     if ($promptImageUrl !== '' && !filter_var($promptImageUrl, FILTER_VALIDATE_URL)) {
@@ -443,8 +446,28 @@ function question_save(int $userId, bool $isUpdate): never
         $errors[] = 'Visibilidade inválida.';
     }
 
-    if ($disciplineId <= 0 || $subjectId <= 0 || !belongs_subject($subjectId, $disciplineId)) {
-        $errors[] = 'Disciplina e assunto precisam ser válidos.';
+    if ($disciplineName === '' && $disciplineId <= 0) {
+        $errors[] = 'Informe a disciplina.';
+    } elseif ($disciplineId <= 0 && $disciplineName !== '') {
+        $disciplineId = question_find_or_create_discipline($disciplineName, [$disciplineName], $userId);
+    }
+
+    if ($subjectId > 0) {
+        $disciplineId = question_subject_discipline_id($subjectId);
+    }
+
+    if ($subjectName === '' && $subjectId <= 0) {
+        $errors[] = 'Informe o assunto.';
+    } elseif ($subjectId <= 0 && $subjectName !== '' && $disciplineId > 0) {
+        $subjectId = question_find_or_create_subject($disciplineId, $subjectName, $userId);
+    }
+
+    if ($subjectId > 0 && $disciplineId <= 0) {
+        $disciplineId = question_subject_discipline_id($subjectId);
+    }
+
+    if ($subjectId > 0 && $disciplineId > 0 && !belongs_subject($subjectId, $disciplineId)) {
+        $disciplineId = question_subject_discipline_id($subjectId);
     }
 
     if (!in_array($level, ['fundamental', 'medio', 'tecnico', 'superior'], true)) {
@@ -511,6 +534,12 @@ function question_save(int $userId, bool $isUpdate): never
         $trueFalseAnswer = null;
     }
 
+    if ($prompt !== '') {
+        $title = question_prompt_title_from_html($prompt);
+    } else {
+        $title = $questionCode;
+    }
+
     if ($errors !== []) {
         flash('error', implode(' ', $errors));
         redirect('question-editor.php' . ($editing ? '?edit=' . (int) $editing['id'] : '?new=1'));
@@ -521,6 +550,7 @@ function question_save(int $userId, bool $isUpdate): never
     try {
         if ($editing) {
             $updateSql = 'UPDATE questions SET
+                 question_code = :question_code,
                  title = :title,
                  prompt = :prompt,
                  prompt_image_url = :prompt_image_url,
@@ -532,11 +562,12 @@ function question_save(int $userId, bool $isUpdate): never
                  difficulty = :difficulty,
                  allow_multiple_correct = :allow_multiple_correct,
                  discursive_answer = :discursive_answer,
-                 response_lines = :response_lines,
-                 drawing_size = :drawing_size,
-                 drawing_height_px = :drawing_height_px,
-                 true_false_answer = :true_false_answer,
-                 source_name = :source_name,
+                response_lines = :response_lines,
+                drawing_size = :drawing_size,
+                drawing_height_px = :drawing_height_px,
+                true_false_answer = :true_false_answer,
+                explanation = :explanation,
+                source_name = :source_name,
                  source_url = :source_url,
                  source_reference = :source_reference,
                  updated_at = NOW()
@@ -548,6 +579,7 @@ function question_save(int $userId, bool $isUpdate): never
 
             $update = db()->prepare($updateSql);
             $updateParams = [
+                'question_code' => $questionCode,
                 'title' => $title,
                 'prompt' => $prompt,
                 'prompt_image_url' => $promptImageUrl !== '' ? $promptImageUrl : null,
@@ -563,6 +595,7 @@ function question_save(int $userId, bool $isUpdate): never
                 'drawing_size' => $drawingSize,
                 'drawing_height_px' => $drawingHeightPx,
                 'true_false_answer' => $trueFalseAnswer,
+                'explanation' => $explanation !== '' ? $explanation : null,
                 'source_name' => $sourceName,
                 'source_url' => $sourceUrl,
                 'source_reference' => $sourceReference !== '' ? $sourceReference : null,
@@ -581,12 +614,13 @@ function question_save(int $userId, bool $isUpdate): never
         } else {
             $insert = db()->prepare(
                 'INSERT INTO questions
-                 (author_id, based_on_question_id, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, source_name, source_url, source_reference, usage_count, created_at, updated_at)
+                 (author_id, based_on_question_id, question_code, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, explanation, source_name, source_url, source_reference, usage_count, created_at, updated_at)
                  VALUES
-                 (:author_id, NULL, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, :discursive_answer, :response_lines, :drawing_size, :drawing_height_px, :true_false_answer, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
+                 (:author_id, NULL, :question_code, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, :discursive_answer, :response_lines, :drawing_size, :drawing_height_px, :true_false_answer, :explanation, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
             );
             $insert->execute([
                 'author_id' => $userId,
+                'question_code' => $questionCode,
                 'title' => $title,
                 'prompt' => $prompt,
                 'prompt_image_url' => $promptImageUrl !== '' ? $promptImageUrl : null,
@@ -603,6 +637,7 @@ function question_save(int $userId, bool $isUpdate): never
                 'drawing_size' => $drawingSize,
                 'drawing_height_px' => $drawingHeightPx,
                 'true_false_answer' => $trueFalseAnswer,
+                'explanation' => $explanation !== '' ? $explanation : null,
                 'source_name' => $sourceName,
                 'source_url' => $sourceUrl,
                 'source_reference' => $sourceReference !== '' ? $sourceReference : null,
@@ -720,12 +755,13 @@ function question_import_enem(int $userId): never
 
         $insert = db()->prepare(
             'INSERT INTO questions
-             (author_id, based_on_question_id, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, source_name, source_url, source_reference, usage_count, created_at, updated_at)
+             (author_id, based_on_question_id, question_code, title, prompt, prompt_image_url, question_type, visibility, discipline_id, subject_id, education_level, difficulty, status, allow_multiple_correct, discursive_answer, response_lines, drawing_size, drawing_height_px, true_false_answer, explanation, source_name, source_url, source_reference, usage_count, created_at, updated_at)
              VALUES
-             (:author_id, NULL, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, NULL, NULL, NULL, NULL, NULL, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
+             (:author_id, NULL, :question_code, :title, :prompt, :prompt_image_url, :question_type, :visibility, :discipline_id, :subject_id, :education_level, :difficulty, :status, :allow_multiple_correct, NULL, NULL, NULL, NULL, NULL, :explanation, :source_name, :source_url, :source_reference, 0, NOW(), NOW())'
         );
         $insert->execute([
             'author_id' => $userId,
+            'question_code' => question_generate_code(),
             'title' => trim((string) ($question['title'] ?? 'Questão ENEM ' . $year)),
             'prompt' => $prompt,
             'prompt_image_url' => $promptImageUrl,
@@ -737,6 +773,7 @@ function question_import_enem(int $userId): never
             'difficulty' => 'medio',
             'status' => 'published',
             'allow_multiple_correct' => $allowMultipleCorrect,
+            'explanation' => null,
             'source_name' => $sourceName,
             'source_url' => enem_api_source_url($year, $index, $language !== '' ? $language : null),
             'source_reference' => $sourceReference,

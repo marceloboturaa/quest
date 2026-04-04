@@ -4,23 +4,16 @@ Status: Em desenvolvimento
 Type: PHP/MySQL educational platform
 
 Summary:
-Quest is a PHP application for teachers and school staff to manage questions, assemble exams, export them as PDF, exchange internal messages, and control a Xerox workflow for printing. The repository also includes backup infrastructure, user profile defaults for exam creation, a guided single-model exam builder, and a shared renderer used by both the print preview and PDF export flows.
+Quest is a PHP application for teachers and school staff to manage questions, exchange internal messages, control a Xerox workflow for printing, and maintain backups.
 
 Primary areas:
-- `dashboard.php`: simplified home dashboard with quick access to questions, exams, and Xerox.
+- `dashboard.php`: simplified home dashboard with quick access to questions and Xerox.
 - `questions.php`: decision hub for the questions area.
 - `question-bank.php`: searchable bank of existing questions.
 - `question-editor.php`: dedicated editor for creating and revising questions.
-- `exam-library.php`: central entrypoint for the exams area.
-- `exam-models.php`: dedicated page for the current standard exam model.
-- `exam-model-preview.php`: preview of the standard model before use.
-- `exam-create.php`: guided exam setup for header, answer-key preview, body text, and final structure.
-- `exams.php`: exam assembly and saved exam management.
-- `exam-preview.php`: print preview, saved-layout summary, and Xerox submission entrypoint.
-- `exam-pdf.php`: PDF export route that reuses the same shared exam renderer.
 - `xerox.php`: Xerox panel for teachers, operators, and admins.
 - `users.php`: role management for `master_admin`.
-- `profile.php`: per-user default data panel used to prefill exam creation.
+- `profile.php`: per-user default data panel used to prefill recurring profile data.
 - `messages.php`: internal inbox for admin, Xerox, and users.
 - `backup.php`: backup management page.
 
@@ -29,7 +22,6 @@ Current behavior:
 - Uses four roles: `master_admin`, `local_admin`, `user`, and `xerox`.
 - Includes a top-level user profile panel with defaults for teacher, discipline, component, class, school, subtitle, and header logos.
 - Allows admins to authorize Xerox operators.
-- Allows teachers to send exams to Xerox, cancel a pending send, and resend after completion.
 - Allows Xerox operators to accept, move to in-progress, and finalize printing jobs.
 - Allows users to send internal messages to the administrator and, when available, to Xerox.
 - Allows the administrator to answer users, send direct messages, and send broadcast notices to all users.
@@ -37,32 +29,25 @@ Current behavior:
 - Supports public and private questions with filters, favorites, cloning, and usage tracking.
 - Supports multiple choice, discursive, drawing, and true/false question types.
 - Preserves richer pasted content for question authoring, including improved handling for mathematics formatting cases.
-- Builds exams from selected questions and exports them to PDF.
-- Includes a separate exams library, a standard exam model page, a model preview flow, and a streamlined exam creation page.
-- Uses a header editor in `exam-create.php` that prefills user data and lets the operator adjust answer-key quantity, orientation, width, height, font size, and colors before saving.
-- Persists exam metadata through `includes/exam_metadata.php`, including answer-key configuration and reusable header defaults from `profile.php`.
-- Uses an A4-oriented shared exam renderer with official school header, logo support, blank student fields, configurable answer-key preview, fixed header rows, and optional body comments before the footer.
-- Splits long questions into continuation segments and redistributes them across columns/pages to keep preview and PDF aligned and away from the footer.
-- Keeps a single standard print model with question cards, answer-key section, footer, and preview/PDF parity as the default path.
+- Generates dynamic A4 exam layouts with header, two-column body, fixed footer, and PDF output.
+- Lets the master admin change exam colors through saved system settings.
 - Includes base backup services and scripts for local/manual and future Drive-based backups.
 - Uses updated favicon assets from `/favicon` with SVG, PNG, manifest, and purple theme color `#4f2ec9`.
 
 Important files:
-- `includes/exam_document_renderer.php`: shared HTML/PDF exam renderer, A4 layout, segmented question flow, balanced columns, header rows, and print styling.
 - `includes/xerox_repository.php`: Xerox workflow repository functions and status transitions.
 - `includes/messages_repository.php`: internal messaging, broadcast, reply, and inbox helpers.
-- `includes/exam_metadata.php`: exam metadata defaults, parsing, answer-key settings, and user-profile-aware exam prefills.
+- `includes/dashboard_repository.php`: dashboard metrics and recent-questions helpers.
 - `includes/backup_repository.php`: backup generation and logging helpers.
 - `includes/question_helpers.php`: question content normalization and formatting helpers.
+- `includes/question_repository.php`: question listing and lookup helpers.
+- `includes/question_actions.php`: question CRUD, clone, favorite, and bulk actions.
 - `database_geral_atualizado.sql`: full schema/reference SQL with current seed users.
 - `history.txt`: dated project change log.
 
 Defaults and assumptions:
 - The default school header is `COLÉGIO ESTADUAL CÍVICO-MILITAR TANCREDO DE ALMEIDA NEVES`.
 - The default school subtitle is `ENSINO FUNDAMENTAL, MÉDIO E PROFISSIONALIZANTE`.
-- The default exam label is `AVALIAÇÃO TRIMESTRAL`.
-- The default exam logo URL is `https://cdn.worldvectorlogo.com/logos/colegio-estadual-c-vico-militar-tancredo-de-almeida-neves.svg`.
-- The default answer-key preview uses `10` questions, vertical orientation, full page width, `7 cm` height, and `13 px` answer-key font size.
 - The embedded font asset for the school name is `assets/fonts/Poppins-Black.ttf`.
 - The favicon manifest and theme color currently use `#4f2ec9`.
 
@@ -70,7 +55,5 @@ Notes for LLMs:
 - Prefer preserving the current role model and Xerox permissions.
 - Prefer `database_geral_atualizado.sql` as the SQL reference.
 - Prefer the dedicated pages (`question-bank.php`, `question-editor.php`) instead of reintroducing modal-based question creation.
-- Prefer `profile.php` as the source of recurring user defaults for new exam creation.
+- Prefer `profile.php` as the source of recurring user defaults for the user panel.
 - Prefer `messages.php` and `includes/messages_repository.php` for any future internal communication changes.
-- Prefer the single standard exam model instead of reintroducing multiple competing model variants.
-- Prefer maintaining preview/PDF visual parity by editing `includes/exam_document_renderer.php` instead of forking logic between `exam-preview.php` and `exam-pdf.php`.

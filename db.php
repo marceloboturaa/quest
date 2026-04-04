@@ -121,10 +121,10 @@ if (!function_exists('ensure_runtime_schema')) {
 
         $userRoleColumn = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'role'")->fetch();
 
-        if ($userRoleColumn && !str_contains((string) $userRoleColumn['Type'], "'xerox'")) {
+        if ($userRoleColumn && !str_contains((string) $userRoleColumn['Type'], "'professor'")) {
             $pdo->exec(
                 "ALTER TABLE `users`
-                 MODIFY `role` ENUM('master_admin', 'local_admin', 'xerox', 'user') NOT NULL DEFAULT 'user'"
+                 MODIFY `role` ENUM('master_admin', 'local_admin', 'professor', 'xerox', 'user', 'aluno') NOT NULL DEFAULT 'user'"
             );
         }
 
@@ -134,8 +134,7 @@ if (!function_exists('ensure_runtime_schema')) {
             'preferred_component_name' => "ALTER TABLE `users` ADD COLUMN `preferred_component_name` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_discipline`",
             'preferred_class_name' => "ALTER TABLE `users` ADD COLUMN `preferred_class_name` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_component_name`",
             'preferred_year_reference' => "ALTER TABLE `users` ADD COLUMN `preferred_year_reference` VARCHAR(80) NULL DEFAULT NULL AFTER `preferred_class_name`",
-            'preferred_exam_label' => "ALTER TABLE `users` ADD COLUMN `preferred_exam_label` VARCHAR(140) NULL DEFAULT NULL AFTER `preferred_year_reference`",
-            'preferred_school_name' => "ALTER TABLE `users` ADD COLUMN `preferred_school_name` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_exam_label`",
+            'preferred_school_name' => "ALTER TABLE `users` ADD COLUMN `preferred_school_name` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_year_reference`",
             'preferred_school_subtitle' => "ALTER TABLE `users` ADD COLUMN `preferred_school_subtitle` VARCHAR(180) NULL DEFAULT NULL AFTER `preferred_school_name`",
             'preferred_header_logo_left' => "ALTER TABLE `users` ADD COLUMN `preferred_header_logo_left` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_school_subtitle`",
             'preferred_header_logo_right' => "ALTER TABLE `users` ADD COLUMN `preferred_header_logo_right` VARCHAR(500) NULL DEFAULT NULL AFTER `preferred_header_logo_left`",
@@ -146,6 +145,31 @@ if (!function_exists('ensure_runtime_schema')) {
 
             if (!$columnExists) {
                 $pdo->exec($statement);
+            }
+        }
+
+        $questionColumnStatements = [
+            'question_code' => "ALTER TABLE `questions` ADD COLUMN `question_code` VARCHAR(40) NULL DEFAULT NULL AFTER `id`",
+            'explanation' => "ALTER TABLE `questions` ADD COLUMN `explanation` TEXT NULL DEFAULT NULL AFTER `source_reference`",
+        ];
+
+        foreach ($questionColumnStatements as $column => $statement) {
+            $columnExists = $pdo->query("SHOW COLUMNS FROM `questions` LIKE " . $pdo->quote($column))->fetch();
+
+            if (!$columnExists) {
+                $pdo->exec($statement);
+            }
+        }
+
+        $pdo->exec("UPDATE `questions` SET `question_code` = CONCAT('Q', DATE_FORMAT(`created_at`, '%y%m%d'), '-', LPAD(`id`, 6, '0')) WHERE `question_code` IS NULL OR `question_code` = ''");
+
+        $questionCodeIndex = $pdo->query("SHOW INDEX FROM `questions` WHERE Key_name = 'questions_question_code_unique'")->fetch();
+
+        if (!$questionCodeIndex) {
+            try {
+                $pdo->exec("ALTER TABLE `questions` ADD UNIQUE KEY `questions_question_code_unique` (`question_code`)");
+            } catch (Throwable) {
+                // ignore duplicate or unsupported index errors on existing installs
             }
         }
 
@@ -221,6 +245,25 @@ if (!function_exists('ensure_runtime_schema')) {
                 `setting_value` VARCHAR(255) NOT NULL,
                 `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`setting_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS `answers` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `user_id` INT UNSIGNED NOT NULL,
+                `question_id` INT UNSIGNED NOT NULL,
+                `resposta` VARCHAR(10) NOT NULL,
+                `correta` TINYINT(1) NOT NULL DEFAULT 0,
+                `data` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `answers_user_id_index` (`user_id`),
+                KEY `answers_question_id_index` (`question_id`),
+                KEY `answers_data_index` (`data`),
+                CONSTRAINT `answers_user_id_foreign`
+                    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `answers_question_id_foreign`
+                    FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
 

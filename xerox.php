@@ -276,8 +276,8 @@ render_header(
                             <span class="badge">Enviado: <?= h(datetime_label((string) ($exam['xerox_requested_at'] ?? null), '-')) ?></span>
                         </div>
                         <div class="simple-list-actions">
-                            <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
-                            <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
+                            <span class="badge">Prévia removida</span>
+                            <span class="badge">PDF removido</span>
                             <?php if ((string) $exam['xerox_status'] === 'sent'): ?>
                                 <form method="post">
                                     <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -327,8 +327,8 @@ render_header(
                                 <span class="badge">Enviado: <?= h(datetime_label((string) ($exam['xerox_requested_at'] ?? null), '-')) ?></span>
                             </div>
                             <div class="simple-list-actions">
-                                <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
-                                <a class="ghost-button" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
+                                <span class="badge">Prévia removida</span>
+                                <span class="badge">PDF removido</span>
                                 <?php if (is_xerox_user()): ?>
                                     <form method="post">
                                         <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -377,8 +377,8 @@ render_header(
                                 <span class="badge">Aceito: <?= h(datetime_label((string) ($exam['xerox_started_at'] ?? null), '-')) ?></span>
                             </div>
                             <div class="simple-list-actions">
-                                <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
-                                <a class="ghost-button" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
+                                <span class="badge">Prévia removida</span>
+                                <span class="badge">PDF removido</span>
                                 <?php if ($canFinish): ?>
                                     <form method="post">
                                         <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
@@ -427,8 +427,8 @@ render_header(
                                 <span class="badge">Finalizado: <?= h(datetime_label((string) ($exam['xerox_finished_at'] ?? null), '-')) ?></span>
                             </div>
                             <div class="simple-list-actions">
-                                <a class="ghost-button" href="exam-preview.php?id=<?= h((string) $exam['id']) ?>">Preview</a>
-                                <a class="button-secondary" href="exam-pdf.php?id=<?= h((string) $exam['id']) ?>">PDF</a>
+                                <span class="badge">Prévia removida</span>
+                                <span class="badge">PDF removido</span>
                             </div>
                         </article>
                     <?php endforeach; ?>

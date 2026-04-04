@@ -67,7 +67,7 @@ $questionPreview = static function (?string $text, int $limit = 220): string {
 
 render_header(
     'Banco de questões',
-    'Filtre, abra e use questões na montagem da prova de forma simples.'
+    'Filtre, abra e use questões de forma simples.'
 );
 ?>
 
@@ -170,8 +170,6 @@ render_header(
                 <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">
                 <span class="badge" data-question-selected-count>0 selecionadas</span>
                 <button class="ghost-button" type="button" data-question-select-all>Selecionar tudo</button>
-                <button class="button-secondary" type="submit" formaction="exam-create.php" formmethod="get">Usar selecionadas</button>
-                <a class="ghost-button" href="exam-create.php">Nova prova</a>
                 <?php if ($canBulkDeleteQuestions): ?>
                     <button class="button-danger" type="submit" name="action" value="bulk_delete_questions" onclick="return confirm('Excluir as questões selecionadas?')">Excluir selecionadas</button>
                     <button class="button-danger" type="submit" name="action" value="delete_all_questions" onclick="return confirm('Excluir todas as questões do banco? Esta ação não pode ser desfeita.')">Excluir tudo</button>
@@ -224,7 +222,7 @@ render_header(
 
                     <div class="simple-list-footer">
                         <div class="simple-inline-list">
-                            <span class="badge">Uso em provas: <?= h((string) $question['usage_count']) ?></span>
+                            <span class="badge">Uso no sistema: <?= h((string) $question['usage_count']) ?></span>
                             <?php if (!empty($question['author_name'])): ?>
                                 <span class="badge">Autor: <?= h((string) $question['author_name']) ?></span>
                             <?php endif; ?>
@@ -236,7 +234,6 @@ render_header(
                                 <input type="hidden" name="question_id" value="<?= h((string) $question['id']) ?>">
                                 <button class="<?= (int) $question['is_favorite'] === 1 ? 'button-secondary' : 'ghost-button' ?>" type="submit"><?= (int) $question['is_favorite'] === 1 ? 'Favoritada' : 'Favoritar' ?></button>
                             </form>
-                            <a class="ghost-button" href="exam-create.php?question_ids%5B%5D=<?= h((string) $question['id']) ?>">Usar em prova</a>
                             <?php if ((string) $question['visibility'] === 'public' || (int) $question['author_id'] === $userId): ?>
                                 <form method="post">
                                     <input type="hidden" name="_token" value="<?= h(csrf_token()) ?>">

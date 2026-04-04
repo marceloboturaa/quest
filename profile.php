@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
-require_once __DIR__ . '/includes/exam_metadata.php';
 
 require_login();
 
@@ -15,7 +14,6 @@ $profileFields = [
     'preferred_component_name' => 'Componente curricular',
     'preferred_class_name' => 'Turma mais usada',
     'preferred_year_reference' => 'Ano / série',
-    'preferred_exam_label' => 'Título padrão da avaliação',
     'preferred_school_name' => 'Nome da escola',
     'preferred_school_subtitle' => 'Subtítulo da escola',
     'preferred_header_logo_left' => 'Logo principal',
@@ -38,7 +36,6 @@ if (is_post()) {
             preferred_component_name = :preferred_component_name,
             preferred_class_name = :preferred_class_name,
             preferred_year_reference = :preferred_year_reference,
-            preferred_exam_label = :preferred_exam_label,
             preferred_school_name = :preferred_school_name,
             preferred_school_subtitle = :preferred_school_subtitle,
             preferred_header_logo_left = :preferred_header_logo_left,
@@ -48,16 +45,14 @@ if (is_post()) {
     );
     $statement->execute($payload + ['id' => $userId]);
 
-    flash('success', 'Painel do usuário atualizado. Os novos padrões já serão usados na criação das provas.');
+    flash('success', 'Painel do usuário atualizado. Os novos padrões já serão usados nas páginas do sistema.');
     redirect('profile.php');
 }
 
 $user = current_user();
-$examDefaults = exam_user_profile_defaults($user);
-
 render_header(
     'Meu painel',
-    'Preencha seus dados padrão para agilizar a criação das provas.'
+    'Preencha seus dados padrão para deixar o painel mais rápido no dia a dia.'
 );
 ?>
 
@@ -72,42 +67,41 @@ render_header(
                 <span class="badge">Painel ativo</span>
             </div>
             <div class="profile-sidebar-actions">
-                <a class="button-secondary" href="exam-create.php">Nova prova</a>
                 <a class="ghost-button" href="messages.php">Mensagens</a>
             </div>
         </article>
 
         <article class="simple-card profile-summary-card-clean">
-            <span class="profile-card-kicker">Na nova prova</span>
+            <span class="profile-card-kicker">Preferências</span>
             <div class="profile-summary-list">
                 <div class="profile-summary-row">
                     <small>Professor</small>
-                    <strong><?= h($examDefaults['teacher_name'] !== '' ? $examDefaults['teacher_name'] : (string) $user['name']) ?></strong>
+                    <strong><?= h((string) ($user['preferred_teacher_name'] ?? $user['name'])) ?></strong>
                 </div>
                 <div class="profile-summary-row">
                     <small>Escola</small>
-                    <strong><?= h($examDefaults['school_name']) ?></strong>
+                    <strong><?= h((string) ($user['preferred_school_name'] ?? '')) ?></strong>
                 </div>
                 <div class="profile-summary-row">
-                    <small>Cabeçalho</small>
-                    <strong><?= h($examDefaults['header_logo_left'] !== '' ? 'Logo principal definida' : 'Nenhuma logo definida') ?></strong>
+                    <small>Logo principal</small>
+                    <strong><?= h(!empty($user['preferred_header_logo_left']) ? 'Definida' : 'Não definida') ?></strong>
                 </div>
             </div>
         </article>
 
         <article class="simple-card profile-tip-card">
             <span class="profile-card-kicker">Uso rápido</span>
-            <p>Preencha a escola, o professor e a logo principal. Isso já elimina boa parte do retrabalho na montagem das provas.</p>
+            <p>Preencha os campos mais usados para reduzir retrabalho nas páginas do sistema.</p>
         </article>
     </aside>
 
     <section class="profile-main">
         <article class="simple-card profile-form-shell">
             <div class="simple-card-head">
-                <div>
+                    <div>
                     <span class="profile-card-kicker">Configuração pessoal</span>
-                    <h2>Dados padrão da prova</h2>
-                    <p class="helper-text">Preencha somente o que costuma se repetir. O restante pode ser ajustado normalmente dentro da prova.</p>
+                    <h2>Dados padrão do painel</h2>
+                    <p class="helper-text">Preencha somente o que costuma se repetir no uso do sistema.</p>
                 </div>
             </div>
 
@@ -135,26 +129,23 @@ render_header(
                         <label><span>Ano / série</span>
                             <input type="text" name="preferred_year_reference" value="<?= h((string) ($user['preferred_year_reference'] ?? '')) ?>" placeholder="Ex.: 6º ano">
                         </label>
-                        <label><span>Título padrão da avaliação</span>
-                            <input type="text" name="preferred_exam_label" value="<?= h((string) ($user['preferred_exam_label'] ?? '')) ?>" placeholder="Ex.: AVALIAÇÃO TRIMESTRAL">
-                        </label>
                     </div>
                 </section>
 
                 <section class="profile-form-section">
                     <div class="profile-form-section-head">
                         <h3>Escola e cabeçalho</h3>
-                        <p>Esses dados alimentam o topo da prova automaticamente.</p>
+                        <p>Esses dados alimentam os campos reutilizáveis do sistema automaticamente.</p>
                     </div>
                     <div class="simple-filter-grid profile-form-grid">
                         <label class="profile-form-grid-span-2"><span>Nome da escola</span>
-                            <input type="text" name="preferred_school_name" value="<?= h((string) ($user['preferred_school_name'] ?? '')) ?>" placeholder="<?= h(EXAM_DEFAULT_SCHOOL_NAME) ?>">
+                            <input type="text" name="preferred_school_name" value="<?= h((string) ($user['preferred_school_name'] ?? '')) ?>" placeholder="COLÉGIO ESTADUAL CÍVICO-MILITAR TANCREDO DE ALMEIDA NEVES">
                         </label>
                         <label class="profile-form-grid-span-2"><span>Subtítulo da escola</span>
-                            <input type="text" name="preferred_school_subtitle" value="<?= h((string) ($user['preferred_school_subtitle'] ?? '')) ?>" placeholder="<?= h(EXAM_DEFAULT_SCHOOL_SUBTITLE) ?>">
+                            <input type="text" name="preferred_school_subtitle" value="<?= h((string) ($user['preferred_school_subtitle'] ?? '')) ?>" placeholder="ENSINO FUNDAMENTAL, MÉDIO E PROFISSIONALIZANTE">
                         </label>
                         <label class="profile-form-grid-span-2"><span>Logo principal</span>
-                            <input type="text" name="preferred_header_logo_left" value="<?= h((string) ($user['preferred_header_logo_left'] ?? '')) ?>" placeholder="<?= h(EXAM_DEFAULT_LOGO_URL) ?>">
+                            <input type="text" name="preferred_header_logo_left" value="<?= h((string) ($user['preferred_header_logo_left'] ?? '')) ?>" placeholder="https://cdn.worldvectorlogo.com/logos/colegio-estadual-c-vico-militar-tancredo-de-almeida-neves.svg">
                         </label>
                         <label class="profile-form-grid-span-2"><span>Logo secundária</span>
                             <input type="text" name="preferred_header_logo_right" value="<?= h((string) ($user['preferred_header_logo_right'] ?? '')) ?>" placeholder="Opcional">
@@ -164,7 +155,6 @@ render_header(
 
                 <div class="simple-action-row profile-form-actions">
                     <button class="button" type="submit">Salvar painel</button>
-                    <a class="ghost-button" href="exam-create.php">Abrir criação de prova</a>
                 </div>
             </form>
         </article>

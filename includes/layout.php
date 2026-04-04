@@ -10,6 +10,10 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
     $unreadMessages = $user && function_exists('messages_unread_count') ? messages_unread_count((int) $user['id']) : 0;
     $toastMessage = $user && function_exists('messages_latest_toast_for_user') ? messages_latest_toast_for_user((int) $user['id']) : null;
     $currentPath = basename((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+    $currentRole = (string) ($user['role'] ?? '');
+    $isStudent = $currentRole === 'aluno';
+    $isProfessor = in_array($currentRole, ['professor', 'local_admin', 'master_admin'], true);
+    $isMaster = $currentRole === 'master_admin';
     $isActive = static function (array $paths) use ($currentPath): bool {
         return in_array($currentPath, $paths, true);
     };
@@ -30,8 +34,20 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
     <title><?= h($title . ' | Quest') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)'], ['$', '$']],
+                displayMath: [['\\[', '\\]'], ['$$', '$$']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="<?= h(asset_url('assets/css/app.css')) ?>">
 </head>
 <body data-app-version="<?= h(QUEST_ADMIN_UI_VERSION) ?>" data-authenticated="<?= $user ? 'true' : 'false' ?>" data-csrf-token="<?= h(csrf_token()) ?>">
@@ -62,16 +78,28 @@ function render_header(string $title, string $subtitle = '', bool $showHero = tr
                 <?php if ($user): ?>
                     <nav id="topbar-nav" class="topbar-nav" data-menu-panel>
                         <div class="topbar-nav-group">
-                            <a class="<?= $isActive(['dashboard.php']) ? 'is-active' : '' ?>" href="dashboard.php"><i class="fa-solid fa-house nav-link-icon" aria-hidden="true"></i><span>Início</span></a>
-                            <a class="<?= $isActive(['questions.php', 'enem.php']) ? 'is-active' : '' ?>" href="questions.php"><i class="fa-solid fa-lightbulb nav-link-icon" aria-hidden="true"></i><span>Questões</span></a>
-                            <a class="<?= $isActive(['exam-library.php', 'exam-models.php', 'exam-model-preview.php', 'exam-create.php', 'exams.php', 'exam-preview.php', 'exam-pdf.php']) ? 'is-active' : '' ?>" href="exam-library.php"><i class="fa-solid fa-file-circle-plus nav-link-icon" aria-hidden="true"></i><span>Provas</span></a>
-                            <a class="<?= $isActive(['xerox.php']) ? 'is-active' : '' ?>" href="xerox.php"><i class="fa-solid fa-print nav-link-icon" aria-hidden="true"></i><span>Xerox</span></a>
-                            <a class="<?= $isActive(['messages.php']) ? 'is-active' : '' ?>" href="messages.php"><i class="fa-solid fa-envelope nav-link-icon" aria-hidden="true"></i><span>Mensagens</span><?php if ($unreadMessages > 0): ?><small class="nav-pill"><?= h((string) $unreadMessages) ?></small><?php endif; ?></a>
-                            <?php if (can_manage_backups()): ?>
-                                <a class="<?= $isActive(['backup.php']) ? 'is-active' : '' ?>" href="backup.php"><i class="fa-solid fa-cloud-arrow-up nav-link-icon" aria-hidden="true"></i><span>Backup</span></a>
+                            <?php if ($isStudent): ?>
+                                <a class="<?= $isActive(['study.php', 'question.php', 'result.php']) ? 'is-active' : '' ?>" href="study.php"><i class="fa-solid fa-book-open-reader nav-link-icon" aria-hidden="true"></i><span>Modo de estudos</span></a>
+                                <a class="<?= $isActive(['question-bank.php']) ? 'is-active' : '' ?>" href="question-bank.php"><i class="fa-solid fa-lightbulb nav-link-icon" aria-hidden="true"></i><span>Questões</span></a>
+                            <?php else: ?>
+                                <a class="<?= $isActive(['dashboard.php']) ? 'is-active' : '' ?>" href="dashboard.php"><i class="fa-solid fa-house nav-link-icon" aria-hidden="true"></i><span>Início</span></a>
+                                <a class="<?= $isActive(['study.php', 'question.php', 'result.php']) ? 'is-active' : '' ?>" href="study.php"><i class="fa-solid fa-book-open-reader nav-link-icon" aria-hidden="true"></i><span>Modo de estudos</span></a>
+                                <a class="<?= $isActive(['question-bank.php']) ? 'is-active' : '' ?>" href="question-bank.php"><i class="fa-solid fa-lightbulb nav-link-icon" aria-hidden="true"></i><span>Questões</span></a>
+                                <?php if ($isProfessor): ?>
+                                    <a class="topbar-nav-prova <?= $isActive(['exam-create.php']) ? 'is-active' : '' ?>" href="exam-create.php" title="Em manutenção"><i class="fa-solid fa-circle-plus nav-link-icon" aria-hidden="true"></i><span>Prova</span></a>
+                                <?php endif; ?>
+                                <?php if ($isMaster || $currentRole === 'xerox'): ?>
+                                    <a class="<?= $isActive(['xerox.php']) ? 'is-active' : '' ?>" href="xerox.php"><i class="fa-solid fa-print nav-link-icon" aria-hidden="true"></i><span>Xerox</span></a>
+                                <?php endif; ?>
                             <?php endif; ?>
-                            <?php if (can_manage_users()): ?>
-                                <a class="<?= $isActive(['users.php']) ? 'is-active' : '' ?>" href="users.php"><i class="fa-solid fa-users-gear nav-link-icon" aria-hidden="true"></i><span>Usuários</span></a>
+                            <?php if (!$isStudent): ?>
+                                <a class="<?= $isActive(['messages.php']) ? 'is-active' : '' ?>" href="messages.php"><i class="fa-solid fa-envelope nav-link-icon" aria-hidden="true"></i><span>Mensagens</span><?php if ($unreadMessages > 0): ?><small class="nav-pill"><?= h((string) $unreadMessages) ?></small><?php endif; ?></a>
+                                <?php if ($isMaster || has_role('local_admin')): ?>
+                                    <a class="<?= $isActive(['backup.php']) ? 'is-active' : '' ?>" href="backup.php"><i class="fa-solid fa-cloud-arrow-up nav-link-icon" aria-hidden="true"></i><span>Backup</span></a>
+                                <?php endif; ?>
+                                <?php if ($isMaster): ?>
+                                    <a class="<?= $isActive(['users.php']) ? 'is-active' : '' ?>" href="users.php"><i class="fa-solid fa-users-gear nav-link-icon" aria-hidden="true"></i><span>Usuários</span></a>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
 

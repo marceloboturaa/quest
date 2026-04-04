@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `name` VARCHAR(120) NOT NULL,
     `email` VARCHAR(180) NOT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
-    `role` ENUM('master_admin', 'local_admin', 'xerox', 'user') NOT NULL DEFAULT 'user',
+    `role` ENUM('master_admin', 'local_admin', 'professor', 'xerox', 'user') NOT NULL DEFAULT 'user',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -161,6 +161,13 @@ CREATE TABLE IF NOT EXISTS `exam_questions` (
         FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
     CONSTRAINT `exam_questions_question_id_foreign`
         FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `system_settings` (
+    `setting_key` VARCHAR(100) NOT NULL,
+    `setting_value` VARCHAR(255) NOT NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`setting_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `backup_runs` (

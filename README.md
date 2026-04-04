@@ -42,11 +42,6 @@ O **Quest** e um projeto pessoal de **Marcelo Botura**, com a ideia apoiada pelo
 - [x] Discursiva com linhas
 - [x] Desenho com espaco e altura ajustavel
 
-### Provas
-
-- [x] Selecionar questoes
-- [x] Montar prova
-
 ### Qualidade do sistema
 
 - [x] Usar PDO
@@ -77,8 +72,6 @@ O arquivo `database.sql` cria a estrutura principal, incluindo:
 - `questions`
 - `question_options`
 - `question_favorites`
-- `exams`
-- `exam_questions`
 
 Atualizacao manual adicional:
 

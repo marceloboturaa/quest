@@ -8,12 +8,12 @@ require_login();
 
 $user = current_user();
 $userId = (int) $user['id'];
+$isStudent = ($user['role'] ?? '') === 'aluno';
 $questionMetrics = [
     'private' => 0,
     'public' => 0,
     'mine' => 0,
 ];
-$examCount = 0;
 $accessibleQuestionCount = 0;
 $xeroxPendingCount = 0;
 $recentActivities = [];
@@ -42,31 +42,11 @@ try {
 }
 
 try {
-    $statement = db()->prepare('SELECT COUNT(*) FROM exams WHERE user_id = :user_id');
-    $statement->execute(['user_id' => $userId]);
-    $examCount = (int) $statement->fetchColumn();
-} catch (Throwable) {
-    $examCount = 0;
-}
-
-try {
     $statement = db()->prepare('SELECT COUNT(*) FROM questions WHERE visibility = "public" OR author_id = :author_id');
     $statement->execute(['author_id' => $userId]);
     $accessibleQuestionCount = (int) $statement->fetchColumn();
 } catch (Throwable) {
     $accessibleQuestionCount = $questionMetrics['public'] + $questionMetrics['mine'];
-}
-
-try {
-    $statement = db()->prepare(
-        'SELECT COUNT(*) FROM exams
-         WHERE user_id = :user_id
-           AND xerox_status IN ("sent", "in_progress")'
-    );
-    $statement->execute(['user_id' => $userId]);
-    $xeroxPendingCount = (int) $statement->fetchColumn();
-} catch (Throwable) {
-    $xeroxPendingCount = 0;
 }
 
 foreach (dashboard_recent_questions($userId, false, 3) as $item) {
@@ -88,50 +68,98 @@ $recentActivities = array_slice($recentActivities, 0, 5);
 
 render_header(
     'Questões',
-    'Escolha o que deseja fazer: criar uma questão, buscar no banco ou montar uma prova.'
+    $isStudent
+        ? 'Área organizada para estudo, com acesso rápido ao banco e ao treino.'
+        : 'Área organizada para montar questões, importar conteúdo e preparar provas.'
 );
 ?>
 
-<section class="simple-stack">
-    <article class="simple-card">
+<section class="questions-workspace">
+    <article class="simple-card questions-hero-card">
         <div class="simple-card-head">
             <div>
-                <h2>O que deseja fazer?</h2>
-                <p class="helper-text">Escolha uma opção para continuar.</p>
+                <span class="exam-library-kicker">Painel de questões</span>
+                <h2><?= $isStudent ? 'Seu fluxo é de estudo' : 'Seu fluxo é de produção' ?></h2>
+                <p class="helper-text">
+                    <?= $isStudent
+                        ? 'Use o banco para resolver questões e seguir para o Modo Estudo.'
+                        : 'Crie, organize e depois transforme o material em prova.' ?>
+                </p>
+            </div>
+            <div class="questions-role-badge">
+                <small>Perfil atual</small>
+                <strong><?= h(role_label((string) $user['role'])) ?></strong>
             </div>
         </div>
-
-        <div class="simple-decision-grid">
-            <a class="simple-action-card" href="question-editor.php?new=1">
-                <span class="simple-action-icon"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i></span>
-                <span>
-                    <strong>Criar questão</strong>
-                    <small>Escrever uma nova questão</small>
-                </span>
-            </a>
-            <a class="simple-action-card" href="question-bank.php">
-                <span class="simple-action-icon"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></span>
-                <span>
-                    <strong>Abrir banco</strong>
-                    <small>Buscar e usar questões já prontas</small>
-                </span>
-            </a>
-            <a class="simple-action-card" href="exam-library.php">
-                <span class="simple-action-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span>
-                <span>
-                    <strong>Montar prova</strong>
-                    <small>Criar uma prova a partir do banco</small>
-                </span>
-            </a>
-            <a class="simple-action-card" href="enem.php">
-                <span class="simple-action-icon"><i class="fa-solid fa-download" aria-hidden="true"></i></span>
-                <span>
-                    <strong>Importar ENEM</strong>
-                    <small>Importar questões oficiais para adaptação</small>
-                </span>
-            </a>
-        </div>
     </article>
+
+    <div class="questions-panel-grid">
+    <article class="simple-card questions-role-card">
+        <div class="simple-card-head">
+            <div>
+                <h2>Estudo rápido</h2>
+                <p class="helper-text">Atalhos pensados para quem vai resolver questões.</p>
+            </div>
+            </div>
+
+            <div class="simple-decision-grid">
+                <a class="simple-action-card" href="study.php">
+                    <span class="simple-action-icon"><i class="fa-solid fa-book-open-reader" aria-hidden="true"></i></span>
+                    <span>
+                        <strong>Modo estudo</strong>
+                        <small>Começar um treino com correção automática</small>
+                    </span>
+                </a>
+                <a class="simple-action-card" href="question-bank.php">
+                    <span class="simple-action-icon"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></span>
+                    <span>
+                        <strong>Banco de questões</strong>
+                        <small>Buscar, filtrar e usar questões prontas</small>
+                    </span>
+                </a>
+            </div>
+        </article>
+
+        <?php if (!$isStudent): ?>
+            <article class="simple-card questions-role-card">
+                <div class="simple-card-head">
+                    <div>
+                        <h2>Área docente</h2>
+                        <p class="helper-text">Ferramentas para criar e organizar provas.</p>
+                    </div>
+                </div>
+
+                <div class="simple-decision-grid">
+                    <a class="simple-action-card" href="question-editor.php?new=1">
+                        <span class="simple-action-icon"><i class="fa-regular fa-pen-to-square" aria-hidden="true"></i></span>
+                        <span>
+                            <strong>Criar questão</strong>
+                            <small>Escrever uma nova questão para o banco</small>
+                        </span>
+                    </a>
+                    <a class="simple-action-card" href="enem.php">
+                        <span class="simple-action-icon"><i class="fa-solid fa-download" aria-hidden="true"></i></span>
+                        <span>
+                            <strong>Importar ENEM</strong>
+                            <small>Adicionar questões oficiais ao seu banco</small>
+                        </span>
+                    </a>
+                    <button
+                        class="simple-action-card simple-action-card-button simple-action-card--maintenance"
+                        type="button"
+                        title="Em manutenção"
+                        aria-disabled="true"
+                    >
+                        <span class="simple-action-icon"><i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i></span>
+                        <span>
+                            <strong>Criar prova</strong>
+                            <small>Em manutenção</small>
+                        </span>
+                    </button>
+                </div>
+            </article>
+        <?php endif; ?>
+    </div>
 
     <section class="simple-metric-grid">
         <article class="simple-metric-card">
@@ -143,12 +171,12 @@ render_header(
             <strong><?= h((string) $accessibleQuestionCount) ?></strong>
         </article>
         <article class="simple-metric-card">
-            <small>Provas criadas</small>
-            <strong><?= h((string) $examCount) ?></strong>
-        </article>
-        <article class="simple-metric-card">
             <small>Xerox</small>
             <strong><?= $xeroxPendingCount > 0 ? h((string) $xeroxPendingCount) : 'Livre' ?></strong>
+        </article>
+        <article class="simple-metric-card">
+            <small>Perfil</small>
+            <strong><?= h(role_label((string) $user['role'])) ?></strong>
         </article>
     </section>
 

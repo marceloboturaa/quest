@@ -16,6 +16,15 @@ function question_subjects(): array
     )->fetchAll();
 }
 
+function question_subject_discipline_id(int $subjectId): int
+{
+    $statement = db()->prepare('SELECT discipline_id FROM subjects WHERE id = :id LIMIT 1');
+    $statement->execute(['id' => $subjectId]);
+    $disciplineId = $statement->fetchColumn();
+
+    return $disciplineId !== false ? (int) $disciplineId : 0;
+}
+
 function question_authors(): array
 {
     return db()->query('SELECT id, name FROM users ORDER BY name ASC')->fetchAll();
@@ -86,6 +95,7 @@ function question_list(array $filters, int $userId): array
         $query .= ' AND (
             questions.title LIKE :term_title
             OR questions.prompt LIKE :term_prompt
+            OR COALESCE(questions.question_code, "") LIKE :term_question_code
             OR authors.name LIKE :term_author
             OR COALESCE(questions.source_name, "") LIKE :term_source_name
             OR COALESCE(questions.source_reference, "") LIKE :term_source_reference
@@ -93,6 +103,7 @@ function question_list(array $filters, int $userId): array
         $term = '%' . $filters['term'] . '%';
         $params['term_title'] = $term;
         $params['term_prompt'] = $term;
+        $params['term_question_code'] = $term;
         $params['term_author'] = $term;
         $params['term_source_name'] = $term;
         $params['term_source_reference'] = $term;

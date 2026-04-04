@@ -83,13 +83,6 @@ quest/
 ├── 📄 database_geral_atualizado.sql
 ├── 📄 deploy_manifest_20260325.txt
 ├── 📄 enem.php
-├── 📄 exam-create.php
-├── 📄 exam-library.php
-├── 📄 exam-model-preview.php
-├── 📄 exam-models.php
-├── 📄 exam-pdf.php
-├── 📄 exam-preview.php
-├── 📄 exams.php
 ├── 📂 favicon/
 │   ├── 🖼️ android-chrome-192x192.png
 │   ├── 🖼️ android-chrome-512x512.png
@@ -106,12 +99,6 @@ quest/
 │   ├── 📄 backup_repository.php
 │   ├── 📄 dashboard_repository.php
 │   ├── 📄 enem_api.php
-│   ├── 📄 exam_actions.php
-│   ├── 📄 exam_browser_pdf.php
-│   ├── 📄 exam_document_renderer.php
-│   ├── 📄 exam_examples.php
-│   ├── 📄 exam_metadata.php
-│   ├── 📄 exam_repository.php
 │   ├── 📄 layout.php
 │   ├── 📄 messages_repository.php
 │   ├── 📄 pdf_builder.php

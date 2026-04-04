@@ -14,8 +14,12 @@ Subir estes arquivos e pastas para o servidor:
 - dashboard.php
 - users.php
 - questions.php
-- exams.php
-- exam-pdf.php
+- question-bank.php
+- question-editor.php
+- profile.php
+- messages.php
+- xerox.php
+- backup.php
 - bootstrap.php
 - config.php
 
@@ -24,8 +28,8 @@ Subir estes arquivos e pastas para o servidor:
 - includes/question_helpers.php
 - includes/question_actions.php
 - includes/question_repository.php
-- includes/exam_actions.php
-- includes/exam_repository.php
+- includes/dashboard_repository.php
+- includes/messages_repository.php
 - includes/pdf_builder.php
 - includes/public_sources.php
 
@@ -56,9 +60,10 @@ ORDEM RECOMENDADA
 5. Conferir config.php com host, banco, usuario e senha da hospedagem.
 6. Testar:
 - login.php
+- dashboard.php
 - questions.php
-- exams.php
-- exam-pdf.php?id=ID_DA_PROVA
+- question-bank.php
+- xerox.php
 
 OBSERVACAO
 

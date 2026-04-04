@@ -13,7 +13,7 @@ if (is_post()) {
     if ($action === 'set_role') {
         $userId = (int) ($_POST['user_id'] ?? 0);
         $newRole = (string) ($_POST['role'] ?? 'user');
-        $allowedRoles = ['user', 'local_admin', 'xerox'];
+        $allowedRoles = ['user', 'professor', 'local_admin', 'xerox'];
 
         if (!in_array($newRole, $allowedRoles, true)) {
             flash('error', 'Perfil inválido.');
@@ -63,6 +63,7 @@ $users = db()->query('SELECT id, name, email, role, created_at FROM users ORDER 
 $registrationEnabled = system_registration_enabled();
 $counts = [
     'total' => count($users),
+    'professors' => count(array_filter($users, static fn(array $user): bool => $user['role'] === 'professor')),
     'local_admins' => count(array_filter($users, static fn(array $user): bool => $user['role'] === 'local_admin')),
     'xerox' => count(array_filter($users, static fn(array $user): bool => $user['role'] === 'xerox')),
     'users' => count(array_filter($users, static fn(array $user): bool => $user['role'] === 'user')),
@@ -83,6 +84,10 @@ render_header(
         <article class="simple-metric-card">
             <small>Admins locais</small>
             <strong><?= h((string) $counts['local_admins']) ?></strong>
+        </article>
+        <article class="simple-metric-card">
+            <small>Professores</small>
+            <strong><?= h((string) $counts['professors']) ?></strong>
         </article>
         <article class="simple-metric-card">
             <small>Usuários</small>
@@ -127,6 +132,7 @@ render_header(
                                 <label>Perfil
                                     <select name="role">
                                         <option value="user" <?= $managedUser['role'] === 'user' ? 'selected' : '' ?>>Usuário</option>
+                                        <option value="professor" <?= $managedUser['role'] === 'professor' ? 'selected' : '' ?>>Professor</option>
                                         <option value="local_admin" <?= $managedUser['role'] === 'local_admin' ? 'selected' : '' ?>>Admin local</option>
                                         <option value="xerox" <?= $managedUser['role'] === 'xerox' ? 'selected' : '' ?>>Xerox</option>
                                     </select>
@@ -186,6 +192,12 @@ render_header(
                     <div>
                         <strong>Admin local</strong>
                         <p>Apoio operacional ao banco de questões.</p>
+                    </div>
+                </div>
+                <div class="simple-list-item">
+                    <div>
+                        <strong>Professor</strong>
+                        <p>Cria e organiza questões para uso pedagógico.</p>
                     </div>
                 </div>
                 <div class="simple-list-item">

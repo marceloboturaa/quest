@@ -61,7 +61,7 @@ if (is_post()) {
         'name' => $name,
         'email' => $email,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-        'role' => 'user',
+        'role' => 'aluno',
     ]);
 
     $userId = (int) db()->lastInsertId();
@@ -75,12 +75,12 @@ if (is_post()) {
     redirect('dashboard.php');
 }
 
-render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inicial de usuário.', false, false);
+render_header('Criar conta de aluno', 'Cadastre novos usuários no Modo Estudo com acesso ao banco de questões.', false, false);
 ?>
 <div class="auth-wrap">
     <section class="auth-card">
-        <h2>Novo cadastro</h2>
-        <p>Depois do cadastro, a conta entra como usuário comum. O administrador master pode promover o perfil para admin local quando necessário.</p>
+        <h2>Novo cadastro de aluno</h2>
+        <p>Este cadastro usa o mesmo sistema de usuários do projeto, mas cria o perfil como aluno para estudar questões, salvar respostas e acompanhar desempenho.</p>
 
         <?php if (!$registrationEnabled): ?>
             <div class="flash flash-error">
@@ -122,7 +122,7 @@ render_header('Criar conta', 'Cadastre novos usuários no Quest com perfil inici
 
         <div class="auth-note">
             <strong>Perfil inicial</strong><br>
-            Usuários comuns podem criar questões, editar as próprias e montar provas com questões visíveis.
+            A conta é criada como <strong>aluno</strong> e já entra pronta para o Modo Estudo.
         </div>
     </section>
 </div>
